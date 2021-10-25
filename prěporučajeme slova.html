@@ -1,452 +1,598 @@
-<!DOCTYPE html>
-
-<html lang="en">
-
+<!doctype html>
+<html style='font-size:18px !important'>
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>
-        HackMD - Collaborative Markdown Knowledge Base
-    </title>
-    <link rel="icon" type="image/png" href="https://hackmd.io/favicon.png">
-    <link rel="apple-touch-icon" href="https://hackmd.io/apple-touch-icon.png">
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css" integrity="sha256-3iu9jgsy9TpTwXKb7bNQzqWekRX7pPK+2OLj3R922fo=" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.5.0/octicons.min.css" integrity="sha256-QiWfLIsCT02Sdwkogf6YMiQlj4NE84MKkzEMkZnMGdg=" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.1/themes/prism.min.css" integrity="sha256-vtR0hSWRc3Tb26iuN2oZHt3KRUomwTufNIf5/4oeCyg=" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@hackmd/emojify.js@2.1.0/dist/css/basic/emojify.min.css" integrity="sha256-UOrvMOsSDSrW6szVLe8ZDZezBxh5IoIfgTwdNDgTjiU=" crossorigin="anonymous" />
-    <style>
-        @import url(https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,500,500i|Source+Code+Pro:300,400,500|Source+Sans+Pro:300,300i,400,400i,600,600i|Source+Serif+Pro&subset=latin-ext);.hljs{display:block;background:#fff;padding:.5em;color:#333;overflow-x:auto}.hljs-comment,.hljs-meta{color:#969896}.hljs-emphasis,.hljs-quote,.hljs-string,.hljs-strong,.hljs-template-variable,.hljs-variable{color:#df5000}.hljs-keyword,.hljs-selector-tag,.hljs-type{color:#a71d5d}.hljs-attribute,.hljs-bullet,.hljs-literal,.hljs-number,.hljs-symbol{color:#0086b3}.hljs-built_in,.hljs-builtin-name{color:#005cc5}.hljs-name,.hljs-section{color:#63a35c}.hljs-tag{color:#333}.hljs-attr,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-selector-pseudo,.hljs-title{color:#795da3}.hljs-addition{color:#55a532;background-color:#eaffea}.hljs-deletion{color:#bd2c00;background-color:#ffecec}.hljs-link{text-decoration:underline}.markdown-body{font-size:16px;line-height:1.5;word-wrap:break-word}.markdown-body:after,.markdown-body:before{display:table;content:""}.markdown-body:after{clear:both}.markdown-body>:first-child{margin-top:0!important}.markdown-body>:last-child{margin-bottom:0!important}.markdown-body a:not([href]){color:inherit;text-decoration:none}.markdown-body .absent{color:#c00}.markdown-body .anchor{float:left;padding-right:4px;margin-left:-20px;line-height:1}.markdown-body .anchor:focus{outline:none}.markdown-body blockquote,.markdown-body dl,.markdown-body ol,.markdown-body p,.markdown-body pre,.markdown-body table,.markdown-body ul{margin-top:0;margin-bottom:16px}.markdown-body hr{height:.25em;padding:0;margin:24px 0;background-color:#e7e7e7;border:0}.markdown-body blockquote{font-size:16px;padding:0 1em;color:#777;border-left:.25em solid #ddd}.markdown-body blockquote>:first-child{margin-top:0}.markdown-body blockquote>:last-child{margin-bottom:0}.markdown-body kbd,.popover kbd{display:inline-block;padding:3px 5px;font-size:11px;line-height:10px;color:#555;vertical-align:middle;background-color:#fcfcfc;border:1px solid #ccc;border-bottom-color:#bbb;border-radius:3px;box-shadow:inset 0 -1px 0 #bbb}.markdown-body .loweralpha{list-style-type:lower-alpha}.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25}.markdown-body h1 .octicon-link,.markdown-body h2 .octicon-link,.markdown-body h3 .octicon-link,.markdown-body h4 .octicon-link,.markdown-body h5 .octicon-link,.markdown-body h6 .octicon-link{color:#000;vertical-align:middle;visibility:hidden}.markdown-body h1:hover .anchor,.markdown-body h2:hover .anchor,.markdown-body h3:hover .anchor,.markdown-body h4:hover .anchor,.markdown-body h5:hover .anchor,.markdown-body h6:hover .anchor{text-decoration:none}.markdown-body h1:hover .anchor .octicon-link,.markdown-body h2:hover .anchor .octicon-link,.markdown-body h3:hover .anchor .octicon-link,.markdown-body h4:hover .anchor .octicon-link,.markdown-body h5:hover .anchor .octicon-link,.markdown-body h6:hover .anchor .octicon-link{visibility:visible}.markdown-body h1 code,.markdown-body h1 tt,.markdown-body h2 code,.markdown-body h2 tt,.markdown-body h3 code,.markdown-body h3 tt,.markdown-body h4 code,.markdown-body h4 tt,.markdown-body h5 code,.markdown-body h5 tt,.markdown-body h6 code,.markdown-body h6 tt{font-size:inherit}.markdown-body h1{font-size:2em}.markdown-body h1,.markdown-body h2{padding-bottom:.3em;border-bottom:1px solid #eee}.markdown-body h2{font-size:1.5em}.markdown-body h3{font-size:1.25em}.markdown-body h4{font-size:1em}.markdown-body h5{font-size:.875em}.markdown-body h6{font-size:.85em;color:#777}.markdown-body ol,.markdown-body ul{padding-left:2em}.markdown-body ol.no-list,.markdown-body ul.no-list{padding:0;list-style-type:none}.markdown-body ol ol,.markdown-body ol ul,.markdown-body ul ol,.markdown-body ul ul{margin-top:0;margin-bottom:0}.markdown-body li>p{margin-top:16px}.markdown-body li+li{padding-top:.25em}.markdown-body dl{padding:0}.markdown-body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}.markdown-body dl dd{padding:0 16px;margin-bottom:16px}.markdown-body table{display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}.markdown-body table th{font-weight:700}.markdown-body table td,.markdown-body table th{padding:6px 13px;border:1px solid #ddd}.markdown-body table tr{background-color:#fff;border-top:1px solid #ccc}.markdown-body table tr:nth-child(2n){background-color:#f8f8f8}.markdown-body img{max-width:100%;box-sizing:content-box;background-color:#fff}.markdown-body img[align=right]{padding-left:20px}.markdown-body img[align=left]{padding-right:20px}.markdown-body .emoji{max-width:none;vertical-align:text-top;background-color:transparent}.markdown-body span.frame{display:block;overflow:hidden}.markdown-body span.frame>span{display:block;float:left;width:auto;padding:7px;margin:13px 0 0;overflow:hidden;border:1px solid #ddd}.markdown-body span.frame span img{display:block;float:left}.markdown-body span.frame span span{display:block;padding:5px 0 0;clear:both;color:#333}.markdown-body span.align-center{display:block;overflow:hidden;clear:both}.markdown-body span.align-center>span{display:block;margin:13px auto 0;overflow:hidden;text-align:center}.markdown-body span.align-center span img{margin:0 auto;text-align:center}.markdown-body span.align-right{display:block;overflow:hidden;clear:both}.markdown-body span.align-right>span{display:block;margin:13px 0 0;overflow:hidden;text-align:right}.markdown-body span.align-right span img{margin:0;text-align:right}.markdown-body span.float-left{display:block;float:left;margin-right:13px;overflow:hidden}.markdown-body span.float-left span{margin:13px 0 0}.markdown-body span.float-right{display:block;float:right;margin-left:13px;overflow:hidden}.markdown-body span.float-right>span{display:block;margin:13px auto 0;overflow:hidden;text-align:right}.markdown-body code,.markdown-body tt{padding:0;padding-top:.2em;padding-bottom:.2em;margin:0;font-size:85%;background-color:rgba(0,0,0,.04);border-radius:3px}.markdown-body code:after,.markdown-body code:before,.markdown-body tt:after,.markdown-body tt:before{letter-spacing:-.2em;content:"\00a0"}.markdown-body code br,.markdown-body tt br{display:none}.markdown-body del code{text-decoration:inherit}.markdown-body pre{word-wrap:normal}.markdown-body pre>code{padding:0;margin:0;font-size:100%;word-break:normal;white-space:pre;background:transparent;border:0}.markdown-body .highlight{margin-bottom:16px}.markdown-body .highlight pre{margin-bottom:0;word-break:normal}.markdown-body .highlight pre,.markdown-body pre{padding:16px;overflow:auto;font-size:85%;line-height:1.45;background-color:#f7f7f7;border-radius:3px}.markdown-body pre code,.markdown-body pre tt{display:inline;max-width:auto;padding:0;margin:0;overflow:visible;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}.markdown-body pre code:after,.markdown-body pre code:before,.markdown-body pre tt:after,.markdown-body pre tt:before{content:normal}.markdown-body .csv-data td,.markdown-body .csv-data th{padding:5px;overflow:hidden;font-size:12px;line-height:1;text-align:left;white-space:nowrap}.markdown-body .csv-data .blob-line-num{padding:10px 8px 9px;text-align:right;background:#fff;border:0}.markdown-body .csv-data tr{border-top:0}.markdown-body .csv-data th{font-weight:700;background:#f8f8f8;border-top:0}.news .alert .markdown-body blockquote{padding:0 0 0 40px;border:0 none}.activity-tab .news .alert .commits,.activity-tab .news .markdown-body blockquote{padding-left:0}.task-list-item{list-style-type:none}.task-list-item label{font-weight:400}.task-list-item.enabled label{cursor:pointer}.task-list-item+.task-list-item{margin-top:3px}.task-list-item-checkbox{float:left;margin:.31em 0 .2em -1.3em!important;vertical-align:middle;cursor:default!important}.markdown-body{padding-top:40px;padding-bottom:40px;max-width:758px;overflow:visible!important;position:relative}.markdown-body .emoji{vertical-align:top}.markdown-body pre{border:inherit!important}.markdown-body code{color:inherit!important}.markdown-body pre code .wrapper{display:-moz-inline-flex;display:-ms-inline-flex;display:-o-inline-flex;display:inline-flex}.markdown-body pre code .gutter{float:left;overflow:hidden;-webkit-user-select:none;user-select:none}.markdown-body pre code .gutter.linenumber{text-align:right;position:relative;display:inline-block;cursor:default;z-index:4;padding:0 8px 0 0;min-width:20px;box-sizing:content-box;color:#afafaf!important;border-right:3px solid #6ce26c!important}.markdown-body pre code .gutter.linenumber>span:before{content:attr(data-linenumber)}.markdown-body pre code .code{float:left;margin:0 0 0 16px}.markdown-body .gist .line-numbers{border-left:none;border-top:none;border-bottom:none}.markdown-body .gist .line-data{border:none}.markdown-body .gist table{border-spacing:0;border-collapse:inherit!important}.markdown-body code[data-gist-id]{background:none;padding:0}.markdown-body code[data-gist-id]:after,.markdown-body code[data-gist-id]:before{content:""}.markdown-body code[data-gist-id] .blob-num{border:unset}.markdown-body code[data-gist-id] table{overflow:unset;margin-bottom:unset}.markdown-body code[data-gist-id] table tr{background:unset}.markdown-body[dir=rtl] pre{direction:ltr}.markdown-body[dir=rtl] code{direction:ltr;unicode-bidi:embed}.markdown-body .alert>p{margin-bottom:0}.markdown-body pre.abc,.markdown-body pre.flow-chart,.markdown-body pre.graphviz,.markdown-body pre.mermaid,.markdown-body pre.sequence-diagram,.markdown-body pre.vega{text-align:center;background-color:inherit;border-radius:0;white-space:inherit;overflow:visible}.markdown-body pre.abc>code,.markdown-body pre.flow-chart>code,.markdown-body pre.graphviz>code,.markdown-body pre.mermaid>code,.markdown-body pre.sequence-diagram>code,.markdown-body pre.vega>code{text-align:left}.markdown-body pre.abc>svg,.markdown-body pre.flow-chart>svg,.markdown-body pre.graphviz>svg,.markdown-body pre.mermaid>svg,.markdown-body pre.sequence-diagram>svg,.markdown-body pre.vega>svg{max-width:100%;height:100%}.markdown-body pre>code.wrap{white-space:pre-wrap;white-space:-moz-pre-wrap;white-space:-pre-wrap;white-space:-o-pre-wrap;word-wrap:break-word}.markdown-body .alert>p,.markdown-body .alert>ul{margin-bottom:0}.markdown-body summary{display:list-item}.markdown-body summary:focus{outline:none}.markdown-body details summary{cursor:pointer}.markdown-body details:not([open])>:not(summary){display:none}.markdown-body figure{margin:1em 40px}.markdown-body .mark,.markdown-body mark{background-color:#fff1a7}.vimeo,.youtube{cursor:pointer;display:table;text-align:center;background-position:50%;background-repeat:no-repeat;background-size:contain;background-color:#000;overflow:hidden}.vimeo,.youtube{position:relative;width:100%}.youtube{padding-bottom:56.25%}.vimeo img{width:100%;object-fit:contain;z-index:0}.youtube img{object-fit:cover;z-index:0}.vimeo iframe,.youtube iframe,.youtube img{width:100%;height:100%;position:absolute;top:0;left:0}.vimeo iframe,.youtube iframe{vertical-align:middle;z-index:1}.vimeo .icon,.youtube .icon{position:absolute;height:auto;width:auto;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;opacity:.3;transition:opacity .2s;z-index:0}.vimeo:hover .icon,.youtube:hover .icon{opacity:.6;transition:opacity .2s}.slideshare .inner,.speakerdeck .inner{position:relative;width:100%}.slideshare .inner iframe,.speakerdeck .inner iframe{position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%}.figma{display:table;position:relative;width:100%;padding-bottom:56.25%}.figma iframe{position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%;border:1px solid #eee}.MJX_Assistive_MathML{display:none}#MathJax_Message{z-index:1000!important}.ui-infobar{position:relative;z-index:2;max-width:760px;margin:25px auto -25px;color:#777}.toc .invisable-node{list-style-type:none}.ui-toc{position:fixed;bottom:20px;z-index:998}.ui-toc.both-mode{margin-left:8px}.ui-toc.both-mode .ui-toc-label{height:40px;padding:10px 4px;border-top-left-radius:0;border-bottom-left-radius:0}.ui-toc-label{background-color:#e6e6e6;border:none;color:#868686;transition:opacity .2s}.ui-toc .open .ui-toc-label{opacity:1;color:#fff;transition:opacity .2s}.ui-toc-label:focus{opacity:.3;background-color:#ccc;color:#000}.ui-toc-label:hover{opacity:1;background-color:#ccc;transition:opacity .2s}.ui-toc-dropdown{margin-top:20px;margin-bottom:20px;padding-left:10px;padding-right:10px;max-width:45vw;width:25vw;max-height:70vh;overflow:auto;text-align:inherit}.ui-toc-dropdown>.toc{max-height:calc(70vh - 100px);overflow:auto}.ui-toc-dropdown[dir=rtl] .nav{padding-right:0;letter-spacing:.0029em}.ui-toc-dropdown a{overflow:hidden;text-overflow:ellipsis;white-space:pre}.ui-toc-dropdown .nav>li>a{display:block;padding:4px 20px;font-size:13px;font-weight:500;color:#767676}.ui-toc-dropdown .nav>li:first-child:last-child>ul,.ui-toc-dropdown .toc.expand ul{display:block}.ui-toc-dropdown .nav>li>a:focus,.ui-toc-dropdown .nav>li>a:hover{padding-left:19px;color:#000;text-decoration:none;background-color:transparent;border-left:1px solid #000}.ui-toc-dropdown[dir=rtl] .nav>li>a:focus,.ui-toc-dropdown[dir=rtl] .nav>li>a:hover{padding-right:19px;border-left:none;border-right:1px solid #000}.ui-toc-dropdown .nav>.active:focus>a,.ui-toc-dropdown .nav>.active:hover>a,.ui-toc-dropdown .nav>.active>a{padding-left:18px;font-weight:700;color:#000;background-color:transparent;border-left:2px solid #000}.ui-toc-dropdown[dir=rtl] .nav>.active:focus>a,.ui-toc-dropdown[dir=rtl] .nav>.active:hover>a,.ui-toc-dropdown[dir=rtl] .nav>.active>a{padding-right:18px;border-left:none;border-right:2px solid #000}.ui-toc-dropdown .nav .nav{display:none;padding-bottom:10px}.ui-toc-dropdown .nav>.active>ul{display:block}.ui-toc-dropdown .nav .nav>li>a{padding-top:1px;padding-bottom:1px;padding-left:30px;font-size:12px;font-weight:400}.ui-toc-dropdown[dir=rtl] .nav .nav>li>a{padding-right:30px}.ui-toc-dropdown .nav .nav>li>ul>li>a{padding-top:1px;padding-bottom:1px;padding-left:40px;font-size:12px;font-weight:400}.ui-toc-dropdown[dir=rtl] .nav .nav>li>ul>li>a{padding-right:40px}.ui-toc-dropdown .nav .nav>li>a:focus,.ui-toc-dropdown .nav .nav>li>a:hover{padding-left:29px}.ui-toc-dropdown[dir=rtl] .nav .nav>li>a:focus,.ui-toc-dropdown[dir=rtl] .nav .nav>li>a:hover{padding-right:29px}.ui-toc-dropdown .nav .nav>li>ul>li>a:focus,.ui-toc-dropdown .nav .nav>li>ul>li>a:hover{padding-left:39px}.ui-toc-dropdown[dir=rtl] .nav .nav>li>ul>li>a:focus,.ui-toc-dropdown[dir=rtl] .nav .nav>li>ul>li>a:hover{padding-right:39px}.ui-toc-dropdown .nav .nav>.active:focus>a,.ui-toc-dropdown .nav .nav>.active:hover>a,.ui-toc-dropdown .nav .nav>.active>a{padding-left:28px;font-weight:500}.ui-toc-dropdown[dir=rtl] .nav .nav>.active:focus>a,.ui-toc-dropdown[dir=rtl] .nav .nav>.active:hover>a,.ui-toc-dropdown[dir=rtl] .nav .nav>.active>a{padding-right:28px}.ui-toc-dropdown .nav .nav>.active>.nav>.active:focus>a,.ui-toc-dropdown .nav .nav>.active>.nav>.active:hover>a,.ui-toc-dropdown .nav .nav>.active>.nav>.active>a{padding-left:38px;font-weight:500}.ui-toc-dropdown[dir=rtl] .nav .nav>.active>.nav>.active:focus>a,.ui-toc-dropdown[dir=rtl] .nav .nav>.active>.nav>.active:hover>a,.ui-toc-dropdown[dir=rtl] .nav .nav>.active>.nav>.active>a{padding-right:38px}.markdown-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif}html[lang^=ja] .markdown-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,Hiragino Kaku Gothic Pro,ヒラギノ角ゴ Pro W3,Osaka,Meiryo,メイリオ,MS Gothic,ＭＳ\ ゴシック,sans-serif}html[lang=zh-tw] .markdown-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,PingFang TC,Microsoft JhengHei,微軟正黑,sans-serif}html[lang=zh-cn] .markdown-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,PingFang SC,Microsoft YaHei,微软雅黑,sans-serif}html .markdown-body[lang^=ja]{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,Hiragino Kaku Gothic Pro,ヒラギノ角ゴ Pro W3,Osaka,Meiryo,メイリオ,MS Gothic,ＭＳ\ ゴシック,sans-serif}html .markdown-body[lang=zh-tw]{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,PingFang TC,Microsoft JhengHei,微軟正黑,sans-serif}html .markdown-body[lang=zh-cn]{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Helvetica,Roboto,Arial,PingFang SC,Microsoft YaHei,微软雅黑,sans-serif}html[lang^=ja] .ui-toc-dropdown{font-family:Source Sans Pro,Helvetica,Arial,Meiryo UI,MS PGothic,ＭＳ\ Ｐゴシック,sans-serif}html[lang=zh-tw] .ui-toc-dropdown{font-family:Source Sans Pro,Helvetica,Arial,Microsoft JhengHei UI,微軟正黑UI,sans-serif}html[lang=zh-cn] .ui-toc-dropdown{font-family:Source Sans Pro,Helvetica,Arial,Microsoft YaHei UI,微软雅黑UI,sans-serif}html .ui-toc-dropdown[lang^=ja]{font-family:Source Sans Pro,Helvetica,Arial,Meiryo UI,MS PGothic,ＭＳ\ Ｐゴシック,sans-serif}html .ui-toc-dropdown[lang=zh-tw]{font-family:Source Sans Pro,Helvetica,Arial,Microsoft JhengHei UI,微軟正黑UI,sans-serif}html .ui-toc-dropdown[lang=zh-cn]{font-family:Source Sans Pro,Helvetica,Arial,Microsoft YaHei UI,微软雅黑UI,sans-serif}.ui-affix-toc{position:fixed;top:0;max-width:15vw;max-height:70vh;overflow:auto}.back-to-top,.expand-toggle,.go-to-bottom{display:block;padding:4px 10px;margin-top:10px;margin-left:10px;font-size:12px;font-weight:500;color:#999}.back-to-top:focus,.back-to-top:hover,.expand-toggle:focus,.expand-toggle:hover,.go-to-bottom:focus,.go-to-bottom:hover{color:#563d7c;text-decoration:none}.back-to-top,.go-to-bottom{margin-top:0}.ui-user-icon{width:20px;height:20px;display:block;border-radius:50%;margin-top:2px;margin-bottom:2px;margin-right:5px;background-position:50%;background-repeat:no-repeat;background-size:cover}.ui-user-icon.small{width:18px;height:18px;display:inline-block;vertical-align:middle;margin:0 0 .2em}.ui-infobar>small>span{line-height:22px}.ui-infobar>small .dropdown{display:inline-block}.ui-infobar>small .dropdown a:focus,.ui-infobar>small .dropdown a:hover{text-decoration:none}.ui-more-info{color:#888;cursor:pointer;vertical-align:middle}.ui-more-info .fa{font-size:16px}.ui-connectedGithub,.ui-published-note{color:#888}.ui-connectedGithub{line-height:23px;white-space:nowrap}.ui-connectedGithub a.file-path{color:#888;text-decoration:none;padding-left:22px}.ui-connectedGithub a.file-path:active,.ui-connectedGithub a.file-path:hover{color:#888;text-decoration:underline}.ui-connectedGithub .fa{font-size:20px}.ui-published-note .fa{font-size:20px;vertical-align:top}.unselectable{-webkit-user-select:none;-o-user-select:none;user-select:none}.selectable{-webkit-user-select:text;-o-user-select:text;user-select:text}@media print{blockquote,div,img,pre,table{page-break-inside:avoid!important}a[href]:after{font-size:12px!important}}.markdown-body.slides{position:relative;z-index:1;color:#222}.markdown-body.slides:before{content:"";display:block;position:absolute;top:0;left:0;right:0;bottom:0;z-index:-1;background-color:currentColor;box-shadow:0 0 0 50vw}.markdown-body.slides section[data-markdown]{position:relative;margin-bottom:1.5em;background-color:#fff;text-align:center}.markdown-body.slides section[data-markdown] code{text-align:left}.markdown-body.slides section[data-markdown]:before{content:"";display:block;padding-bottom:56.23%}.markdown-body.slides section[data-markdown]>div:first-child{position:absolute;top:50%;left:1em;right:1em;transform:translateY(-50%);max-height:100%;overflow:hidden}.markdown-body.slides section[data-markdown]>ul{display:inline-block}.markdown-body.slides>section>section+section:after{content:"";position:absolute;top:-1.5em;right:1em;height:1.5em;border:3px solid #777}.site-ui-font{font-family:Source Sans Pro,Helvetica,Arial,sans-serif}html[lang^=ja] .site-ui-font{font-family:Source Sans Pro,Helvetica,Arial,Hiragino Kaku Gothic Pro,ヒラギノ角ゴ Pro W3,Osaka,Meiryo,メイリオ,MS Gothic,ＭＳ\ ゴシック,sans-serif}html[lang=zh-tw] .site-ui-font{font-family:Source Sans Pro,Helvetica,Arial,PingFang TC,Microsoft JhengHei,微軟正黑,sans-serif}html[lang=zh-cn] .site-ui-font{font-family:Source Sans Pro,Helvetica,Arial,PingFang SC,Microsoft YaHei,微软雅黑,sans-serif}body{font-smoothing:subpixel-antialiased!important;-webkit-font-smoothing:subpixel-antialiased!important;-moz-osx-font-smoothing:auto!important;text-shadow:0 0 1em transparent,1px 1px 1.2px rgba(0,0,0,.004);-webkit-overflow-scrolling:touch;letter-spacing:.025em;font-family:Source Sans Pro,Helvetica,Arial,sans-serif}html[lang^=ja] body{font-family:Source Sans Pro,Helvetica,Arial,Hiragino Kaku Gothic Pro,ヒラギノ角ゴ Pro W3,Osaka,Meiryo,メイリオ,MS Gothic,ＭＳ\ ゴシック,sans-serif}html[lang=zh-tw] body{font-family:Source Sans Pro,Helvetica,Arial,PingFang TC,Microsoft JhengHei,微軟正黑,sans-serif}html[lang=zh-cn] body{font-family:Source Sans Pro,Helvetica,Arial,PingFang SC,Microsoft YaHei,微软雅黑,sans-serif}abbr[title]{border-bottom:none;text-decoration:underline;-webkit-text-decoration:underline dotted;text-decoration:underline dotted}abbr[data-original-title],abbr[title]{cursor:help}body.modal-open{overflow-y:auto;padding-right:0!important}
-    </style>
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    	<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" integrity="sha256-3Jy/GbSLrg0o9y5Z5n1uw0qxZECH7C6OQpVBgNFYa0g=" crossorigin="anonymous"></script>
-    	<script src="https://cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.min.js" integrity="sha256-g6iAfvZp+nDQ2TdTR/VVKJf3bGro4ub5fvWSWVRi2NE=" crossorigin="anonymous"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.9/es5-shim.min.js" integrity="sha256-8E4Is26QH0bD52WoQpcB+R/tcWQtpzlCojrybUd7Mxo=" crossorigin="anonymous"></script>
-    <![endif]-->
+<link href='https://fonts.loli.net/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext' rel='stylesheet' type='text/css' /><style type='text/css'>html {overflow-x: initial !important;}:root { --bg-color:#ffffff; --text-color:#333333; --select-text-bg-color:#B5D6FC; --select-text-font-color:auto; --monospace:"Lucida Console",Consolas,"Courier",monospace; --title-bar-height:20px; }
+.mac-os-11 { --title-bar-height:28px; }
+html { font-size: 14px; background-color: var(--bg-color); color: var(--text-color); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0px; padding: 0px; height: auto; inset: 0px; font-size: 1rem; line-height: 1.42857; overflow-x: hidden; background: inherit; tab-size: 4; }
+iframe { margin: auto; }
+a.url { word-break: break-all; }
+a:active, a:hover { outline: 0px; }
+.in-text-selection, ::selection { text-shadow: none; background: var(--select-text-bg-color); color: var(--select-text-font-color); }
+#write { margin: 0px auto; height: auto; width: inherit; word-break: normal; overflow-wrap: break-word; position: relative; white-space: normal; overflow-x: visible; padding-top: 36px; }
+#write.first-line-indent p { text-indent: 2em; }
+#write.first-line-indent li p, #write.first-line-indent p * { text-indent: 0px; }
+#write.first-line-indent li { margin-left: 2em; }
+.for-image #write { padding-left: 8px; padding-right: 8px; }
+body.typora-export { padding-left: 30px; padding-right: 30px; }
+.typora-export .footnote-line, .typora-export li, .typora-export p { white-space: pre-wrap; }
+.typora-export .task-list-item input { pointer-events: none; }
+@media screen and (max-width: 500px) {
+  body.typora-export { padding-left: 0px; padding-right: 0px; }
+  #write { padding-left: 20px; padding-right: 20px; }
+  .CodeMirror-sizer { margin-left: 0px !important; }
+  .CodeMirror-gutters { display: none !important; }
+}
+#write li > figure:last-child { margin-bottom: 0.5rem; }
+#write ol, #write ul { position: relative; }
+img { max-width: 100%; vertical-align: middle; image-orientation: from-image; }
+button, input, select, textarea { color: inherit; font: inherit; }
+input[type="checkbox"], input[type="radio"] { line-height: normal; padding: 0px; }
+*, ::after, ::before { box-sizing: border-box; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p, #write pre { width: inherit; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p { position: relative; }
+p { line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid-page; break-inside: avoid; orphans: 4; }
+p { orphans: 4; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+.md-math-block, .md-rawblock, h1, h2, h3, h4, h5, h6, p { margin-top: 1rem; margin-bottom: 1rem; }
+.hidden { display: none; }
+.md-blockmeta { color: rgb(204, 204, 204); font-weight: 700; font-style: italic; }
+a { cursor: pointer; }
+sup.md-footnote { padding: 2px 4px; background-color: rgba(238, 238, 238, 0.7); color: rgb(85, 85, 85); border-radius: 4px; cursor: pointer; }
+sup.md-footnote a, sup.md-footnote a:hover { color: inherit; text-transform: inherit; text-decoration: inherit; }
+#write input[type="checkbox"] { cursor: pointer; width: inherit; height: inherit; }
+figure { overflow-x: auto; margin: 1.2em 0px; max-width: calc(100% + 16px); padding: 0px; }
+figure > table { margin: 0px; }
+tr { break-inside: avoid; break-after: auto; }
+thead { display: table-header-group; }
+table { border-collapse: collapse; border-spacing: 0px; width: 100%; overflow: auto; break-inside: auto; text-align: left; }
+table.md-table td { min-width: 32px; }
+.CodeMirror-gutters { border-right: 0px; background-color: inherit; }
+.CodeMirror-linenumber { user-select: none; }
+.CodeMirror { text-align: left; }
+.CodeMirror-placeholder { opacity: 0.3; }
+.CodeMirror pre { padding: 0px 4px; }
+.CodeMirror-lines { padding: 0px; }
+div.hr:focus { cursor: none; }
+#write pre { white-space: pre-wrap; }
+#write.fences-no-line-wrapping pre { white-space: pre; }
+#write pre.ty-contain-cm { white-space: normal; }
+.CodeMirror-gutters { margin-right: 4px; }
+.md-fences { font-size: 0.9rem; display: block; break-inside: avoid; text-align: left; overflow: visible; white-space: pre; background: inherit; position: relative !important; }
+.md-fences-adv-panel { width: 100%; margin-top: 10px; text-align: center; padding-top: 0px; padding-bottom: 8px; overflow-x: auto; }
+#write .md-fences.mock-cm { white-space: pre-wrap; }
+.md-fences.md-fences-with-lineno { padding-left: 0px; }
+#write.fences-no-line-wrapping .md-fences.mock-cm { white-space: pre; overflow-x: auto; }
+.md-fences.mock-cm.md-fences-with-lineno { padding-left: 8px; }
+.CodeMirror-line, twitterwidget { break-inside: avoid; }
+.footnotes { opacity: 0.8; font-size: 0.9rem; margin-top: 1em; margin-bottom: 1em; }
+.footnotes + .footnotes { margin-top: 0px; }
+.md-reset { margin: 0px; padding: 0px; border: 0px; outline: 0px; vertical-align: top; background: 0px 0px; text-decoration: none; text-shadow: none; float: none; position: static; width: auto; height: auto; white-space: nowrap; cursor: inherit; -webkit-tap-highlight-color: transparent; line-height: normal; font-weight: 400; text-align: left; box-sizing: content-box; direction: ltr; }
+li div { padding-top: 0px; }
+blockquote { margin: 1rem 0px; }
+li .mathjax-block, li p { margin: 0.5rem 0px; }
+li blockquote { margin: 1rem 0px; }
+li { margin: 0px; position: relative; }
+blockquote > :last-child { margin-bottom: 0px; }
+blockquote > :first-child, li > :first-child { margin-top: 0px; }
+.footnotes-area { color: rgb(136, 136, 136); margin-top: 0.714rem; padding-bottom: 0.143rem; white-space: normal; }
+#write .footnote-line { white-space: pre-wrap; }
+@media print {
+  body, html { border: 1px solid transparent; height: 99%; break-after: avoid; break-before: avoid; font-variant-ligatures: no-common-ligatures; }
+  #write { margin-top: 0px; padding-top: 0px; border-color: transparent !important; }
+  .typora-export * { -webkit-print-color-adjust: exact; }
+  .typora-export #write { break-after: avoid; }
+  .typora-export #write::after { height: 0px; }
+  .is-mac table { break-inside: avoid; }
+  .typora-export-show-outline .typora-export-sidebar { display: none; }
+}
+.footnote-line { margin-top: 0.714em; font-size: 0.7em; }
+a img, img a { cursor: pointer; }
+pre.md-meta-block { font-size: 0.8rem; min-height: 0.8rem; white-space: pre-wrap; background: rgb(204, 204, 204); display: block; overflow-x: hidden; }
+p > .md-image:only-child:not(.md-img-error) img, p > img:only-child { display: block; margin: auto; }
+#write.first-line-indent p > .md-image:only-child:not(.md-img-error) img { left: -2em; position: relative; }
+p > .md-image:only-child { display: inline-block; width: 100%; }
+#write .MathJax_Display { margin: 0.8em 0px 0px; }
+.md-math-block { width: 100%; }
+.md-math-block:not(:empty)::after { display: none; }
+.MathJax_ref { fill: currentcolor; }
+[contenteditable="true"]:active, [contenteditable="true"]:focus, [contenteditable="false"]:active, [contenteditable="false"]:focus { outline: 0px; box-shadow: none; }
+.md-task-list-item { position: relative; list-style-type: none; }
+.task-list-item.md-task-list-item { padding-left: 0px; }
+.md-task-list-item > input { position: absolute; top: 0px; left: 0px; margin-left: -1.2em; margin-top: calc(1em - 10px); border: none; }
+.math { font-size: 1rem; }
+.md-toc { min-height: 3.58rem; position: relative; font-size: 0.9rem; border-radius: 10px; }
+.md-toc-content { position: relative; margin-left: 0px; }
+.md-toc-content::after, .md-toc::after { display: none; }
+.md-toc-item { display: block; color: rgb(65, 131, 196); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-h1 .md-toc-inner { margin-left: 0px; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+@media screen and (max-width: 48em) {
+  .md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+  .md-toc-h4 .md-toc-inner { margin-left: 5em; }
+  .md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+  .md-toc-h6 .md-toc-inner { margin-left: 8em; }
+}
+a.md-toc-inner { font-size: inherit; font-style: inherit; font-weight: inherit; line-height: inherit; }
+.footnote-line a:not(.reversefootnote) { color: inherit; }
+.md-attr { display: none; }
+.md-fn-count::after { content: "."; }
+code, pre, samp, tt { font-family: var(--monospace); }
+kbd { margin: 0px 0.1em; padding: 0.1em 0.6em; font-size: 0.8em; color: rgb(36, 39, 41); background: rgb(255, 255, 255); border: 1px solid rgb(173, 179, 185); border-radius: 3px; box-shadow: rgba(12, 13, 14, 0.2) 0px 1px 0px, rgb(255, 255, 255) 0px 0px 0px 2px inset; white-space: nowrap; vertical-align: middle; }
+.md-comment { color: rgb(162, 127, 3); opacity: 0.6; font-family: var(--monospace); }
+code { text-align: left; vertical-align: initial; }
+a.md-print-anchor { white-space: pre !important; border-width: initial !important; border-style: none !important; border-color: initial !important; display: inline-block !important; position: absolute !important; width: 1px !important; right: 0px !important; outline: 0px !important; background: 0px 0px !important; text-decoration: initial !important; text-shadow: initial !important; }
+.os-windows.monocolor-emoji .md-emoji { font-family: "Segoe UI Symbol", sans-serif; }
+.md-diagram-panel > svg { max-width: 100%; }
+[lang="flow"] svg, [lang="mermaid"] svg { max-width: 100%; height: auto; }
+[lang="mermaid"] .node text { font-size: 1rem; }
+table tr th { border-bottom: 0px; }
+video { max-width: 100%; display: block; margin: 0px auto; }
+iframe { max-width: 100%; width: 100%; border: none; }
+.highlight td, .highlight tr { border: 0px; }
+mark { background: rgb(255, 255, 0); color: rgb(0, 0, 0); }
+.md-html-inline .md-plain, .md-html-inline strong, mark .md-inline-math, mark strong { color: inherit; }
+.md-expand mark .md-meta { opacity: 0.3 !important; }
+mark .md-meta { color: rgb(0, 0, 0); }
+@media print {
+  .typora-export h1, .typora-export h2, .typora-export h3, .typora-export h4, .typora-export h5, .typora-export h6 { break-inside: avoid; }
+}
+.md-diagram-panel .messageText { stroke: none !important; }
+.md-diagram-panel .start-state { fill: var(--node-fill); }
+.md-diagram-panel .edgeLabel rect { opacity: 1 !important; }
+.md-fences.md-fences-math { font-size: 1em; }
+.md-fences-advanced:not(.md-focus) { padding: 0px; white-space: nowrap; border: 0px; }
+.md-fences-advanced:not(.md-focus) { background: inherit; }
+.typora-export-show-outline .typora-export-content { max-width: 1440px; margin: auto; display: flex; flex-direction: row; }
+.typora-export-sidebar { width: 300px; font-size: 0.8rem; margin-top: 80px; margin-right: 18px; }
+.typora-export-show-outline #write { --webkit-flex:2; flex: 2 1 0%; }
+.typora-export-sidebar .outline-content { position: fixed; top: 0px; max-height: 100%; overflow: hidden auto; padding-bottom: 30px; padding-top: 60px; width: 300px; }
+@media screen and (max-width: 1024px) {
+  .typora-export-sidebar, .typora-export-sidebar .outline-content { width: 240px; }
+}
+@media screen and (max-width: 800px) {
+  .typora-export-sidebar { display: none; }
+}
+.outline-content li, .outline-content ul { margin-left: 0px; margin-right: 0px; padding-left: 0px; padding-right: 0px; list-style: none; }
+.outline-content ul { margin-top: 0px; margin-bottom: 0px; }
+.outline-content strong { font-weight: 400; }
+.outline-expander { width: 1rem; height: 1.42857rem; position: relative; display: table-cell; vertical-align: middle; cursor: pointer; padding-left: 4px; }
+.outline-expander::before { content: ""; position: relative; font-family: Ionicons; display: inline-block; font-size: 8px; vertical-align: middle; }
+.outline-item { padding-top: 3px; padding-bottom: 3px; cursor: pointer; }
+.outline-expander:hover::before { content: ""; }
+.outline-h1 > .outline-item { padding-left: 0px; }
+.outline-h2 > .outline-item { padding-left: 1em; }
+.outline-h3 > .outline-item { padding-left: 2em; }
+.outline-h4 > .outline-item { padding-left: 3em; }
+.outline-h5 > .outline-item { padding-left: 4em; }
+.outline-h6 > .outline-item { padding-left: 5em; }
+.outline-label { cursor: pointer; display: table-cell; vertical-align: middle; text-decoration: none; color: inherit; }
+.outline-label:hover { text-decoration: underline; }
+.outline-item:hover { border-color: rgb(245, 245, 245); background-color: var(--item-hover-bg-color); }
+.outline-item:hover { margin-left: -28px; margin-right: -28px; border-left: 28px solid transparent; border-right: 28px solid transparent; }
+.outline-item-single .outline-expander::before, .outline-item-single .outline-expander:hover::before { display: none; }
+.outline-item-open > .outline-item > .outline-expander::before { content: ""; }
+.outline-children { display: none; }
+.info-panel-tab-wrapper { display: none; }
+.outline-item-open > .outline-children { display: block; }
+.typora-export .outline-item { padding-top: 1px; padding-bottom: 1px; }
+.typora-export .outline-item:hover { margin-right: -8px; border-right: 8px solid transparent; }
+.typora-export .outline-expander::before { content: "+"; font-family: inherit; top: -1px; }
+.typora-export .outline-expander:hover::before, .typora-export .outline-item-open > .outline-item > .outline-expander::before { content: "−"; }
+.typora-export-collapse-outline .outline-children { display: none; }
+.typora-export-collapse-outline .outline-item-open > .outline-children, .typora-export-no-collapse-outline .outline-children { display: block; }
+.typora-export-no-collapse-outline .outline-expander::before { content: "" !important; }
+.typora-export-show-outline .outline-item-active > .outline-item .outline-label { font-weight: 700; }
+.md-inline-math-container mjx-container { zoom: 0.95; }
+
+
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+}
+
+@include-when-export url(https://fonts.loli.net/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext);
+
+/* open-sans-regular - latin-ext_latin */
+  /* open-sans-italic - latin-ext_latin */
+    /* open-sans-700 - latin-ext_latin */
+    /* open-sans-700italic - latin-ext_latin */
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family: "Open Sans","Clear Sans", "Helvetica Neue", Helvetica, Arial, 'Segoe UI Emoji', sans-serif;
+    color: rgb(51, 51, 51);
+    line-height: 1.6;
+}
+
+#write {
+    max-width: 860px;
+  	margin: 0 auto;
+  	padding: 30px;
+    padding-bottom: 100px;
+}
+
+@media only screen and (min-width: 1400px) {
+	#write {
+		max-width: 1024px;
+	}
+}
+
+@media only screen and (min-width: 1800px) {
+	#write {
+		max-width: 1200px;
+	}
+}
+
+#write > ul:first-child,
+#write > ol:first-child{
+    margin-top: 30px;
+}
+
+a {
+    color: #4183C4;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    cursor: text;
+}
+h1:hover a.anchor,
+h2:hover a.anchor,
+h3:hover a.anchor,
+h4:hover a.anchor,
+h5:hover a.anchor,
+h6:hover a.anchor {
+    text-decoration: none;
+}
+h1 tt,
+h1 code {
+    font-size: inherit;
+}
+h2 tt,
+h2 code {
+    font-size: inherit;
+}
+h3 tt,
+h3 code {
+    font-size: inherit;
+}
+h4 tt,
+h4 code {
+    font-size: inherit;
+}
+h5 tt,
+h5 code {
+    font-size: inherit;
+}
+h6 tt,
+h6 code {
+    font-size: inherit;
+}
+h1 {
+    font-size: 2.25em;
+    line-height: 1.2;
+    border-bottom: 1px solid #eee;
+}
+h2 {
+    font-size: 1.75em;
+    line-height: 1.225;
+    border-bottom: 1px solid #eee;
+}
+
+/*@media print {
+    .typora-export h1,
+    .typora-export h2 {
+        border-bottom: none;
+        padding-bottom: initial;
+    }
+
+    .typora-export h1::after,
+    .typora-export h2::after {
+        content: "";
+        display: block;
+        height: 100px;
+        margin-top: -96px;
+        border-top: 1px solid #eee;
+    }
+}*/
+
+h3 {
+    font-size: 1.5em;
+    line-height: 1.43;
+}
+h4 {
+    font-size: 1.25em;
+}
+h5 {
+    font-size: 1em;
+}
+h6 {
+   font-size: 1em;
+    color: #777;
+}
+p,
+blockquote,
+ul,
+ol,
+dl,
+table{
+    margin: 0.8em 0;
+}
+li>ol,
+li>ul {
+    margin: 0 0;
+}
+hr {
+    height: 2px;
+    padding: 0;
+    margin: 16px 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+}
+
+li p.first {
+    display: inline-block;
+}
+ul,
+ol {
+    padding-left: 30px;
+}
+ul:first-child,
+ol:first-child {
+    margin-top: 0;
+}
+ul:last-child,
+ol:last-child {
+    margin-bottom: 0;
+}
+blockquote {
+    border-left: 4px solid #dfe2e5;
+    padding: 0 15px;
+    color: #777777;
+}
+blockquote blockquote {
+    padding-right: 0;
+}
+table {
+    padding: 0;
+    word-break: initial;
+}
+table tr {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 0;
+}
+table tr:nth-child(2n),
+thead {
+    background-color: #f8f8f8;
+}
+table th {
+    font-weight: bold;
+    border: 1px solid #dfe2e5;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;
+}
+table td {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 6px 13px;
+}
+table th:first-child,
+table td:first-child {
+    margin-top: 0;
+}
+table th:last-child,
+table td:last-child {
+    margin-bottom: 0;
+}
+
+.CodeMirror-lines {
+    padding-left: 4px;
+}
+
+.code-tooltip {
+    box-shadow: 0 1px 1px 0 rgba(0,28,36,.3);
+    border-top: 1px solid #eef2f2;
+}
+
+.md-fences,
+code,
+tt {
+    border: 1px solid #e7eaed;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    padding: 0;
+    padding: 2px 4px 0px 4px;
+    font-size: 0.9em;
+}
+
+code {
+    background-color: #f3f4f4;
+    padding: 0 2px 0 2px;
+}
+
+.md-fences {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    padding-top: 8px;
+    padding-bottom: 6px;
+}
+
+
+.md-task-list-item > input {
+  margin-left: -1.3em;
+}
+
+@media print {
+    html {
+        font-size: 13px;
+    }
+    table,
+    pre {
+        page-break-inside: avoid;
+    }
+    pre {
+        word-wrap: break-word;
+    }
+}
+
+.md-fences {
+	background-color: #f8f8f8;
+}
+#write pre.md-meta-block {
+	padding: 1rem;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f7f7f7;
+    border: 0;
+    border-radius: 3px;
+    color: #777777;
+    margin-top: 0 !important;
+}
+
+.mathjax-block>.code-tooltip {
+	bottom: .375rem;
+}
+
+.md-mathjax-midline {
+    background: #fafafa;
+}
+
+#write>h3.md-focus:before{
+	left: -1.5625rem;
+	top: .375rem;
+}
+#write>h4.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h5.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h6.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+.md-image>.md-meta {
+    /*border: 1px solid #ddd;*/
+    border-radius: 3px;
+    padding: 2px 0px 0px 4px;
+    font-size: 0.9em;
+    color: inherit;
+}
+
+.md-tag {
+    color: #a7a7a7;
+    opacity: 1;
+}
+
+.md-toc { 
+    margin-top:20px;
+    padding-bottom:20px;
+}
+
+.sidebar-tabs {
+    border-bottom: none;
+}
+
+#typora-quick-open {
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+}
+
+#typora-quick-open-item {
+    background-color: #FAFAFA;
+    border-color: #FEFEFE #e5e5e5 #e5e5e5 #eee;
+    border-style: solid;
+    border-width: 1px;
+}
+
+/** focus mode */
+.on-focus-mode blockquote {
+    border-left-color: rgba(85, 85, 85, 0.12);
+}
+
+header, .context-menu, .megamenu-content, footer{
+    font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+.file-node-content:hover .file-node-icon,
+.file-node-content:hover .file-node-open-state{
+    visibility: visible;
+}
+
+.mac-seamless-mode #typora-sidebar {
+    background-color: #fafafa;
+    background-color: var(--side-bar-bg-color);
+}
+
+.md-lang {
+    color: #b4654d;
+}
+
+/*.html-for-mac {
+    --item-hover-bg-color: #E6F0FE;
+}*/
+
+#md-notification .btn {
+    border: 0;
+}
+
+.dropdown-menu .divider {
+    border-color: #e5e5e5;
+    opacity: 0.4;
+}
+
+.ty-preferences .window-content {
+    background-color: #fafafa;
+}
+
+.ty-preferences .nav-group-item.active {
+    color: white;
+    background: #999;
+}
+
+.menu-item-container a.menu-style-btn {
+    background-color: #f5f8fa;
+    background-image: linear-gradient( 180deg , hsla(0, 0%, 100%, 0.8), hsla(0, 0%, 100%, 0)); 
+}
+
+
+
+</style><title></title>
 </head>
-
-<body>
-    <div id="doc" class="markdown-body container-fluid comment-enabled" data-hard-breaks="true"><table>
-<thead>
-<tr>
-<th><span>Slovo na anglijskom</span></th>
-<th><span>Vse varianty v MS</span></th>
-<th><span>Variant najvyše razumlivy vsim</span></th>
-<th><span>Objasnjenje/komentar</span></th>
-<th><span>Priměry fraz</span></th>
-<th><span>Izgovor, udarjenje/akcent</span></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><span>understand</span></td>
-<td><span>råzuměti, råzbirati, pojmati, postigati</span></td>
-<td><span>råzuměti</span></td>
-<td><span>Jest vo vsih językah kromě bulgarskogo i makedonskogo (ale one imajut slovo “razum”).</span></td>
-<td><span>“Ja tebe ne razuměm” </span><br><span>“Poljaki to ne razumějųt”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>think</span></td>
-<td><span>dumati, mysliti, mněti</span></td>
-<td><span>mysliti</span></td>
-<td><span>“Mysliti” jest vó vsih językah.</span></td>
-<td><span>- “Mysliš li, že to jest dobra ideja?” </span><br><span>- “Ja myslju, že da”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>know</span></td>
-<td><span>znati, věděti</span></td>
-<td><span>znati</span></td>
-<td><span>“Věděti” jest jedino v poljskom, češskom, slovačskom i slovenskom. V bělorusskom i russkom jest “ведать/ведаць” ale spreženje jest mnogo različno. Iz togo povoda to slovo ne jest razumlivo vsim.</span></td>
-<td><span>“On znaje mnogo językov” </span><br><span>“Ja znajų, dokųd on pošel”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>today</span></td>
-<td><span>dnes, tutdenj, sego dnja</span></td>
-<td><span>(v) tutdenj, dnes[1], v tutoj denj[2]</span></td>
-<td><span>“Tutdenj” jest kompromis, kaky rabotaje od togo dovoda, že vsi języky imajųt “tu/tut” i “denj”. Ale za srbov, hrvatov i slovencev bųde malo razumlivo, zatože u njih “tu” i “denj” to sųt “dan” i “tu/tukaj”, ktore zvųčęt inako. </span><br><br><span>Forma “dnes” jest vo vsih južnyh i zapadnyh językah ale jest mnogo daleka od poljskogo “dziś”. Takože slovo ne jest v uk/be, a v russkom jest zastarělo. </span><br><br><span>“V tutoj denj” jest ješče jedin kompromis, ktory potrěbuje byti vyše razumlivy.</span></td>
-<td><span>“V tutdenj ja ne rabotaju, jesm v domu”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>now</span></td>
-<td><span>sejčas, nyně, segda, tutčas, aktualno</span></td>
-<td><span>(v) tutčas[1], v tutoj čas/moment[2], aktualno[2], v tom momentu[2]</span></td>
-<td><span>Odpovědnik slovu “tutčas” ima jedino russky (“тотчас”), ale slova “tu/tut” i “čas” sųt razumlive vsekde.</span></td>
-<td><span>“V tutčas ne mogų govoriti” </span><br><span>“Aktualno my ješče ne znajemo, čto my bųdemo dělati” </span><br><span>“Ja ne znaju, kde oni sųt v tom momentu”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>for</span></td>
-<td><span>za, dlja</span></td>
-<td><span>za</span></td>
-<td><span>“Dlja” jest jedino v iztočnyh slov. językah i v poljskom. </span><br><br><span>“Za” jest vo vsih drugyh językah i takože jestvuje kako slang/dialektno slovo v russkom.</span></td>
-<td><span>“Aktualna situacija jest mnogo težka za nas”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>why</span></td>
-<td><span>čemu, začto, načto</span></td>
-<td><span>začto[1], iz kakogo povoda[2]</span></td>
-<td><span>“Povod” jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod)</span></td>
-<td><span>“Iz kakogo povoda naš let byl anulovany?” </span><br><span>“Začto ničto ne dělaješ?”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>therefore, that’s why</span></td>
-<td><span>zato, zatom, tomu, ubo</span></td>
-<td><span>zato[1], iz togo povoda[2]</span></td>
-<td><span>“Povod” jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod).</span></td>
-<td><span>“On jest strašno umorjeny iz togo povoda ne može uže rabotati” </span><br><span>“Koty mnogo spęt i zato sųt ščęstlive”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>because</span></td>
-<td><span>zatože, zato že, zato čto, ibo, jerbo, poneže, jer, tomu že</span></td>
-<td><span>zato že/zatože</span></td>
-<td><span>“zato čto” bude lěpje rabotati za južnyh i iztočnyh (ne imajųt slova “že”).   </span><br><span>“poneže” jestvuje vsekde na zapadu, v bulgarskom, v russkom (zastarelo)</span></td>
-<td><span>- Začto tu jest tako temno? </span><br><span>- Zato že električnost ne funkcjonuje</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>because of</span></td>
-<td><span>vslěd, za, jerbo za, po pričině</span></td>
-<td><span>od povoda (něčego), v rezultatu (něčego)</span></td>
-<td><span>“Povod” jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod).</span></td>
-<td><span>“Od povoda glasnoj muziky ja ne mogų sę učiti” </span><br><span>“V rezultatu velikoj avarije umrlo mnogo ljudij”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>thanks to</span></td>
-<td><span>dekujųči, blågodare, hvala</span></td>
-<td><span>hvala (něčemu)</span></td>
-<td><span>Slovo “hvala” govori sę mnogo čęsto i srazuměti jego značenje iz konteksta jest mnogo prosto, iz togo povoda věrojętno ljudi uže bųdųt jego znati i razuměti.</span></td>
-<td><span>“Hvala internetu my možemo sę učiti iz doma”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>hard, difficult</span></td>
-<td><span>težky, neprosty, komplikovany, problemny, trudny</span></td>
-<td><span>težky, nelegky, problemny</span></td>
-<td><span>“Težky” i “problem” sut vó vsih slovjanskyh językah. “Legky” jest vo vsih slov. językah kromě makedonskogo.</span></td>
-<td><span>“Kitajsky to jest mnogo težky język” </span><br><span>“Nam jest mnogo problemno idti tako daleko”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>easy</span></td>
-<td><span>prosty, bezproblemny, legky</span></td>
-<td><span>prosty, legky, bezproblemny</span></td>
-<td><span>“Prosty” i “problem” sųt vó vsih slovjanskyh językah. “Legky” jest vo vsih slov. językah kromě makedonskogo.</span></td>
-<td><span>“To zadanje jest prosto” </span><br><br><span>“V tutčas naučiti sę anglijskogo jest absolutno bezproblemno”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>work</span></td>
-<td><span>rabotati, funkcionovati, truditi, pracovati</span></td>
-<td><span>rabotati, funkcionovati</span></td>
-<td><span>“Funkcionirovati” znači jedino “dobro dělati svojų funkcijų”.  </span><br><span>“Funkcija” i “rabota” sųt vo vsih slovjanskyh językah.</span></td>
-<td><span>“Moj prijatelj ne rabotaje, zato že on jest nezdravy”</span><br><br><span> “Toj kompjuter jest mnogo stary i uže ne rabotaje/funkcjonuje”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>work, labour, labor, job</span></td>
-<td><span>rabota, trud, praca</span></td>
-<td><span>rabota</span></td>
-<td><span>“Rabota” jest vo vsih slovjanskyh językah.</span></td>
-<td><span>“Ne imam rabotų i iz togo povoda ne mogų kupiti sobě dom”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>that</span></td>
-<td><span>da, že, čto</span></td>
-<td><span>že</span></td>
-<td><span>“Čto” zvųči kako pytalno slovo (what) za južnyh i zapadnyh slovjanov. </span><br><span>“Da” ne jestvuje v iztočnyh i zapadnyh slovjanskyh językah i takože zvųči kako “daby” za bulgarov (kako v “hču da ideš” = “hču da bys šel”). </span><br><span>“Že” jestvuje jedino v zapadnyh slov. językah i jest falšivy prijatelj za slovencev (SL. “že” = “uže”) ale v drugyh językah to slovo ne zvųči podobno na druge slova i od togo povoda nikogo ne zaměšivaje.</span></td>
-<td><span>“Ja myslju že to jest mnogo dobra ideja!” </span><br><span>“Ona ješče ne znaje že on uže ne ljubi jų”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>thank you, thanks</span></td>
-<td><span>dękujų, blagodarim, blagodarju, hvala</span></td>
-<td><span>hvala, blagodarim, blagodarju</span></td>
-<td><span>“Děkuju” jest jedino v bělorusskom, ukrajinskom, i zapadnyh jezykah  </span><br><br><span>“Hvala” v značenju “thanks” jest jedino v srbskom, hrvatskom i slovenskom, ale “(po)hvala” v drugom značenju (ang. “praise, commendation”) jest vo vsih slov. językah.  Takože možno govoriti “velika hvala”, kogdy my hčemo povysiti značenje “hvala”.  </span><br><span>“Blagodariti” ne jest vo vsih slov. językah, no slova “dar” i “blago” sut občeslovjanske</span></td>
-<td><span>- “Jesm kupil za tebe tort” </span><br><span>- “Velika hvala!” </span><br><span> - “Blagodarim tebe, to bylo mnogo pomočno”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>more</span></td>
-<td><span>vyše, veče, bolje</span></td>
-<td><span>vyše</span></td>
-<td><span>“Veče” i “bolje” ne sut vo vsih slov. językah. “Vyše” v tom značenju jest jedino v srbskom i hrvatskom, ale jest vo vsih slov. językah v značenju “bolje/veče vysoko”, iz togo povoda toj variant jest najrazumlivy. (V bulgarskom “више” znači “vyše vysoky”)  Poslě “vyše + slovo” imamo “od” (ględite priměr)</span></td>
-<td><span>“Anglijsky jest vyše prosty od francuzskogo” “</span><br><span>Novy učitelj jest vyše dobry od starogo”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>the most, most</span></td>
-<td><span>najvyše, najbolje, največe, naj-</span></td>
-<td><span>naj-, najvyše</span></td>
-<td><span>“Največe” i “najbolje” ne sut vo vsih slov. językah. “Najvyše” v tom značenju jest jedino v srbskom i hrvatskom, ale v značenju “najvysoko” jest vo vsih slov. językah, kromě bulgarskogo, iz togo povoda toj variant jest vyše razumlivy od “najbolje” i “največe”.  </span><br><span>“Naj-” jest vo vsih slov. językah (ale to zvųči neprirodno za vsih kromě bulgarov).  </span><br><br><span>!Čuvanje! poslě “naj-” slovo potrěbuje byti bez suffiksa “-ějš-” ili “-ěje”. Ględite priměry.</span></td>
-<td><span>“On jest najglupy člověk na světu!” ili “On jest najvyše glupy člověk na světu!”  </span><br><span>“Najvyše čęsto my govorimo o knigah” ili “Najčęsto my govorimo o knigah”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>say, speak, talk</span></td>
-<td><span>govoriti, molviti, rěkti</span></td>
-<td><span>govoriti</span></td>
-<td><span>“Govoriti” jest vo vsih slov. językah.  V poljskom forma “govoriti” v tom značenju ne jestvuje ale sųt: “gwarzyć”, “gaworzyć”, “pogwarka”, “gwar”, “gwara” i “rozhowor”, ktore sųt podobne.</span></td>
-<td><span>“Je ne govorjų na srbskom”</span><br><span> “My uže davno ne jesmo govorili”</span><br><span> “Albert govori, že potrěbno spati”</span><br><span>“Govorite tiho, vse jedno ja vas ne razuměm”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>life</span></td>
-<td><span>život, žitje</span></td>
-<td><span>život</span></td>
-<td><span>“Žitje” jest falšivy prijatelj v južnyh jezykah (razumějut kako žito/zŕno)  “Život” jest falšivy prijatelj v iztočnyh jezykah (razumějut kako brjuho/trbuh), ale jestvuje kako zastarělo slovo v značenju “žitje”.</span></td>
-<td><span>“I medžu životom i smrtju ničto ne bude na světu, Jedino veliko morje mrtvečskyh glav i skeletov”  </span><br><span>“Studentsko žitje jest težko”</span></td>
-<td><span>Da by slovo “život” ne bylo falšivym prijateljem za rusov, ukrajincev i bělorusov, v izgovoru potrěbno davati akcent na prvy slog:  žÍvot</span></td>
-</tr>
-<tr>
-<td><span>each, every</span></td>
-<td><span>každy, vsaky</span></td>
-<td><span>vśaky</span></td>
-<td><span>“Vsaky” jest vo vsih iztočnyh i južnyh slov. językah.  </span><br><span>V češskom i slovačskom jest “všelijaký”, v poljskom sųt “wszelaki” i “wszelki” ale te slova imajųt drugo značenje: “vsekaky, vśakomožny, kakykoli”.  </span><br><span>“Každy” ne jest v nijednom južnom języku.</span></td>
-<td><span>“Vśaky člověk jest cěly oddělny svět”</span></td>
-<td><span>Etimologičny izgovor slova “vśaky” s “ś” bųde pomočnym za zapadnyh i iztočnyh slovjan (“ś” izgovarjaje sę kako mękka “s”).</span></td>
-</tr>
-<tr>
-<td><span>try, attempt</span></td>
-<td><span>pokušati, probovati</span></td>
-<td><span>probovati</span></td>
-<td><span>“Probovati” jest v vyše velikoj kolikosti slov. językov od “pokušati”. “Probovati” ne jestvuje jedino v Češskom, Slovačskom (jestvuje jedino v něktoryh dialektah) i Slovenačskom. Za njih možno koristati “pokušati”. </span><br><br><span>Jestvuje takože forma “pokušati sę”, ktora bųde mnogym vyše razumliva rusam od “pokušati”.</span></td>
-<td><span>“Jesi li ty proboval izključiti i iznova vključiti kompjuter?”</span></td>
-<td><span>V “pokušAti” akcent/udarjenje potrěbuje byti na tretjem slogu, da by to zvųčalo podobno do russkogo “покушаться”, zatože “pokUšati” s udarjenjem/akcentom na vtory slog zvųči za rusov kako “покушать” (jedati).</span></td>
-</tr>
-<tr>
-<td><span>which, that</span></td>
-<td><span>ktory, koji</span></td>
-<td><span>ktory, kaky</span></td>
-<td><span>“Ktory” jest v najvelikoj kolikosti slov. językov. V hrvatskom i srbskom to slovo jest v něktoryh dialektah. To slovo ne jestvuje jedino v bulgarskom.   </span><br><br><span>“Koji” jest jedino v južnyh slov. językah (i takože v nepolnom značenju v russkom). No takože, “koj”, osoblivo s izgovorom “kȯj”, može byti v něktoryh situacijah priblizno råzumlivo na zapadu (pl. ki, cz. ký, sk. ký). </span><br><br><span> “Kaky” takože možno poněkogda koristati ale za južnyh slovjanov to bųde dělati konfuziju: “Žena, kakų ja potrěbujų” za njih zvųči NE kako “Ta žena, ktora jest mně potrěbna”, a kako “toj TIP ženy, ktory mně jest potrěbny”.  </span><br><br><span>Iz togo povoda my prěporučajemo “ktory”</span></td>
-<td><span>“Člověk, ktory ne razumě sebe, ne može dobro razuměti drugyh ljudij” </span><br><br><span>“Dom, v ktorom živęt moj prijatelj, jest mnogo stary”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>some</span></td>
-<td><span>něktory, někoj</span></td>
-<td><span>něktory</span></td>
-<td><span>“Něktory” jest v najvelikoj kolikosti slov. językov. V hrvatskom i srbskom “ktory” jest v něktoryh dialektah. To slovo ne jestvuje jedino v bulgarskom.   </span><br><br><span>“Někoj” jest jedino v južnyh slov. językah (i takože v russkom).</span></td>
-<td><span>“Něktori ljudi myslęt, že oni sųt najvyše mudri na světu. To sųt najglupi ljudi” </span><br><br><span>“V něktoryh igrah možno naučiti sę anglijskogo”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>tomorrow</span></td>
-<td><span>zautra</span></td>
-<td><span>zajutra</span></td>
-<td><span>“Zajutra” jest kombinacija zapadnoslovjanskyh “jutro”, “zítra” i “zajtra”, iztočnoslovjanskogo “zavtra” i južnoslovjanskyh “sutra”, “utre”, “jutri”</span></td>
-<td><span>“Nikogdy ne govori že izdělaš zajutra to, čto možeš izdělati dnes” </span><br><span>“Zajutra ja pojdų do lěsa”</span></td>
-<td><span>Za rusov bųde vyše razumlivo s akcentom/udarjenjem na prvy slog: “zAjutra”, zato že to jest vyše podobno na russko “zAvtra” i ne bųde zvųčati kako “utro” (morning)</span></td>
-</tr>
-<tr>
-<td><span>answer</span></td>
-<td><span>odpověděti, odpovědati, odgovoriti, odgovarjati</span></td>
-<td><span>odgovoriti[perf], odgovarjati[imperf]</span></td>
-<td><span>“Odpověděti/odpovědati” jest jedino v zapadnyh slovjanskyh językah i v ukrajinskom. </span><br><br><span>“Odgovoriti/odgovarjati” jest jedino v južnyh językah ale vsi (ili bez malogo vsi) imajųt “govoriti”, iz togo povoda toj variant jest najvyše razumlivy.</span></td>
-<td><span>“Ja ne hčų odgovorjati na to pytanje” </span><br><span>“Nikto ješče nam ne odgvoril”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>about</span></td>
-<td><span>o, ob</span></td>
-<td><span>o/ob</span></td>
-<td><span>“O/ob” ne jest jedino v Bulgarskom, Makedonskom i Ukrajinskom.</span></td>
-<td><span>“Nam jest potrěbno o tom pogovoriti” </span><br><span>“Ta kniga ob aeroplanah jest zaisto mnogo dobra”</span></td>
-<td><span>Råzlika medžu “o” i “ob” jestvuje glavno za prostotų izgovora. Možeš li jasno skazati “bajka o oslu”? Ne. A s frazojų “bajka ob oslu” už ne bųde problema. “Ob” govori sę prěd samoglaskojų (a, o, i, u, i tako dalje)</span></td>
-</tr>
-<tr>
-<td><span>it is needed, it is necessary, one should, one ought to, one is obliged to</span></td>
-<td><span>trěba, povinno se, potrěbno, trěba jest</span></td>
-<td><span>potrěbno</span></td>
-<td><span>“Potrěbno” abo “potrěba” jest vo vsih slov. językah, “trěba”, “povinno sę” - ne.  </span><br><span>“Trěba” može značiti (i čęsto znači) </span><em><span>should</span></em><span>.  “Potrěbno” ne ima to značeńje i vsegda izraža nužnost́, obvęznost́.</span></td>
-<td><span>“Da by naučiti sę někakogo języka, potrěbno mnogo slušati” </span><br><span>“Nam jest potrěbno uže idti”</span></td>
-<td></td>
-</tr>
-<tr>
-<td><span>want</span></td>
-<td><span>htěti, hotěti</span></td>
-<td><span>htěti</span></td>
-<td><span>To jest kompromis medžu zapadnoslovjanskym “hc-”, iztočnym “hoč-” i južnym “hč-/hoč-”.</span></td>
-<td><span>“Ja byh htěl sę naučiti vsih językov světa” </span><br><span>“My ne hčemo dělati glupe věči”</span></td>
-<td></td>
-</tr>
-</tbody>
-</table></div>
-    <div class="ui-toc dropup unselectable hidden-print" style="display:none;">
-        <div class="pull-right dropdown">
-            <a id="tocLabel" class="ui-toc-label btn btn-default" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="Table of content">
-                <i class="fa fa-bars"></i>
-            </a>
-            <ul id="ui-toc" class="ui-toc-dropdown dropdown-menu" aria-labelledby="tocLabel">
-                <div class="toc-menu"><a class="expand-toggle" href="#">Collapse all</a><a class="back-to-top" href="#">Back to top</a><a class="go-to-bottom" href="#">Go to bottom</a></div>
-            </ul>
-        </div>
-    </div>
-    <div id="ui-toc-affix" class="ui-affix-toc ui-toc-dropdown unselectable hidden-print" data-spy="affix" style="top:17px;display:none;" null null>
-        <div class="toc-menu"><a class="expand-toggle" href="#">Collapse all</a><a class="back-to-top" href="#">Back to top</a><a class="go-to-bottom" href="#">Go to bottom</a></div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gist-embed/2.6.0/gist-embed.min.js" integrity="sha256-KyF2D6xPIJUW5sUDSs93vWyZm+1RzIpKCexxElmxl8g=" crossorigin="anonymous" defer></script>
-    <script>
-        var markdown = $(".markdown-body");
-        //smooth all hash trigger scrolling
-        function smoothHashScroll() {
-            var hashElements = $("a[href^='#']").toArray();
-            for (var i = 0; i < hashElements.length; i++) {
-                var element = hashElements[i];
-                var $element = $(element);
-                var hash = element.hash;
-                if (hash) {
-                    $element.on('click', function (e) {
-                        // store hash
-                        var hash = this.hash;
-                        if ($(hash).length <= 0) return;
-                        // prevent default anchor click behavior
-                        e.preventDefault();
-                        // animate
-                        $('body, html').stop(true, true).animate({
-                            scrollTop: $(hash).offset().top
-                        }, 100, "linear", function () {
-                            // when done, add hash to url
-                            // (default click behaviour)
-                            window.location.hash = hash;
-                        });
-                    });
-                }
-            }
-        }
-
-        smoothHashScroll();
-        var toc = $('.ui-toc');
-        var tocAffix = $('.ui-affix-toc');
-        var tocDropdown = $('.ui-toc-dropdown');
-        //toc
-        tocDropdown.click(function (e) {
-            e.stopPropagation();
-        });
-
-        var enoughForAffixToc = true;
-
-        function generateScrollspy() {
-            $(document.body).scrollspy({
-                target: ''
-            });
-            $(document.body).scrollspy('refresh');
-            if (enoughForAffixToc) {
-                toc.hide();
-                tocAffix.show();
-            } else {
-                tocAffix.hide();
-                toc.show();
-            }
-            $(document.body).scroll();
-        }
-
-        function windowResize() {
-            //toc right
-            var paddingRight = parseFloat(markdown.css('padding-right'));
-            var right = ($(window).width() - (markdown.offset().left + markdown.outerWidth() - paddingRight));
-            toc.css('right', right + 'px');
-            //affix toc left
-            var newbool;
-            var rightMargin = (markdown.parent().outerWidth() - markdown.outerWidth()) / 2;
-            //for ipad or wider device
-            if (rightMargin >= 133) {
-                newbool = true;
-                var affixLeftMargin = (tocAffix.outerWidth() - tocAffix.width()) / 2;
-                var left = markdown.offset().left + markdown.outerWidth() - affixLeftMargin;
-                tocAffix.css('left', left + 'px');
-            } else {
-                newbool = false;
-            }
-            if (newbool != enoughForAffixToc) {
-                enoughForAffixToc = newbool;
-                generateScrollspy();
-            }
-        }
-        $(window).resize(function () {
-            windowResize();
-        });
-        $(document).ready(function () {
-            windowResize();
-            generateScrollspy();
-        });
-
-        //remove hash
-        function removeHash() {
-            window.location.hash = '';
-        }
-
-        var backtotop = $('.back-to-top');
-        var gotobottom = $('.go-to-bottom');
-
-        backtotop.click(function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (scrollToTop)
-                scrollToTop();
-            removeHash();
-        });
-        gotobottom.click(function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (scrollToBottom)
-                scrollToBottom();
-            removeHash();
-        });
-
-        var toggle = $('.expand-toggle');
-        var tocExpand = false;
-
-        checkExpandToggle();
-        toggle.click(function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            tocExpand = !tocExpand;
-            checkExpandToggle();
-        })
-
-        function checkExpandToggle () {
-            var toc = $('.ui-toc-dropdown .toc');
-            var toggle = $('.expand-toggle');
-            if (!tocExpand) {
-                toc.removeClass('expand');
-                toggle.text('Expand all');
-            } else {
-                toc.addClass('expand');
-                toggle.text('Collapse all');
-            }
-        }
-
-        function scrollToTop() {
-            $('body, html').stop(true, true).animate({
-                scrollTop: 0
-            }, 100, "linear");
-        }
-
-        function scrollToBottom() {
-            $('body, html').stop(true, true).animate({
-                scrollTop: $(document.body)[0].scrollHeight
-            }, 100, "linear");
-        }
-    </script>
+<body class='typora-export os-windows'><div class='typora-export-content'>
+<div id='write'  class=''><figure><table><thead><tr><th><span>Slovo na anglijskom</span></th><th><span>Vse varianty v MS</span></th><th><span>Variant najvyše razumlivy vsim</span></th><th><span>Objasnjenje/komentar</span></th><th><span>Priměry fraz</span></th><th><span>Izgovor, udarjenje/akcent</span></th></tr></thead><tbody><tr><td><span>understand</span></td><td><span>råzuměti, råzbirati, pojmati, postigati</span></td><td><span>råzuměti</span></td><td><span>Jest vo vsih językah kromě bulgarskogo i makedonskogo (ale one imajut slovo &quot;razum&quot;).</span></td><td><span>&quot;Ja tebe ne razuměm&quot; </span><br><span>&quot;Poljaki to ne razumějųt&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>think</span></td><td><span>dumati, mysliti, mněti</span></td><td><span>mysliti</span></td><td><span>&quot;Mysliti&quot; jest vó vsih językah.</span></td><td><span>- &quot;Mysliš li, že to jest dobra ideja?&quot; </span><br><span>- &quot;Ja myslju, že da&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>know</span></td><td><span>znati, věděti</span></td><td><span>znati</span></td><td><span>&quot;Věděti&quot; jest jedino v poljskom, češskom, slovačskom i slovenskom. V bělorusskom i russkom jest &quot;ведать/ведаць&quot; ale spreženje jest mnogo različno. Iz togo povoda to slovo ne jest razumlivo vsim.</span></td><td><span>&quot;On znaje mnogo językov&quot; </span><br><span>&quot;Ja znajų, dokųd on pošel&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>today</span></td><td><span>dnes, tutdenj, sego dnja</span></td><td><span>(v) tutdenj, dnes[1], v tutoj denj[2]</span></td><td><span>&quot;Tutdenj&quot; jest kompromis, kaky rabotaje od togo dovoda, že vsi języky imajųt &quot;tu/tut&quot; i &quot;denj&quot;. Ale za srbov, hrvatov i slovencev bųde malo razumlivo, zatože u njih &quot;tu&quot; i &quot;denj&quot; to sųt &quot;dan&quot; i &quot;tu/tukaj&quot;, ktore zvųčęt inako. </span><br><br><span>Forma &quot;dnes&quot; jest vo vsih južnyh i zapadnyh językah ale jest mnogo daleka od poljskogo &quot;dziś&quot;. Takože slovo ne jest v uk/be, a v russkom jest zastarělo. </span><br><br><span>&quot;V tutoj denj&quot; jest ješče jedin kompromis, ktory potrěbuje byti vyše razumlivy.</span></td><td><span>&quot;V tutdenj ja ne rabotaju, jesm v domu&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>now</span></td><td><span>sejčas, nyně, segda, tutčas, aktualno</span></td><td><span>(v) tutčas[1], v tutoj čas/moment[2], aktualno[2], v tom momentu[2]</span></td><td><span>Odpovědnik slovu &quot;tutčas&quot; ima jedino russky (&quot;тотчас&quot;), ale slova &quot;tu/tut&quot; i &quot;čas&quot; sųt razumlive vsekde.</span></td><td><span>&quot;V tutčas ne mogų govoriti&quot; </span><br><span>&quot;Aktualno my ješče ne znajemo, čto my bųdemo dělati&quot; </span><br><span>&quot;Ja ne znaju, kde oni sųt v tom momentu&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>for</span></td><td><span>za, dlja</span></td><td><span>za</span></td><td><span>&quot;Dlja&quot; jest jedino v iztočnyh slov. językah i v poljskom. </span><br><br><span>&quot;Za&quot; jest vo vsih drugyh językah i takože jestvuje kako slang/dialektno slovo v russkom.</span></td><td><span>&quot;Aktualna situacija jest mnogo težka za nas&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>why</span></td><td><span>čemu, začto, načto</span></td><td><span>začto[1], iz kakogo povoda[2]</span></td><td><span>&quot;Povod&quot; jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod)</span></td><td><span>&quot;Iz kakogo povoda naš let byl anulovany?&quot; </span><br><span>&quot;Začto ničto ne dělaješ?&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>therefore, that&#39;s why</span></td><td><span>zato, zatom, tomu, ubo</span></td><td><span>zato[1], iz togo povoda[2]</span></td><td><span>&quot;Povod&quot; jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod).</span></td><td><span>&quot;On jest strašno umorjeny iz togo povoda ne može uže rabotati&quot; </span><br><span>&quot;Koty mnogo spęt i zato sųt ščęstlive&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>because</span></td><td><span>zatože, zato že, zato čto, ibo, jerbo, poneže, jer, tomu že</span></td><td><span>zato že/zatože</span></td><td><span>&quot;zato čto&quot; bude lěpje rabotati za južnyh i iztočnyh (ne imajųt slova &quot;že&quot;).   </span><br><span>&quot;poneže&quot; jestvuje vsekde na zapadu, v bulgarskom, v russkom (zastarelo)</span></td><td><span>- Začto tu jest tako temno? </span><br><span>- Zato že električnost ne funkcjonuje</span></td><td>&nbsp;</td></tr><tr><td><span>because of</span></td><td><span>vslěd, za, jerbo za, po pričině</span></td><td><span>od povoda (něčego), v rezultatu (něčego)</span></td><td><span>&quot;Povod&quot; jest vó vsih slovjanskyh językah (v češskom i slovačskom - dovod).</span></td><td><span>&quot;Od povoda glasnoj muziky ja ne mogų sę učiti&quot; </span><br><span>&quot;V rezultatu velikoj avarije umrlo mnogo ljudij&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>thanks to</span></td><td><span>dekujųči, blågodare, hvala</span></td><td><span>hvala (něčemu)</span></td><td><span>Slovo &quot;hvala&quot; govori sę mnogo čęsto i srazuměti jego značenje iz konteksta jest mnogo prosto, iz togo povoda věrojętno ljudi uže bųdųt jego znati i razuměti.</span></td><td><span>&quot;Hvala internetu my možemo sę učiti iz doma&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>hard, difficult</span></td><td><span>težky, neprosty, komplikovany, problemny, trudny</span></td><td><span>težky, nelegky, problemny</span></td><td><span>&quot;Težky&quot; i &quot;problem&quot; sut vó vsih slovjanskyh językah. &quot;Legky&quot; jest vo vsih slov. językah kromě makedonskogo.</span></td><td><span>&quot;Kitajsky to jest mnogo težky język&quot; </span><br><span>&quot;Nam jest mnogo problemno idti tako daleko&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>easy</span></td><td><span>prosty, bezproblemny, legky</span></td><td><span>prosty, legky, bezproblemny</span></td><td><span>&quot;Prosty&quot; i &quot;problem&quot; sųt vó vsih slovjanskyh językah. &quot;Legky&quot; jest vo vsih slov. językah kromě makedonskogo.</span></td><td><span>&quot;To zadanje jest prosto&quot; </span><br><br><span>&quot;V tutčas naučiti sę anglijskogo jest absolutno bezproblemno&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>work</span></td><td><span>rabotati, funkcionovati, truditi, pracovati</span></td><td><span>rabotati, funkcionovati</span></td><td><span>&quot;Funkcionirovati&quot; znači jedino &quot;dobro dělati svojų funkcijų&quot;.  </span><br><span>&quot;Funkcija&quot; i &quot;rabota&quot; sųt vo vsih slovjanskyh językah.</span></td><td><span>&quot;Moj prijatelj ne rabotaje, zato že on jest nezdravy&quot;</span><br><br><span> &quot;Toj kompjuter jest mnogo stary i uže ne rabotaje/funkcjonuje&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>work, labour, labor, job</span></td><td><span>rabota, trud, praca</span></td><td><span>rabota</span></td><td><span>&quot;Rabota&quot; jest vo vsih slovjanskyh językah.</span></td><td><span>&quot;Ne imam rabotų i iz togo povoda ne mogų kupiti sobě dom&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>that</span></td><td><span>da, že, čto</span></td><td><span>že</span></td><td><span>&quot;Čto&quot; zvųči kako pytalno slovo (what) za južnyh i zapadnyh slovjanov. </span><br><span>&quot;Da&quot; ne jestvuje v iztočnyh i zapadnyh slovjanskyh językah i takože zvųči kako &quot;daby&quot; za bulgarov (kako v &quot;hču da ideš&quot; = &quot;hču da bys šel&quot;). </span><br><span>&quot;Že&quot; jestvuje jedino v zapadnyh slov. językah i jest falšivy prijatelj za slovencev (SL. &quot;že&quot; = &quot;uže&quot;) ale v drugyh językah to slovo ne zvųči podobno na druge slova i od togo povoda nikogo ne zaměšivaje.</span></td><td><span>&quot;Ja myslju že to jest mnogo dobra ideja!&quot; </span><br><span>&quot;Ona ješče ne znaje že on uže ne ljubi jų&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>thank you, thanks</span></td><td><span>dękujų, blagodarim, blagodarju, hvala</span></td><td><span>hvala, blagodarim, blagodarju</span></td><td><span>&quot;Děkuju&quot; jest jedino v bělorusskom, ukrajinskom, i zapadnyh jezykah  </span><br><br><span>&quot;Hvala&quot; v značenju &quot;thanks&quot; jest jedino v srbskom, hrvatskom i slovenskom, ale &quot;(po)hvala&quot; v drugom značenju (ang. &quot;praise, commendation&quot;) jest vo vsih slov. językah.  Takože možno govoriti &quot;velika hvala&quot;, kogdy my hčemo povysiti značenje &quot;hvala&quot;.  </span><br><span>&quot;Blagodariti&quot; ne jest vo vsih slov. językah, no slova &quot;dar&quot; i &quot;blago&quot; sut občeslovjanske</span></td><td><span>- &quot;Jesm kupil za tebe tort&quot; </span><br><span>- &quot;Velika hvala!&quot; </span><br><span> - &quot;Blagodarim tebe, to bylo mnogo pomočno&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>more</span></td><td><span>vyše, veče, bolje</span></td><td><span>vyše</span></td><td><span>&quot;Veče&quot; i &quot;bolje&quot; ne sut vo vsih slov. językah. &quot;Vyše&quot; v tom značenju jest jedino v srbskom i hrvatskom, ale jest vo vsih slov. językah v značenju &quot;bolje/veče vysoko&quot;, iz togo povoda toj variant jest najrazumlivy. (V bulgarskom &quot;више&quot; znači &quot;vyše vysoky&quot;)  Poslě &quot;vyše + slovo&quot; imamo &quot;od&quot; (ględite priměr)</span></td><td><span>&quot;Anglijsky jest vyše prosty od francuzskogo&quot; &quot;</span><br><span>Novy učitelj jest vyše dobry od starogo&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>the most, most</span></td><td><span>najvyše, najbolje, največe, naj-</span></td><td><span>naj-, najvyše</span></td><td><span>&quot;Največe&quot; i &quot;najbolje&quot; ne sut vo vsih slov. językah. &quot;Najvyše&quot; v tom značenju jest jedino v srbskom i hrvatskom, ale v značenju &quot;najvysoko&quot; jest vo vsih slov. językah, kromě bulgarskogo, iz togo povoda toj variant jest vyše razumlivy od &quot;najbolje&quot; i &quot;največe&quot;.  </span><br><span>&quot;Naj-&quot; jest vo vsih slov. językah (ale to zvųči neprirodno za vsih kromě bulgarov).  </span><br><br><span>!Čuvanje! poslě &quot;naj-&quot; slovo potrěbuje byti bez suffiksa &quot;-ějš-&quot; ili &quot;-ěje&quot;. Ględite priměry.</span></td><td><span>&quot;On jest najglupy člověk na světu!&quot; ili &quot;On jest najvyše glupy člověk na světu!&quot;  </span><br><span>&quot;Najvyše čęsto my govorimo o knigah&quot; ili &quot;Najčęsto my govorimo o knigah&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>say, speak, talk</span></td><td><span>govoriti, molviti, rěkti</span></td><td><span>govoriti</span></td><td><span>&quot;Govoriti&quot; jest vo vsih slov. językah.  V poljskom forma &quot;govoriti&quot; v tom značenju ne jestvuje ale sųt: &quot;gwarzyć&quot;, &quot;gaworzyć&quot;, &quot;pogwarka&quot;, &quot;gwar&quot;, &quot;gwara&quot; i &quot;rozhowor&quot;, ktore sųt podobne.</span></td><td><span>&quot;Je ne govorjų na srbskom&quot;</span><br><span> &quot;My uže davno ne jesmo govorili&quot;</span><br><span> &quot;Albert govori, že potrěbno spati&quot;</span><br><span>&quot;Govorite tiho, vse jedno ja vas ne razuměm&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>life</span></td><td><span>život, žitje</span></td><td><span>život</span></td><td><span>&quot;Žitje&quot; jest falšivy prijatelj v južnyh jezykah (razumějut kako žito/zŕno)  &quot;Život&quot; jest falšivy prijatelj v iztočnyh jezykah (razumějut kako brjuho/trbuh), ale jestvuje kako zastarělo slovo v značenju &quot;žitje&quot;.</span></td><td><span>&quot;I medžu životom i smrtju ničto ne bude na světu, Jedino veliko morje mrtvečskyh glav i skeletov&quot;  </span><br><span>&quot;Studentsko žitje jest težko&quot;</span></td><td><span>Da by slovo &quot;život&quot; ne bylo falšivym prijateljem za rusov, ukrajincev i bělorusov, v izgovoru potrěbno davati akcent na prvy slog:  žÍvot</span></td></tr><tr><td><span>each, every</span></td><td><span>každy, vsaky</span></td><td><span>vśaky</span></td><td><span>&quot;Vsaky&quot; jest vo vsih iztočnyh i južnyh slov. językah.  </span><br><span>V češskom i slovačskom jest &quot;všelijaký&quot;, v poljskom sųt &quot;wszelaki&quot; i &quot;wszelki&quot; ale te slova imajųt drugo značenje: &quot;vsekaky, vśakomožny, kakykoli&quot;.  </span><br><span>&quot;Každy&quot; ne jest v nijednom južnom języku.</span></td><td><span>&quot;Vśaky člověk jest cěly oddělny svět&quot;</span></td><td><span>Etimologičny izgovor slova &quot;vśaky&quot; s &quot;ś&quot; bųde pomočnym za zapadnyh i iztočnyh slovjan (&quot;ś&quot; izgovarjaje sę kako mękka &quot;s&quot;).</span></td></tr><tr><td><span>try, attempt</span></td><td><span>pokušati, probovati</span></td><td><span>probovati</span></td><td><span>&quot;Probovati&quot; jest v vyše velikoj kolikosti slov. językov od &quot;pokušati&quot;. &quot;Probovati&quot; ne jestvuje jedino v Češskom, Slovačskom (jestvuje jedino v něktoryh dialektah) i Slovenačskom. Za njih možno koristati &quot;pokušati&quot;. </span><br><br><span>Jestvuje takože forma &quot;pokušati sę&quot;, ktora bųde mnogym vyše razumliva rusam od &quot;pokušati&quot;.</span></td><td><span>&quot;Jesi li ty proboval izključiti i iznova vključiti kompjuter?&quot;</span></td><td><span>V &quot;pokušAti&quot; akcent/udarjenje potrěbuje byti na tretjem slogu, da by to zvųčalo podobno do russkogo &quot;покушаться&quot;, zatože &quot;pokUšati&quot; s udarjenjem/akcentom na vtory slog zvųči za rusov kako &quot;покушать&quot; (jedati).</span></td></tr><tr><td><span>which, that</span></td><td><span>ktory, koji</span></td><td><span>ktory, kaky</span></td><td><span>&quot;Ktory&quot; jest v najvelikoj kolikosti slov. językov. V hrvatskom i srbskom to slovo jest v něktoryh dialektah. To slovo ne jestvuje jedino v bulgarskom.   </span><br><br><span>&quot;Koji&quot; jest jedino v južnyh slov. językah (i takože v nepolnom značenju v russkom). No takože, &quot;koj&quot;, osoblivo s izgovorom &quot;kȯj&quot;, može byti v něktoryh situacijah priblizno råzumlivo na zapadu (pl. ki, cz. ký, sk. ký). </span><br><br><span> &quot;Kaky&quot; takože možno poněkogda koristati ale za južnyh slovjanov to bųde dělati konfuziju: &quot;Žena, kakų ja potrěbujų&quot; za njih zvųči NE kako &quot;Ta žena, ktora jest mně potrěbna&quot;, a kako &quot;toj TIP ženy, ktory mně jest potrěbny&quot;.  </span><br><br><span>Iz togo povoda my prěporučajemo &quot;ktory&quot;</span></td><td><span>&quot;Člověk, ktory ne razumě sebe, ne može dobro razuměti drugyh ljudij&quot; </span><br><br><span>&quot;Dom, v ktorom živęt moj prijatelj, jest mnogo stary&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>some</span></td><td><span>něktory, někoj</span></td><td><span>něktory</span></td><td><span>&quot;Něktory&quot; jest v najvelikoj kolikosti slov. językov. V hrvatskom i srbskom &quot;ktory&quot; jest v něktoryh dialektah. To slovo ne jestvuje jedino v bulgarskom.   </span><br><br><span>&quot;Někoj&quot; jest jedino v južnyh slov. językah (i takože v russkom).</span></td><td><span>&quot;Něktori ljudi myslęt, že oni sųt najvyše mudri na světu. To sųt najglupi ljudi&quot; </span><br><br><span>&quot;V něktoryh igrah možno naučiti sę anglijskogo&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>tomorrow</span></td><td><span>zautra</span></td><td><span>zajutra</span></td><td><span>&quot;Zajutra&quot; jest kombinacija zapadnoslovjanskyh &quot;jutro&quot;, &quot;zítra&quot; i &quot;zajtra&quot;, iztočnoslovjanskogo &quot;zavtra&quot; i južnoslovjanskyh &quot;sutra&quot;, &quot;utre&quot;, &quot;jutri&quot;</span></td><td><span>&quot;Nikogdy ne govori že izdělaš zajutra to, čto možeš izdělati dnes&quot; </span><br><span>&quot;Zajutra ja pojdų do lěsa&quot;</span></td><td><span>Za rusov bųde vyše razumlivo s akcentom/udarjenjem na prvy slog: &quot;zAjutra&quot;, zato že to jest vyše podobno na russko &quot;zAvtra&quot; i ne bųde zvųčati kako &quot;utro&quot; (morning)</span></td></tr><tr><td><span>answer</span></td><td><span>odpověděti, odpovědati, odgovoriti, odgovarjati</span></td><td><span>odgovoriti[perf], odgovarjati[imperf]</span></td><td><span>&quot;Odpověděti/odpovědati&quot; jest jedino v zapadnyh slovjanskyh językah i v ukrajinskom. </span><br><br><span>&quot;Odgovoriti/odgovarjati&quot; jest jedino v južnyh językah ale vsi (ili bez malogo vsi) imajųt &quot;govoriti&quot;, iz togo povoda toj variant jest najvyše razumlivy.</span></td><td><span>&quot;Ja ne hčų odgovorjati na to pytanje&quot; </span><br><span>&quot;Nikto ješče nam ne odgvoril&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>about</span></td><td><span>o, ob</span></td><td><span>o/ob</span></td><td><span>&quot;O/ob&quot; ne jest jedino v Bulgarskom, Makedonskom i Ukrajinskom.</span></td><td><span>&quot;Nam jest potrěbno o tom pogovoriti&quot; </span><br><span>&quot;Ta kniga ob aeroplanah jest zaisto mnogo dobra&quot;</span></td><td><span>Råzlika medžu &quot;o&quot; i &quot;ob&quot; jestvuje glavno za prostotų izgovora. Možeš li jasno skazati &quot;bajka o oslu&quot;? Ne. A s frazojų &quot;bajka ob oslu&quot; už ne bųde problema. &quot;Ob&quot; govori sę prěd samoglaskojų (a, o, i, u, i tako dalje)</span></td></tr><tr><td><span>it is needed, it is necessary, one should, one ought to, one is obliged to</span></td><td><span>trěba, povinno se, potrěbno, trěba jest</span></td><td><span>potrěbno</span></td><td><span>&quot;Potrěbno&quot; abo &quot;potrěba&quot; jest vo vsih slov. językah, &quot;trěba&quot;, &quot;povinno sę&quot; - ne.  </span><br><span>&quot;Trěba&quot; može značiti (i čęsto znači) </span><em><span>should</span></em><span>.  &quot;Potrěbno&quot; ne ima to značeńje i vsegda izraža nužnost́, obvęznost́.</span></td><td><span>&quot;Da by naučiti sę někakogo języka, potrěbno mnogo slušati&quot; </span><br><span>&quot;Nam jest potrěbno uže idti&quot;</span></td><td>&nbsp;</td></tr><tr><td><span>want</span></td><td><span>htěti, hotěti</span></td><td><span>htěti</span></td><td><span>To jest kompromis medžu zapadnoslovjanskym &quot;hc-&quot;, iztočnym &quot;hoč-&quot; i južnym &quot;hč-/hoč-&quot;.</span></td><td><span>&quot;Ja byh htěl sę naučiti vsih językov světa&quot; </span><br><span>&quot;My ne hčemo dělati glupe věči&quot;</span></td><td>&nbsp;</td></tr></tbody></table></figure></div></div>
 </body>
-
 </html>
