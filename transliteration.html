@@ -1,186 +1,8 @@
 <html>
 <head>
   <title>Interslavic transliteration</title>
-  <link rel="stylesheet" type="text/css" href="style.css">
-  <style type="text/css">
-    body {
-      font-family: Roboto, sans-serif;
-    background-image: linear-gradient(
-      355deg,
-      hsl(240deg 20% 1%) 6%,
-      hsl(240deg 35% 5%) 61%,
-      hsl(240deg 30% 8%) 100%
-    );
-    background-attachment: fixed;
-    background-size: cover;
-    /*   background-color: #111111;
-      background-image: url(https://w.forfun.com/fetch/a0/a008f8e1d31c2ff391079470583de09c.jpeg); */
-      background-size: 100%;
-    }
-
-    .container {
-      width: 90%;
-      min-width: 390px; 
-      height: 100%; 
-      margin: 1% auto;
-      background-color: #21242C;
-      color: #C0C0C0;
-      padding: 2px;
-      text-align: center;
-      opacity: 80%;
-      box-shadow: 2px 2px 9px #000; 
-
-    }
-
-    .form-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 20px;
-      font-size: 17;
-      
-    }
-
-    .textarea-container {
-      height: 80%;
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: center;
-      align-items: flex-start;
-      margin-bottom: 10px;
-      padding: 8px;
-    }
-
-    textarea {
-      background-color: #30343f;
-      color: #C6C6C6;
-      border: none;
-      resize: horizontal;
-      min-height: 200px;
-      margin-top: 5px;
-      margin-bottom: 5px;
-      outline-color: #EAEAEA;
-      box-shadow: 3px 3px 9px #000;
-      margin: 8px;
-      padding: 8px;
-      font-size: 17;
-    }
-
-    select {
-      margin-left: 10px;
-    }
-
-    label,
-    select {
-      color: #FFFFFF;
-      background-color: #21242C;
-    }
-
-    h1 {
-      color: #EAEAEA;
-    }
-    textarea:focus,
-    label:focus,
-    select:focus{
-      outline: none;
-      box-shadow: 0px 0px 4px #BEBEBE;
-    }
-
-
-    @media (orientation: portrait) {
-      textarea {
-        width: 90%;
-        height: 45%;
-      }
-    }
-
-    @media (orientation: landscape) {
-      textarea {
-        width: 45%;
-        height: 90%;
-      }
-    }
-
-  </style>
-
-  <script type="text/javascript">
-    const transTables = {
-      'isv_to_standard': 'ć-č ć-č ć-č ś-s ź-z ŕ-r ĺ-l ľ-l ń-n t́-t ť-t d́-d ď-d đ-dž ò-o ȯ-o ė-e è-e č-č š-š ž-ž ě-ě е̌-ě å-a ę-e ų-u',
-      
-      'isv_to_standard_cyrillic': 'ń-н ľ-л nj-њ lj-љ ć-ч ć-ч ć-ч ś-с ź-з ŕ-р t́-т ť-т d́-д ď-д đ-дж ò-о ȯ-о ė-е è-е č-ч š-ш ž-ж ě-є е̌-є ě-є å-а ę-е ų-у a-а b-б c-ц č-ч d-д e-е f-ф g-г h-х i-и j-ј k-к l-л m-м n-н o-о p-п r-р s-с š-ш t-т u-у v-в y-ы z-з ž-ж',
-
-      'kir_to_lat': 'ньј-ńj ь- а-a ӑ-å б-b в-v ў-v г-g ґ-g д-d дж-dž ђ-dž е-e є-ě ѣ-ě ж-ž з-z и-i ј-j ї-ji й-j к-k л-l љ-lj м-m н-n њ-nj о-o п-p р-r с-s т-t у-u ф-f х-h ц-c ч-č ш-š щ-šč ъ-ȯ ы-y ю-ju я-ja ё-e ѫ-ų ѧ-ę ћ-ć ѥ-je ꙑ-y',
-      
-      'isv_to_cyrillic': 'ń-нь nj-њ lj-љ ĺ-ль ľ-ль ć-ч ć-ч ć-ч ś-с ź-з ŕ-р t́-т ť-т d́-д ď-д đ-дж ò-о ȯ-о ė-е è-е č-ч š-ш ž-ж ě-є е̌-є ě-є å-а ę-е ų-у a-а b-б c-ц č-ч d-д e-е f-ф g-г h-х i-и j-ј k-к l-л m-м n-н o-о p-п r-р s-с š-ш t-т u-у v-в y-ы z-з ž-ж',
-      
-      'isv_to_slovianto': 'ć-č ś-s ź-z ŕ-r ĺ-l ľ-l ń-n t́-t ť-t d́-d ď-d đ-dž ȯ-o ò-o ė-e č-č š-š ž-ž ě-ě е̌-ě ě-e å-a ę-e ų-u y-i',
-      'nje': 'nje-нје nja-нја nij-ниј nju-нју njah-нјах njam-нјам njem-нјем njami-нјами',
-    };
-
-    function njeProblem(text) {
-        const replaces2 = transTables['nje'];
-        const fragments = text.match(/\b\w+\b|\W+/g);
-        console.log(fragments);
-        const result = [];
-
-        if (fragments) {
-            fragments.forEach(s => {
-                replaces2.split(' ').forEach(i => {
-                    const letters = i.split('-');
-                    s = s.replace(letters[0], letters[1]);
-                });
-                result.push(s);
-            });
-        }
-        return result.join('');
-    }
-
-
-
-    function transliteracija(text, lang) {
-      if (!(lang in transTables)) {
-        return text;
-      }
-
-      text = njeProblem(text)
-      
-      const replaces = (transTables[lang] + " " + transTables[lang].toUpperCase()).split(' ');
-      
-      for (const replace of replaces) {
-        const [from, to] = replace.split('-');
-        const regex = new RegExp(from, 'g');
-        text = text.replace(regex, to);
-      }
-
-      return text;
-    }
-
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const inputText = document.getElementById('input-text');
-      const outputText = document.getElementById('output-text');
-      const languageSelect = document.getElementById('language-select');
-
-      let currentLanguage = languageSelect.value;
-      let currentText = '';
-
-      inputText.addEventListener('input', function() {
-        currentText = inputText.value;
-        const transliteratedText = transliteracija(currentText, currentLanguage);
-        outputText.value = transliteratedText;
-      });
-
-      languageSelect.addEventListener('change', function() {
-        currentLanguage = languageSelect.value;
-        const transliteratedText = transliteracija(currentText, currentLanguage);
-        outputText.value = transliteratedText;
-      });
-    });    
-
-
-  </script>
-
+  <link rel="stylesheet" type="text/css" href="transliteration.css">
+  <script src="transliteration.js"> </script>
 </head>
 <body>
   <div class="container">
@@ -192,17 +14,14 @@
         <option value="isv_to_cyrillic">V kirilicu</option>
         <option value="isv_to_standard">V standardnu latinicu</option>
         <option value="isv_to_standard_cyrillic">V standardnu kirilicu</option>
-        
         <option value="isv_to_slovianto">Latinica v Slovianto</option>
       </select>
     </div>
     <div class="textarea-container">
-
       <textarea id="input-text" placeholder="Vpišite tekst..."></textarea>
       <textarea id="output-text" placeholder="Transliterovany tekst..." readonly></textarea>
     </div>
   </div>
   
-  <script src="script.js"></script>
 </body>
 </html>
