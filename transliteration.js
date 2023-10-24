@@ -8,6 +8,7 @@
       'isv_to_cyrillic': 'ń-нь nj-њ lj-љ ĺ-ль ľ-ль ć-ч ć-ч ć-ч ś-с ź-з ŕ-р t́-т ť-т d́-д ď-д đ-дж ò-о ȯ-о ė-е è-е č-ч š-ш ž-ж ě-є е̌-є ě-є å-а ę-е ų-у a-а b-б c-ц č-ч d-д e-е f-ф g-г h-х i-и j-ј k-к l-л m-м n-н o-о p-п r-р s-с š-ш t-т u-у v-в y-ы z-з ž-ж',
       
       'isv_to_slovianto': 'ć-č ś-s ź-z ŕ-r ĺ-l ľ-l ń-n t́-t ť-t d́-d ď-d đ-dž ȯ-o ò-o ė-e č-č š-š ž-ž ě-ě е̌-ě ě-e å-a ę-e ų-u y-i',
+
       'nje': 'nje-нје nja-нја nij-ниј nju-нју njah-нјах njam-нјам njem-нјем njami-нјами',
     };
 
@@ -48,8 +49,6 @@
 
       return text;
     }
-
-
 
     document.addEventListener('DOMContentLoaded', function() {
       const inputText = document.getElementById('input-text');
