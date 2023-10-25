@@ -9,44 +9,45 @@
       
       'isv_to_slovianto': 'ć-č ś-s ź-z ŕ-r ĺ-l ľ-l ń-n t́-t ť-t d́-d ď-d đ-dž ȯ-o ò-o ė-e č-č š-š ž-ž ě-ě е̌-ě ě-e å-a ę-e ų-u y-i',
 
-      'nje': 'nje-нје nja-нја nij-ниј nju-нју njah-нјах njam-нјам njem-нјем njami-нјами',
     };
 
+    const nje_replacements = {
+      'nje': 'нје',
+      'nja': 'нја',
+      'nij': 'ниј',
+      'nju': 'нју',
+      'njah': 'нјах',
+      'njam': 'нјам',
+      'njem': 'нјем',
+      'njami': 'нјами'
+    };
+
+
+
     function njeProblem(text) {
-        const replaces2 = transTables['nje'];
         const fragments = text.match(/\b\w+\b|\W+/g);
-        console.log(fragments);
         const result = [];
 
         if (fragments) {
             fragments.forEach(s => {
-                replaces2.split(' ').forEach(i => {
-                    const letters = i.split('-');
-                    s = s.replace(letters[0], letters[1]);
-                });
-                result.push(s);
+                const regex = new RegExp(`(${Object.keys(nje_replacements).join('|')})$`, 'gi'); 
+                s = s.replace(regex, match => nje_replacements[match]);                result.push(s);
             });
         }
         return result.join('');
     }
 
-
-
     function transliteracija(text, lang) {
       if (!(lang in transTables)) {
         return text;
       }
-
       text = njeProblem(text)
-      
-      const replaces = (transTables[lang] + " " + transTables[lang].toUpperCase()).split(' ');
-      
+      const replaces = (transTables[lang] + " " + transTables[lang].toUpperCase()).split(' ');      
       for (const replace of replaces) {
         const [from, to] = replace.split('-');
         const regex = new RegExp(from, 'g');
         text = text.replace(regex, to);
       }
-
       return text;
     }
 
