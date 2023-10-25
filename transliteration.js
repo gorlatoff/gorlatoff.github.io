@@ -22,8 +22,6 @@
       'njami': 'нјами'
     };
 
-
-
     function njeProblem(text) {
         const fragments = text.match(/\b\w+\b|\W+/g);
         const result = [];
@@ -31,7 +29,8 @@
         if (fragments) {
             fragments.forEach(s => {
                 const regex = new RegExp(`(${Object.keys(nje_replacements).join('|')})$`, 'gi'); 
-                s = s.replace(regex, match => nje_replacements[match]);                result.push(s);
+                s = s.replace(regex, match => nje_replacements[match]);                
+                result.push(s);
             });
         }
         return result.join('');
