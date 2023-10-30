@@ -4,6 +4,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: stretch;
 }
 
 
@@ -28,6 +29,7 @@ select {
 .textarea-container {
   position: relative;
   margin: 5px;
+  height: 100%;
 }
 .textarea-container textarea {
   width: 100%;
@@ -46,7 +48,8 @@ select {
   position: absolute;
   top: 0;
   right: 0;
-  width: 100%;
+/*  width: 100%;*/
+
 }
 
 
