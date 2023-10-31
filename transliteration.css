@@ -1,6 +1,8 @@
 body {
   font-family: "Roboto", sans-serif;
-  background-color: rgba(17, 18, 22);
+/*  background-color: rgba(17, 18, 22);*/
+/*  background: linear-gradient(90deg, rgba(68,49,110,1) 0%, rgba(93,87,154,1) 25%, rgba(44,119,182,1) 50%, rgba(18,155,221,1) 75%);*/
+  background: linear-gradient(90deg, rgba(75,59,110,1) 0%, rgba(72,83,149,1) 25%, rgba(49,88,176,1) 50%, rgba(57,135,210,1) 75%);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
