@@ -27,22 +27,9 @@ select {
 
 .textarea-container {
   position: relative;
-  margin: 5px;
+  margin: 0.4em;
   height: 100%;
 }
-/*.textarea-container textarea {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background-color: #272a33;
-  color: #C6C6C6;
-  border: none;
-  resize: none;
-  padding: 8px;
-  padding-top: 1.4em;
-  font-size: 1.2em;
-  box-shadow: 3px 3px 9px #000;
-}*/
 
 .textarea-container textarea {
   width: 100%;
@@ -52,8 +39,8 @@ select {
   color: #C6C6C6;
   border: none;
   resize: none;
-  padding: 0.7em;
-  padding-top: 1.4em;
+  padding: 1.2em;
+  padding-top: 1.2em;
   font-size: 1.2em;
   box-shadow: 3px 3px 9px #000;
 }
