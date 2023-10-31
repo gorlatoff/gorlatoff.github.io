@@ -28,8 +28,7 @@ select {
 
 .textarea-container {
   position: relative;
-  margin: 0.4em;
-  margin-bottom: 1.1em;
+  margin: 0.4em 0.4em 0.0em;
   height: 100%;
 }
 
@@ -45,6 +44,8 @@ select {
   padding-top: 1.2em;
   font-size: 1.2em;
   box-shadow: 0.2em 0.2em 0.6em #000;
+  margin-bottom: 0.6em;
+/*  margin-bottom: 0.4em; */
 /*  box-shadow: 3px 3px 9px #000;*/
 }
 
