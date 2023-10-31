@@ -57,13 +57,15 @@ document.addEventListener("DOMContentLoaded", function() {
     if (inputText.value != ""){
       inputText.value = ""; 
       outputText.value = ""; 
-      pasteButton.textContent = "Paste";
+      pasteButton.textContent = "paste";
     }
     else {
       navigator.clipboard.readText().then(function(text) {
-        inputText.value = text; 
-        outputText.value = transliteracija(text, languageSelect.value);
-        pasteButton.textContent = "Clear";
+        if (text != ""){
+          inputText.value = text; 
+          outputText.value = transliteracija(text, languageSelect.value);
+          pasteButton.textContent = "clear";
+        }
         });
     }
   });
@@ -74,17 +76,22 @@ document.addEventListener("DOMContentLoaded", function() {
 
   inputText.addEventListener("input", function() {
     if (inputText.value != "") {
-      pasteButton.textContent = "Clear";
+      pasteButton.textContent = "clear";
     } else {
-      pasteButton.textContent = "Paste";
+      pasteButton.textContent = "paste";
     }
   });
+
+
+
+
+
 
   function synchronizeScroll(scrollingElement) {
     var scrollTop = scrollingElement.scrollTop;
     var scrollHeight = scrollingElement.scrollHeight;
     var clientHeight = scrollingElement.clientHeight;
-    var scrollPosition = Math.floor((scrollTop / (scrollHeight - clientHeight)) * (scrollingElement === inputText ? outputText.scrollHeight - outputText.clientHeight : inputText.scrollHeight - inputText.clientHeight));
+    var scrollPosition = (scrollTop / (scrollHeight - clientHeight)) * (scrollingElement === inputText ? outputText.scrollHeight - outputText.clientHeight : inputText.scrollHeight - inputText.clientHeight);
 
 
     if (scrollingElement === inputText) {
@@ -98,9 +105,12 @@ document.addEventListener("DOMContentLoaded", function() {
     synchronizeScroll(inputText);
   });
 
-  outputText.addEventListener("scroll", function() {
-    synchronizeScroll(outputText);
-  });
+  // outputText.addEventListener("scroll", function() {
+  //   synchronizeScroll(outputText);
+  // });
+
+
+
 
 
   const languageSelect = document.getElementById('language-select');
