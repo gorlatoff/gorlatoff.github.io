@@ -96,7 +96,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (scrollingElement === inputText) {
       outputText.scrollTop = scrollPosition;
-    } else if (scrollingElement === outputText) {
+    } 
+    else {
       inputText.scrollTop = scrollPosition;
     }
   }
@@ -105,9 +106,9 @@ document.addEventListener("DOMContentLoaded", function() {
     synchronizeScroll(inputText);
   });
 
-  // outputText.addEventListener("scroll", function() {
-  //   synchronizeScroll(outputText);
-  // });
+  outputText.addEventListener("scroll", function() {
+    synchronizeScroll(outputText);
+  });
 
 
 
