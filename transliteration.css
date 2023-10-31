@@ -30,7 +30,7 @@ select {
   margin: 5px;
   height: 100%;
 }
-.textarea-container textarea {
+/*.textarea-container textarea {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -42,7 +42,22 @@ select {
   padding-top: 1.4em;
   font-size: 1.2em;
   box-shadow: 3px 3px 9px #000;
+}*/
+
+.textarea-container textarea {
+  width: 100%;
+  height: 100%; /* изменено на 100vh */
+  box-sizing: border-box;
+  background-color: #272a33;
+  color: #C6C6C6;
+  border: none;
+  resize: none;
+  padding: 8px;
+  padding-top: 1.4em;
+  font-size: 1.2em;
+  box-shadow: 3px 3px 9px #000;
 }
+
 
 .textarea-container button {
   position: absolute;
@@ -75,12 +90,18 @@ select:focus {
     width: 90%;
     height: 45%;
   }
+  .textarea-container textarea {
+    height: 45vh; 
+  }
 }
 
 @media (orientation: landscape) {
   .textarea-container {
     width: 45%;
     height: 90%;
+  }
+  .textarea-container textarea {
+    height: 85vh; 
   }
 }
 
