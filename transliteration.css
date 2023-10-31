@@ -28,14 +28,15 @@ select {
 
 .textarea-container {
   position: relative;
-  margin: 0.4em 0.4em 0.5em;
+  margin: 0.4em 0.4em 0.4em;
   height: 100%;
+  overflow: auto; 
 }
 
 .textarea-container textarea {
   width: 100%;
   height: 100%; /* изменено на 100vh */
-  box-sizing: border-box;
+/*  box-sizing: border-box;*/
   background-color: #272a33;
   color: #C6C6C6;
   border: none;
@@ -44,7 +45,7 @@ select {
   padding-top: 1.2em;
   font-size: 1.2em;
   box-shadow: 0.2em 0.2em 0.6em #000;
-  margin-bottom: 0.5em;
+/*  margin-bottom: 0.5em;*/
 /*  margin-bottom: 0.4em; */
 /*  box-shadow: 3px 3px 9px #000;*/
 }
