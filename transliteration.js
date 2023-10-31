@@ -87,18 +87,49 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
+  // function synchronizeScroll(scrollingElement) {
+  //   var scrollTop = scrollingElement.scrollTop;
+  //   var scrollHeight = scrollingElement.scrollHeight;
+  //   var clientHeight = scrollingElement.clientHeight;
+  //   var scrollPosition = (scrollTop / (scrollHeight - clientHeight)) * (scrollingElement === inputText ? outputText.scrollHeight - outputText.clientHeight : inputText.scrollHeight - inputText.clientHeight);
+
+
+  //   if (scrollingElement === inputText) {
+  //     outputText.scrollTop = scrollPosition;
+  //   } 
+  //   else {
+  //     inputText.scrollTop = scrollPosition;
+  //   }
+  // }
+
+  // inputText.addEventListener("scroll", function() {
+  //   synchronizeScroll(inputText);
+  // });
+
+  // outputText.addEventListener("scroll", function() {
+  //   synchronizeScroll(outputText);
+  // });
+
+
+
+  var isScrolling = false;
+
   function synchronizeScroll(scrollingElement) {
-    var scrollTop = scrollingElement.scrollTop;
-    var scrollHeight = scrollingElement.scrollHeight;
-    var clientHeight = scrollingElement.clientHeight;
-    var scrollPosition = (scrollTop / (scrollHeight - clientHeight)) * (scrollingElement === inputText ? outputText.scrollHeight - outputText.clientHeight : inputText.scrollHeight - inputText.clientHeight);
+    if (!isScrolling) {
+      isScrolling = true;
+      
+      var scrollTop = scrollingElement.scrollTop;
+      var scrollHeight = scrollingElement.scrollHeight;
+      var clientHeight = scrollingElement.clientHeight;
+      var scrollPosition = (scrollTop / (scrollHeight - clientHeight)) * (scrollingElement === inputText ? outputText.scrollHeight - outputText.clientHeight : inputText.scrollHeight - inputText.clientHeight);
 
-
-    if (scrollingElement === inputText) {
-      outputText.scrollTop = scrollPosition;
-    } 
-    else {
-      inputText.scrollTop = scrollPosition;
+      if (scrollingElement === inputText) {
+        outputText.scrollTop = scrollPosition;
+      } else {
+        inputText.scrollTop = scrollPosition;
+      }
+      
+      isScrolling = false;
     }
   }
 
@@ -109,7 +140,6 @@ document.addEventListener("DOMContentLoaded", function() {
   outputText.addEventListener("scroll", function() {
     synchronizeScroll(outputText);
   });
-
 
 
 
