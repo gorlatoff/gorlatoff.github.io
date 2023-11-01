@@ -22,6 +22,7 @@ body {
 }
 
 select {
+  border: none;
   background-color: hsla(0, 0%, 100%, 0.2);;
 /*  background-color: #232428;*/
 }
@@ -30,12 +31,12 @@ select {
   position: relative;
   margin: 0.4em 0.4em 0.4em;
   height: 100%;
-  overflow: auto; 
+/*  overflow: auto; */
 }
 
 .textarea-container textarea {
   width: 100%;
-  height: 100%; /* изменено на 100vh */
+  height: 100vh; /* изменено на 100vh */
 /*  box-sizing: border-box;*/
   background-color: #272a33;
   color: #C6C6C6;
@@ -88,7 +89,7 @@ select:focus {
 @media (orientation: portrait) {
   .textarea-container {
     width: 90%;
-    height: 45%;
+    height: 45vh; 
   }
   .textarea-container textarea {
     height: 45vh; 
