@@ -6,13 +6,13 @@ We have some statistics from interslavic-dictionary.com
 
 
 
-## Monthly 11stat by country:
+## Monthly stat by country:
 
 ![countries1](slovnik stat/countries1.jpg)
 
 ![countries2](slovnik stat/countries2.jpg)
 
-# Monthly stat by towns
+## Monthly stat by towns
 ![towns1](slovnik stat\towns1.jpg)
 
 ![towns2](slovnik stat\towns2.jpg)
