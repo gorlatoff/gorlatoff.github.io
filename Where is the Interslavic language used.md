@@ -1,10 +1,12 @@
 # Where is the Interslavic language used?
 
+*author: Neudržima Mašina Dobra*
+
 We have some statistics from interslavic-dictionary.com
 
 
 
-## Monthly stat by country:
+## Monthly 11stat by country:
 
 ![countries1](slovnik stat/countries1.jpg)
 
@@ -25,7 +27,7 @@ We have some statistics from interslavic-dictionary.com
 
 ![map](slovnik stat\map.jpg)
 
-## And countries and languages data by the official Discord server
+## And countries and languages data of the official Discord server
 
 ![discord country](slovnik stat/discord country.png)
 
