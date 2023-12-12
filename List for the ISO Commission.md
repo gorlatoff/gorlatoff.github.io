@@ -39,7 +39,7 @@
 
 
 
-## Videos and Audio
+## Videos and Audios
 
 * Youtube channels:
 
@@ -58,6 +58,7 @@
   * [Rubinolas' channel](https://www.youtube.com/watch?v=LcSl2kV_NB0) (51 subscribers)
   * [Medžumatika](https://www.youtube.com/@medzumatika729) (42 subscribers)
   * [Međurybak's channel](https://www.youtube.com/@medzurybak) (32 subscribers)
+  * [SLOVJANSKY PROSTOR](https://www.youtube.com/@Matej_Milach/videos) (videos in Interslavic and Polish language) (27 subscribers)
   * [Interslavic things](https://www.youtube.com/@interslavicthings): (14 subscribers)
   * "Finding inspiration with Sandra" channel (["Learn Interslavic language" lessons](https://www.youtube.com/playlist?list=PLLErD4LWIUMvdONcueoVkBAvE69VLPnh5)) (1.71 thousand subscribers)
   
@@ -170,7 +171,7 @@
 ## Projects in progress
 
 * [Translation of Jan van Steenbergen's grammar into Slavic languages](https://interslavic.fun/).
-* Audio version of the boSok "Nehaj nesut nas běle oblaky". 
+* Audio version of the book "Nehaj nesut nas běle oblaky". 
 * Animated movie "Sněžna děva".
 * Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander.
 * [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk).
