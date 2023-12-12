@@ -28,10 +28,10 @@
 * [Texts collection](http://steen.free.fr/interslavic/samples.html) by Jan van Steenbergen. It includes 14 sample texts that were added in 2006 and later.
 * A [translation](https://t.me/interslavicthings/210) of part of the chapters of Jacob Perelman's book "Physics at every Step".
 * [Text collection](https://isv.miraheze.org/wiki/Category:Sbornik:Vse) in Medžuviki: [Poems](https://isv.miraheze.org/wiki/Category:Sbornik:Poemy) • [Articles](https://isv.miraheze.org/wiki/Category:Sbornik:Členky) • [Books ](https://isv.miraheze.org/wiki/Category:Sbornik:Knigy)• [Jokes](https://isv.miraheze.org/wiki/Category:Sbornik:Zasměšky) • [Stories](https://isv.miraheze.org/wiki/Category:Sbornik:Povědky) • [Songs](https://isv.miraheze.org/wiki/Category:Sbornik:Pěsnje) • [Prayers](https://isv.miraheze.org/wiki/Category:Sbornik:Molitvy) • [Quotes and proverbs](https://isv.miraheze.org/wiki/Category:Sbornik:Citaty_i_prislovice) • [News and olds](https://isv.miraheze.org/wiki/Category:Sbornik:Věsti) • [Learning Interslavic](https://isv.miraheze.org/wiki/Category:Sbornik:Nauka_medžuslovjanskogo) • [Other texts](https://isv.miraheze.org/wiki/Category:Sbornik:Ine_teksty)
+* ["Dove Book"](https://app.box.com/s/6zxli16nxjjjk3mflltbogixza6n57ht). The Dove Book is a medieval historical document - a religious verse, written somewhere in the 1500's. A Russian legend of the creation of the world.
 * [Translations of songs.](https://lyricstranslate.com/ru/language/interslavic)
 * ["Diky vepr" comic](https://slovene.online/isv/komiks-diky-vepr/) ("Wild pig").
 * ["Rastuči větr"](https://drive.google.com/uc?export=download&id=1Sktn6c29E1iV48Dq4DwjpuXGvFeFdqnV) ("The growing wind").
-* ["Dove Book"](https://drive.google.com/uc?export=download&id=19tG-QeVW_IKJaFunSYSfLlRE38s7IQz5). The Dove Book is a medieval historical document - a religious verse, written somewhere in the 1500's. A Russian legend of the creation of the world.
 * "Běla pala kalibra 7,62" (translation of  Ondřej Neff's "Bílá hůl ráže 7,62"). There are versions in [Cyrrilic](https://disk.yandex.ru/i/HzCjNuxhTJyURw) and [Latin script](https://disk.yandex.ru/i/TPXnwn_xt02_eA).
 * [Card Game "NOVY-2084"](https://drive.google.com/file/d/1Zzj-y4JnVLUIB94x_drubdtR9QIZlks2/view) .
 * [Religious texts](https://docs.google.com/document/d/1bYOy7VR6aIMhmoX0i_tOatNGlBs_TC0DyldFtxEKNhk/edit) by Miroslav Vančo:  [Dekalog](https://docs.google.com/document/d/13eLrO60LpqURu1xrsonMbcOY9-NP1jsG718GlMqWzqk/edit?usp=sharing) • [Ave Maria](https://docs.google.com/document/d/1bqi5tpnZbjGMsPRnu-DaJXQiBJPR6hDoe54653qxd48/edit?usp=sharing) • [Pater noster](https://docs.google.com/document/d/14NWhQa7SHO1IJKZn-WhJsJ4uTPgXFLYDyaIhmYDgriA/edit?usp=sharing) • [Gloria Patri](https://docs.google.com/document/d/1Bjx45uQek_TDA7vqmOG6D7hh4S0tmReUxYAF78PuAoM/edit?usp=sharing) • [Rozvěnec Děvice Marije](https://docs.google.com/document/d/1ED8DyvE8OzZGVZQ-b1HRGD8ABouqIpZGbQVZLkIPLKU/edit?usp=sharing) • [Apostolsky symbol věry](https://docs.google.com/document/d/14M5fy22XJLmmtd_ltXEpkIsMFKPS6r5rTNmErpcMHNU/edit?usp=sharing)
@@ -163,7 +163,7 @@
 * [Interslavic news](https://interslavic.news/) 
 * [Interslavic.fun](https://interslavic.fun/)
 * [Interslavic language portal](https://interslavic-language.org/) 
-* https://interslavic.vercel.app/en/
+* https://interslavic.vercel.app/
 * [Casa Santa Fe Cuba](https://www.casasantafecuba.com/me/)
 * [Tesseract Finance](https://tesr.finance/#/)
 ## Projects in progress
@@ -201,6 +201,8 @@
 * [Prototype of a neural network auto-translator](https://huggingface.co/spaces/Salavat/Interslavic-Translator-NLLB200) by Salavat
 
 * [Linguistic utilities for Interslavic language](https://github.com/medzuslovjansky/js-utils)
+
+* [ISV_NLP_utils](https://github.com/bt2901/ISV_NLP_utils) by Viktor Bulatov. Some general-purpose utils helpful for parsing/sanity-checking/preprocessing.
 
 * [Interslavic keyboards for Mac](https://github.com/orlean-git/isv_mac_keyboards) 
 
