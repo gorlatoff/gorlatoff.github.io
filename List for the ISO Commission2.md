@@ -13,6 +13,7 @@
 * [List of recommended Interslavic words](https://gorlatoff.github.io/fraznik.html) 
 * ["Govoriš li medžuslovjansky?" book by Jakim Sekyra](https://drive.google.com/file/d/1-qYUKVZAoFd1sveBNebeIGbxQJK4tcSf/edit)
 * [Interslavic-polish dialogs in Duolingo Stories](https://duostories.org/inte-pl) (it is not official)
+* [Flash cards for Anki](https://ankiweb.net/shared/decks/interslavic) 
 
 ## Teksty s korektorami (Texts that were proofread):
 
@@ -195,7 +196,10 @@
   * [Noun declinator](http://steen.free.fr/interslavic/declinator.html)
   * [Adjective declinator](http://steen.free.fr/interslavic/adjectivator.html) 
   * [Voting Machine](http://steen.free.fr/interslavic/voting_machine.html) (tool for new words creation) 
-
+* Keyboards: 
+  * [Interslavic keyboards for Mac](https://github.com/orlean-git/isv_mac_keyboards) 
+  * [Interslavic modification of GBoard for Android](http://usachov.eu/g)
+  *  [Interslavic keyboards for Windows](http://tyflonet.com/siciliano/klaviatury/)
 * Dictionary bot Mašina in [Telegram](https://t.me/mashina_slovnik_bot) and [Discord](https://discord.com/channels/879438774323535914/913744290826555442) (it helps to access thousands of unofficial words created by the community)
 * [Prototype of an automatic translator](https://interslavic-dictionary.com/172/translator)
 * [Prototype of a neural network auto-translator](https://huggingface.co/spaces/Salavat/Interslavic-Translator-NLLB200) by Salavat
@@ -203,6 +207,4 @@
 * [Linguistic utilities for Interslavic language](https://github.com/medzuslovjansky/js-utils)
 
 * [ISV_NLP_utils](https://github.com/bt2901/ISV_NLP_utils) by Viktor Bulatov. Some general-purpose utils helpful for parsing/sanity-checking/preprocessing.
-
-* [Interslavic keyboards for Mac](https://github.com/orlean-git/isv_mac_keyboards) 
 
