@@ -179,8 +179,10 @@
 * [List of Slavic idioms with translation into Interslavic](https://docs.google.com/spreadsheets/d/1hGvhqT9-lw3iKONOmu4wkxeMhDesgUlRp0CNKl6JkVk/edit?usp=sharing).
 
 ## Utilities
-
-- [Keyboard layouts](https://tyflonet.com/siciliano/klaviatury/)
+* Keyboards: 
+  * [Interslavic keyboards for Mac](https://github.com/orlean-git/isv_mac_keyboards) 
+  * [Interslavic modification of GBoard for Android](http://usachov.eu/g)
+  *  [Interslavic keyboards for Windows](http://tyflonet.com/siciliano/klaviatury/)
 * [Transliterators](#transliterators)
 	+ [Transliterator by Yaroslav Serheiev](https://interslavic.fun/resources/applets/transliterator/)
 	+ [Basic transliterator by Jan van Steenbergen](http://steen.free.fr/interslavic/transliterator.html)
@@ -198,10 +200,6 @@
   * [Noun declinator](http://steen.free.fr/interslavic/declinator.html)
   * [Adjective declinator](http://steen.free.fr/interslavic/adjectivator.html) 
   * [Voting Machine](http://steen.free.fr/interslavic/voting_machine.html) (tool for new words creation) 
-* Keyboards: 
-  * [Interslavic keyboards for Mac](https://github.com/orlean-git/isv_mac_keyboards) 
-  * [Interslavic modification of GBoard for Android](http://usachov.eu/g)
-  *  [Interslavic keyboards for Windows](http://tyflonet.com/siciliano/klaviatury/)
 * Dictionary bot Mašina in [Telegram](https://t.me/mashina_slovnik_bot) and [Discord](https://discord.com/channels/879438774323535914/913744290826555442) (it helps to access thousands of unofficial words created by the community)
 * [Prototype of an automatic translator](https://interslavic-dictionary.com/172/translator)
 * [Prototype of a neural network auto-translator](https://huggingface.co/spaces/Salavat/Interslavic-Translator-NLLB200) by Salavat
