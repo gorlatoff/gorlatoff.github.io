@@ -14,14 +14,14 @@
 * ["Govoriš li medžuslovjansky?" book by Jakim Sekyra](https://drive.google.com/file/d/1-qYUKVZAoFd1sveBNebeIGbxQJK4tcSf/edit)
 * [Interslavic-polish dialogs in Duolingo Stories](https://duostories.org/inte-pl) (it is not official)
 
-### Teksty s korektorami (Texts that were proofread):
+## Teksty s korektorami (Texts that were proofread):
 
 * ["Turistične konversacije"](https://hackmd.io/@xlO6E2n-S5eX4tROzsbTpg/ryr9565Ni) (an Interslavic language phrasebook). *Certainly, the phrases from this phrasebook are the most understandable of all texts that exist in Interslavic. All problematic parts were discusssed and corrected by people from various nations.*
 * [Texts of Melac's songs](https://melacpise.wordpress.com/teksty-melacevyh-pesnej/) (a known Interslavic creator)
 * Melac's book ["Nehaj nesut nas běle oblaky"](https://www.wattpad.com/story/357549526-nehaj-nesut-nas-běle-oblaky) ("Let white clouds carry us")
 * ["Čitateljnik" anthology](https://books.google.nl/books?id=i3lhDwAAQBAJ) (2018). It contains 36 different texts in one hundred pages.
 
-### Reading:
+## Reading:
 * [Medžuviki](http://isv.miraheze.org/) (Developing encyclopedia in Interslavic). [It has 446 articles](https://isv.miraheze.org/w/index.php?title=Special:AllPages&hideredirects=1) 
 * [The corpus of Interslavic texts](https://app.box.com/s/8zioa8m5kf8wv40ipif9r1b76tl0r5jw), it contains over a thousand texts from dozens of authors.
 * [A translation of the book "The Little Prince"](http://steen.free.fr/interslavic/maly_princ.html)
