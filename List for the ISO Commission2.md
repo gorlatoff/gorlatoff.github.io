@@ -74,7 +74,7 @@
   * [More podcasts](https://tyflonet.com/siciliano/arhiv/)
 * Music:
   * [Music playlist](https://www.youtube.com/playlist?list=PL--S_Qi-XfGTs4Hpnukm4VyiymJJ5VZqF) (69 songs)
-  * [A playlist with song subtitles](https://youtube.com/playlist?list=PLIvLefDX3GpzPjDghoxCDT-recGqGvKh6&si=AbieAlHZknzuFG1K) (32 songs)
+  * [A playlist with song subtitles](https://youtube.com/playlist?list=PLIvLefDX3GpzPjDghoxCDT-recGqGvKh6&si=AbieAlHZknzuFG1K) (33 songs)
   * [Jeden kmen](https://kmen.bandcamp.com/album/basnj)
   * [Buda Kašaliova](https://budakashaliova.bandcamp.com/album/1982)
   * [Melac on Spotify](https://open.spotify.com/artist/7zQAFo2TbFOttXTiCH1Zfh?si=YxmK6JyLS9afS5z4_RFHBQ&utm_medium=share&utm_source=linktree&nd=1&dlsi=cc02f6ef8d96469e)
@@ -169,7 +169,7 @@
 ## Projects in progress
 
 * [Translation of Jan van Steenbergen's grammar into Slavic languages](https://interslavic.fun/) 
-* Audio version of the book "Nehaj nesut nas běle oblaky". 
+* Audio version of the boSok "Nehaj nesut nas běle oblaky". 
 * Animated movie "Sněžna děva".
 * Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander.
 * [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk).
