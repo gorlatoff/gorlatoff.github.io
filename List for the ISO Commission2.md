@@ -94,7 +94,7 @@
 
 * [Interslavic subtitles playlist](https://www.youtube.com/playlist?list=PLN7FF06VmIknLtvkovPAGBCcR_vIfO3zY)
 
-## Videogames
+## Videogames with optional Interslavic interface
 
 * [Minecraft](https://crowdin.com/project/minecraft/isv)
 * [Secret Saga: Xamadeon](https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/) 
@@ -175,6 +175,7 @@
 * Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander.
 * [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk).
 * [Unofficial dictionary / parralel translations corpus.](https://docs.google.com/spreadsheets/d/1rBG7brwbG4pR1j8_eVZapFZUSdaegSVjDH2V6Oqy00A/edit#gid=281935577)
+* [Translation of Telegram interface](https://t.me/translation_interslv) 
 
 ## Utilities
 
