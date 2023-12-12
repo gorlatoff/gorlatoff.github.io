@@ -17,23 +17,23 @@
 ## Teksty s korektorami (Texts that were proofread):
 
 * ["Turistične konversacije"](https://hackmd.io/@xlO6E2n-S5eX4tROzsbTpg/ryr9565Ni) (an Interslavic language phrasebook). *Certainly, the phrases from this phrasebook are the most understandable of all texts that exist in Interslavic. All problematic parts were discusssed and corrected by people from various nations.*
-* [Texts of Melac's songs](https://melacpise.wordpress.com/teksty-melacevyh-pesnej/) (a known Interslavic creator)
-* Melac's book ["Nehaj nesut nas běle oblaky"](https://www.wattpad.com/story/357549526-nehaj-nesut-nas-běle-oblaky) ("Let white clouds carry us")
+* [Texts of Melac's songs](https://melacpise.wordpress.com/teksty-melacevyh-pesnej/) (a known Interslavic creator).
+* Melac's book ["Nehaj nesut nas běle oblaky"](https://www.wattpad.com/story/357549526-nehaj-nesut-nas-běle-oblaky) ("Let white clouds carry us").
 * ["Čitateljnik" anthology](https://books.google.nl/books?id=i3lhDwAAQBAJ) (2018). It contains 36 different texts in one hundred pages.
 
 ## Reading:
-* [Medžuviki](http://isv.miraheze.org/) (Developing encyclopedia in Interslavic). [It has 446 articles](https://isv.miraheze.org/w/index.php?title=Special:AllPages&hideredirects=1) 
+* [Medžuviki](http://isv.miraheze.org/) (Developing encyclopedia in Interslavic). [It has 446 articles](https://isv.miraheze.org/w/index.php?title=Special:AllPages&hideredirects=1).
 * [The corpus of Interslavic texts](https://app.box.com/s/8zioa8m5kf8wv40ipif9r1b76tl0r5jw), it contains over a thousand texts from dozens of authors.
-* [A translation of the book "The Little Prince"](http://steen.free.fr/interslavic/maly_princ.html)
+* [A translation of the book "The Little Prince".](http://steen.free.fr/interslavic/maly_princ.html)
 * [Texts collection](http://steen.free.fr/interslavic/samples.html) by Jan van Steenbergen. It includes 14 sample texts that were added in 2006 and later.
-* A [translation](https://t.me/interslavicthings/210) of part of the chapters of Jacob Perelman's book "Physics at every Step":
+* A [translation](https://t.me/interslavicthings/210) of part of the chapters of Jacob Perelman's book "Physics at every Step".
 * [Text collection](https://isv.miraheze.org/wiki/Category:Sbornik:Vse) in Medžuviki: [Poems](https://isv.miraheze.org/wiki/Category:Sbornik:Poemy) • [Articles](https://isv.miraheze.org/wiki/Category:Sbornik:Členky) • [Books ](https://isv.miraheze.org/wiki/Category:Sbornik:Knigy)• [Jokes](https://isv.miraheze.org/wiki/Category:Sbornik:Zasměšky) • [Stories](https://isv.miraheze.org/wiki/Category:Sbornik:Povědky) • [Songs](https://isv.miraheze.org/wiki/Category:Sbornik:Pěsnje) • [Prayers](https://isv.miraheze.org/wiki/Category:Sbornik:Molitvy) • [Quotes and proverbs](https://isv.miraheze.org/wiki/Category:Sbornik:Citaty_i_prislovice) • [News and olds](https://isv.miraheze.org/wiki/Category:Sbornik:Věsti) • [Learning Interslavic](https://isv.miraheze.org/wiki/Category:Sbornik:Nauka_medžuslovjanskogo) • [Other texts](https://isv.miraheze.org/wiki/Category:Sbornik:Ine_teksty)
-* [Translations of songs](https://lyricstranslate.com/ru/language/interslavic)
-* ["Diky vepr" comic](https://slovene.online/isv/komiks-diky-vepr/) ("Wild pig")
-* ["Rastuči větr"](https://drive.google.com/uc?export=download&id=1Sktn6c29E1iV48Dq4DwjpuXGvFeFdqnV) ("The growing wind")
+* [Translations of songs.](https://lyricstranslate.com/ru/language/interslavic)
+* ["Diky vepr" comic](https://slovene.online/isv/komiks-diky-vepr/) ("Wild pig").
+* ["Rastuči větr"](https://drive.google.com/uc?export=download&id=1Sktn6c29E1iV48Dq4DwjpuXGvFeFdqnV) ("The growing wind").
 * ["Dove Book"](https://drive.google.com/uc?export=download&id=19tG-QeVW_IKJaFunSYSfLlRE38s7IQz5). The Dove Book is a medieval historical document - a religious verse, written somewhere in the 1500's. A Russian legend of the creation of the world.
 * "Běla pala kalibra 7,62" (translation of  Ondřej Neff's "Bílá hůl ráže 7,62"). There are versions in [Cyrrilic](https://disk.yandex.ru/i/HzCjNuxhTJyURw) and [Latin script](https://disk.yandex.ru/i/TPXnwn_xt02_eA).
-* [Card Game "NOVY-2084"](https://drive.google.com/file/d/1Zzj-y4JnVLUIB94x_drubdtR9QIZlks2/view) 
+* [Card Game "NOVY-2084"](https://drive.google.com/file/d/1Zzj-y4JnVLUIB94x_drubdtR9QIZlks2/view) .
 * [Religious texts](https://docs.google.com/document/d/1bYOy7VR6aIMhmoX0i_tOatNGlBs_TC0DyldFtxEKNhk/edit) by Miroslav Vančo:  [Dekalog](https://docs.google.com/document/d/13eLrO60LpqURu1xrsonMbcOY9-NP1jsG718GlMqWzqk/edit?usp=sharing) • [Ave Maria](https://docs.google.com/document/d/1bqi5tpnZbjGMsPRnu-DaJXQiBJPR6hDoe54653qxd48/edit?usp=sharing) • [Pater noster](https://docs.google.com/document/d/14NWhQa7SHO1IJKZn-WhJsJ4uTPgXFLYDyaIhmYDgriA/edit?usp=sharing) • [Gloria Patri](https://docs.google.com/document/d/1Bjx45uQek_TDA7vqmOG6D7hh4S0tmReUxYAF78PuAoM/edit?usp=sharing) • [Rozvěnec Děvice Marije](https://docs.google.com/document/d/1ED8DyvE8OzZGVZQ-b1HRGD8ABouqIpZGbQVZLkIPLKU/edit?usp=sharing) • [Apostolsky symbol věry](https://docs.google.com/document/d/14M5fy22XJLmmtd_ltXEpkIsMFKPS6r5rTNmErpcMHNU/edit?usp=sharing)
 
 
@@ -53,7 +53,7 @@
   * [Кирха](https://www.youtube.com/channel/UCbbFL99pxa2pv7p6kqsoMgA): (216 subscribers)
   * [Advanced Interslavic](https://www.youtube.com/@AdvancedInterslavic-no7gq): (76 subscribers)
   * [Miroslav Vančo - medžuslovjansky](https://www.youtube.com/@miroslavvanco-medzuslovian4147) (73 subscribers)
-  * [Flame and Ice with ISL](https://www.youtube.com/@flameandiceISL) (52 subscribers)
+  * [Flame and Ice with ISL](https://www.youtube.com/@flameandiceISL) (52 subscribers, 5425 views of videos in Interslavic)
   * [Rubinolas' channel](https://www.youtube.com/watch?v=LcSl2kV_NB0) (51 subscribers)
   * [Medžumatika](https://www.youtube.com/@medzumatika729) (42 subscribers)
   * [Međurybak's channel](https://www.youtube.com/@medzurybak) (32 subscribers)
@@ -98,8 +98,6 @@
 * [Minecraft](https://crowdin.com/project/minecraft/isv)
 * [Secret Saga: Xamadeon](https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/) 
 * [Hard Minus Classic Redux](https://store.steampowered.com/news/app/1591540/view/2977430240172987539)
-
-Sure, here are the social media links with hyperlinks in Markdown:
 
 ## Social media
 * Facebook:
@@ -154,7 +152,7 @@ Sure, here are the social media links with hyperlinks in Markdown:
 * Teletype:
   * [Цєним разумливост 💎 Сěnim razumlivost](https://teletype.in/@flame-ice)
   * [Interslavic things](https://teletype.in/@mashine_of_goodness)
-  * [Артур:](https://teletype.in/@arbtttrn6) 
+  * [Артур](https://teletype.in/@arbtttrn6) (has texts in Russian, Interslavic and Esperanto)
   * [Volkonaut](https://teletype.in/@volkonaut)
 * Interslavic in Tumblr ([1](https://www.tumblr.com/tagged/interslavic?sort=top), [2](https://www.tumblr.com/tagged/medžuslovjansky?sort=top))
 * [Old Tapatalk forum](https://www.tapatalk.com/groups/slovianski/index.php)
@@ -173,9 +171,9 @@ Sure, here are the social media links with hyperlinks in Markdown:
 * [Translation of Jan van Steenbergen's grammar into Slavic languages](https://interslavic.fun/) 
 * Audio version of the book "Nehaj nesut nas běle oblaky". 
 * Animated movie "Sněžna děva".
-* Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander
-* [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk)
-* [Unofficial dictionary / parralel translations corpus](https://docs.google.com/spreadsheets/d/1rBG7brwbG4pR1j8_eVZapFZUSdaegSVjDH2V6Oqy00A/edit#gid=281935577)
+* Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander.
+* [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk).
+* [Unofficial dictionary / parralel translations corpus.](https://docs.google.com/spreadsheets/d/1rBG7brwbG4pR1j8_eVZapFZUSdaegSVjDH2V6Oqy00A/edit#gid=281935577)
 
 ## Utilities
 
