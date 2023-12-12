@@ -169,13 +169,14 @@
 * [Tesseract Finance](https://tesr.finance/#/)
 ## Projects in progress
 
-* [Translation of Jan van Steenbergen's grammar into Slavic languages](https://interslavic.fun/) 
+* [Translation of Jan van Steenbergen's grammar into Slavic languages](https://interslavic.fun/).
 * Audio version of the boSok "Nehaj nesut nas běle oblaky". 
 * Animated movie "Sněžna děva".
 * Translation of the essay ["Meditations on Moloch"](https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.) by Scott Alexander.
 * [Volgan's book "Lěpke prsteni"](https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk).
 * [Unofficial dictionary / parralel translations corpus.](https://docs.google.com/spreadsheets/d/1rBG7brwbG4pR1j8_eVZapFZUSdaegSVjDH2V6Oqy00A/edit#gid=281935577)
-* [Translation of Telegram interface](https://t.me/translation_interslv) 
+* [Translation of Telegram interface](https://t.me/translation_interslv).
+* [List of Slavic idioms with translation into Interslavic](https://docs.google.com/spreadsheets/d/1hGvhqT9-lw3iKONOmu4wkxeMhDesgUlRp0CNKl6JkVk/edit?usp=sharing).
 
 ## Utilities
 
