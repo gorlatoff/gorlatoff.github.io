@@ -2,6 +2,8 @@
 
 *authors: Neudržima Mašina Dobra, Владимир Брєзин*
 
+Disclaimer: the materials are collected only for the analysis of the degree of prevalence of the language. The opinions expressed in the materials may not coincide with the opinion of the authors. the content of playlists may change for reasons beyond our control, because they are managed by other people.
+
 ## Educational literature
 * [Jan van Steenbergen's main site](http://steen.free.fr/interslavic/index.html) (has grammar, dictionaries and many more interesting things)
 * [The dictionary](https://interslavic-dictionary.com/)
