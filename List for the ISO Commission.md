@@ -97,11 +97,13 @@
 
 * [Interslavic subtitles playlist](https://www.youtube.com/playlist?list=PLN7FF06VmIknLtvkovPAGBCcR_vIfO3zY)
 
-## Videogames with optional Interslavic interface
+## Videogames 
 
-* [Minecraft](https://crowdin.com/project/minecraft/isv)
-* [Secret Saga: Xamadeon](https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/) 
-* [Hard Minus Classic Redux](https://store.steampowered.com/news/app/1591540/view/2977430240172987539)
+* Games with optional Interslavic interface
+
+  * [Minecraft](https://crowdin.com/project/minecraft/isv)
+  * [Secret Saga: Xamadeon](https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/) 
+  * [Hard Minus Classic Redux](https://store.steampowered.com/news/app/1591540/view/2977430240172987539)
 * [Interslavic Fаn dubbing for CivBE](https://app.box.com/s/i7xhusmdxt8ygnrwkmtoxyc8ea3y3ful) (promo video is [here](https://www.youtube.com/shorts/wPphMHD_Jqw))
 
 ## Social media
