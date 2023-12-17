@@ -123,7 +123,6 @@
   * [Мемы про жаб и обезьян на межславянском](https://vk.com/ms_frogs_apes) (107 subscribers)
   * [Мелац - музикант и меджусловјанскы творителј](https://vk.com/public213917828) (109 subscribers)
   * [Словянщина/Slovjanščina](https://vk.com/antonlandao) (125 subscribers)
-  * [Kolozor](https://vk.com/kolozor) (67 subscribers)
 * Instagram: 
   * [Interslavic Language](https://www.instagram.com/interslaviclanguage/) (2249 subscribers)
   * [InterSlavic Memes](https://www.instagram.com/interslavic_memes/) (431 subscriber)
