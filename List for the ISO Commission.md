@@ -2,7 +2,7 @@
 
 *authors: Neudržima Mašina Dobra, Владимир Брєзин*
 
-Disclaimer: the materials are collected only for the analysis of the degree of prevalence of the language. The opinions expressed in the materials may not coincide with the opinion of the authors. the content of playlists may change for reasons beyond our control, because they are managed by other people.
+**Disclaimer:** the materials are collected only for the analysis of the degree of prevalence of the language. The opinions expressed in the materials may not coincide with the opinion of the authors. the content of playlists may change for reasons beyond our control, because they are managed by other people.
 
 ## Educational literature
 * [Jan van Steenbergen's main site](http://steen.free.fr/interslavic/index.html) (has grammar, dictionaries and many more interesting things)
@@ -102,6 +102,7 @@ Disclaimer: the materials are collected only for the analysis of the degree of p
 * [Minecraft](https://crowdin.com/project/minecraft/isv)
 * [Secret Saga: Xamadeon](https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/) 
 * [Hard Minus Classic Redux](https://store.steampowered.com/news/app/1591540/view/2977430240172987539)
+* [Interslavic Fаn dubbing for CivBE](https://app.box.com/s/i7xhusmdxt8ygnrwkmtoxyc8ea3y3ful) (promo video is [here](https://www.youtube.com/shorts/wPphMHD_Jqw))
 
 ## Social media
 * Facebook:
