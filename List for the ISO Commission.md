@@ -40,6 +40,7 @@
 * Youtube channels:
 
   * [Mihal Swat's channel](https://www.youtube.com/@interslavicofficial) (40.7 thousand subscribers)
+  * [Medžuslovjansky jezyk](https://www.youtube.com/@Medzuslovjanskyjezyk) (2.2 thousand subscribers)
   * [Melac's channel](https://www.youtube.com/@MelacInterslavic)  (1.5 thousand subscribers)
   * [Vojtěh Merunka's channel](https://www.youtube.com/@vojtieh) (781 subscribers)
   * [Ranmaru Rei's channel](https://www.youtube.com/@RanmaruRei) (769 subscribers)
@@ -55,7 +56,7 @@
   * [Medžumatika](https://www.youtube.com/@medzumatika729) (42 subscribers)
   * [Međurybak's channel](https://www.youtube.com/@medzurybak) (32 subscribers)
   * [SLOVJANSKY PROSTOR](https://www.youtube.com/@Matej_Milach/videos) (videos in Interslavic and Polish language) (27 subscribers)
-  * [Interslavic things](https://www.youtube.com/@interslavicthings): (14 subscribers)
+  * [Interslavic things](https://www.youtube.com/@interslavicthings) (14 subscribers)
   * "Finding inspiration with Sandra" channel (["Learn Interslavic language" lessons](https://www.youtube.com/playlist?list=PLLErD4LWIUMvdONcueoVkBAvE69VLPnh5)) (1.71 thousand subscribers)
   
 * Tiktok channels:
