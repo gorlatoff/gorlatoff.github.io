@@ -48,8 +48,8 @@ class AdditiveSynth {
 function setup() {
   const oscillatorContainer = document.getElementById('oscillator-container');
   canvas = document.createElement('canvas');
-  canvas.width = window.innerWidth*0.8;
-  canvas.height = window.innerHeight*0.8;
+  canvas.width = window.innerWidth*0.9;
+  canvas.height = window.innerHeight*0.9;
   oscillatorContainer.appendChild(canvas); // Append the canvas to the oscillator container
   ctx = canvas.getContext('2d');
 
