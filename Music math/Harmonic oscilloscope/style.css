@@ -1,0 +1,23 @@
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+#button-container {
+  position: fixed;
+  bottom:0;
+  left: 0;
+  z-index: 2;
+}
+
+/* Скрываем полосу прокрутки для всех браузеров */
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+/* Скрываем полосу прокрутки для IE, Edge и Firefox */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
