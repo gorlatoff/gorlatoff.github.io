@@ -25,12 +25,13 @@ class AdditiveSynth {
     }).connect(analyser).toDestination();
 
     this.button = document.createElement('button');
-    this.button = document.createElement('button');
-    this.button.style.backgroundColor = 'rgb(25, 70, 81)';
-    this.button.style.color = 'rgb(255, 255, 255)';
-    this.button.style.fontSize = '16px';
-    this.button.style.border = 'none';
     this.button.textContent = freq + ' Hz';
+    // this.button = document.createElement('button');
+    // this.button.style.backgroundColor = 'rgb(25, 70, 81)';
+    // this.button.style.color = 'rgb(255, 255, 255)';
+    // this.button.style.fontSize = '16px';
+    // this.button.style.border = 'none';
+    // this.button.textContent = freq + ' Hz';
     this.button.addEventListener('mousedown', this.playNote.bind(this));
     this.button.addEventListener('mouseup', this.stopNote.bind(this));
     document.getElementById('button-container').appendChild(this.button);
