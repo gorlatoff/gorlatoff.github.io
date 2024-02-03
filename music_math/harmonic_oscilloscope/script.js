@@ -110,13 +110,13 @@ function drawWaveform() {
   let waveEnd = 121;
   waveform = croppedWaveform.slice(0, waveEnd);
   
-  const scale = canvas.height;
+  const scale = canvas.height * 0.5;
   const offset = canvas.height / 2;
   
   for (let i = 0; i < waveform.length; i++) {
     // const x = (i / croppedWaveform.length) * canvas.width;
     let x = map(i, 0, waveform.length, 0, canvas.width);
-    const y = croppedWaveform[i] * scale * 0.5 + offset;
+    const y = croppedWaveform[i] * scale + offset;
 
     if (i === 0) {
       ctx.moveTo(x, y);
