@@ -49,7 +49,7 @@ function setup() {
   const oscillatorContainer = document.getElementById('oscillator-container');
   canvas = document.createElement('canvas');
   canvas.width = window.innerWidth*0.94;
-  canvas.height = window.innerHeight*0.85;
+  canvas.height = window.innerHeight*0.88;
   oscillatorContainer.appendChild(canvas); // Append the canvas to the oscillator container
   ctx = canvas.getContext('2d');
 
