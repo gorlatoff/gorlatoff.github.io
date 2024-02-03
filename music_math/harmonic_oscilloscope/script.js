@@ -15,7 +15,7 @@ class AdditiveSynth {
         type: "sine",
       },
       envelope: {
-        attack: 0.4,
+        attack: 0.6,
         decay: 1.2,
         sustain: 0.9,
         release: 0.6,
@@ -26,12 +26,6 @@ class AdditiveSynth {
 
     this.button = document.createElement('button');
     this.button.textContent = freq + ' Hz';
-    // this.button = document.createElement('button');
-    // this.button.style.backgroundColor = 'rgb(25, 70, 81)';
-    // this.button.style.color = 'rgb(255, 255, 255)';
-    // this.button.style.fontSize = '16px';
-    // this.button.style.border = 'none';
-    // this.button.textContent = freq + ' Hz';
     this.button.addEventListener('mousedown', this.playNote.bind(this));
     this.button.addEventListener('mouseup', this.stopNote.bind(this));
     document.getElementById('button-container').appendChild(this.button);
@@ -111,12 +105,14 @@ function drawWaveform() {
   let waveEnd = 121;
   waveform = croppedWaveform.slice(0, waveEnd);
   
-  const scale = canvas.height * 0.5;
+  const scale = canvas.height * 0.48;
   const offset = canvas.height / 2;
   
+  // if (waveform[waveform.length-1]) >
+
   for (let i = 0; i < waveform.length; i++) {
     // const x = (i / croppedWaveform.length) * canvas.width;
-    let x = map(i, 0, waveform.length, 0, canvas.width);
+    let x = map(i, 0, waveform.length-1, 0, canvas.width);
     const y = croppedWaveform[i] * scale + offset;
 
     if (i === 0) {
