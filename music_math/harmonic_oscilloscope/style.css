@@ -11,13 +11,13 @@ html, body {
   z-index: 2;
 }
 
-/* Скрываем полосу прокрутки для всех браузеров */
+/* Скрываем полосу прокрутки для всех браузеров 
 ::-webkit-scrollbar {
   width: 0px;
 }
 
-/* Скрываем полосу прокрутки для IE, Edge и Firefox */
-* {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
+/* Скрываем полосу прокрутки для IE, Edge и Firefox 
+{
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+}*/
