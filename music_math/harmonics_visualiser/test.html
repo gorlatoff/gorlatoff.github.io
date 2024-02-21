@@ -1,0 +1,79 @@
+<html>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #333;
+    color: white;
+    font-family: Noto Sans, Roboto, sans-serif;
+    display: grid;
+    grid-template-rows: auto 1fr; /* Первая строка будет автоматически подгоняться под размер контента, вторая - займет оставшееся пространство */
+  }
+
+  #row {
+    padding-left: 10px;
+  }
+
+  canvas {
+    display: block;
+    background-color: rgba(9, 9, 15, 1);
+/*    width: 100%;
+    height: 100%; */
+  }
+
+  #canvas-container {
+      display: block;
+    background-color: grey;
+    grid-row: 2 / 3; /* Занимает всю вторую строку сетки */
+    width: 100%; /* Занимает всю доступную ширину */
+    min-height: 100%; /* Занимает всю доступную высоту */
+  }
+
+  input {
+    width: 24px;
+    text-align: center;
+    border: none;
+  }
+
+  #ratio1,
+  #divided,
+  #ratio2,
+  #gcd,
+  #gcd_value {
+    display: inline-block;
+    margin: 3px;
+  }
+
+  #gcd {
+    margin-left: 10px;
+  }
+
+  #ratio1 {
+    background-color: #ff9999;
+  }
+
+  #ratio2 {
+    background-color: #99ff99;
+  }
+</style>
+</head>
+<body>
+  <div id="row">
+    <input type="text" id="ratio1" value="3/2" placeholder="Enter fraction 1">
+    × <div id="divided">4/3</div> =
+    <input type="text" id="ratio2" value="2/1" placeholder="Enter fraction 2">
+    <div id="gcd">Тоника: <div id="gcd_value"></div></div>
+  </div>
+  <div id="canvas-container">
+    <canvas id="myCanvas"></canvas>
+  </div>
+</body>
+<script>
+const canvas = document.getElementById('myCanvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
+const ctx = canvas.getContext("2d");
+
+</script>
+</html>

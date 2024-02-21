@@ -1,68 +1,69 @@
 <html>
 <style>
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #333;
-  color: white;
-  font-family: Noto Sans, Roboto, sans-serif;
-}
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #333;
+    color: white;
+    font-family: Noto Sans, Roboto, sans-serif;
+    display: grid;
+    grid-template-rows: auto 1fr; /* Первая строка будет автоматически подгоняться под размер контента, вторая - займет оставшееся пространство */
+  }
 
-main {
-  flex: 1; /* Разрешает main занимать всю оставшуюся высоту */
-  display: flex;
-  flex-direction: column;
-}
-#row {
-  flex: 0 0 auto; /* row будет иметь высоту в зависимости от содержимого */
-  padding-left: 10px;
-}
+  #row {
+    user-select: none;
+    padding-left: 10px;
+  }
 
-canvas {
-  flex: 1; /* Разрешает canvas занимать всю оставшуюся высоту */
-  background-color: rgba(9, 9, 15, 1);
-}
-input {
-  width: 24px;
-  text-align: center;
-  border: none;
-}
+  canvas {
+    background-color: rgba(9, 9, 15, 1);
+  }
 
-#ratio1,
-#divided,
-#ratio2,
-#gcd,
-#gcd_value {
-  display: inline-block;
-  margin: 3px;
-}
+  input {
+    width: 24px;
+    text-align: center;
+    border: none;
+  }
 
-#gcd {
-  margin-left: 10px;
-}
+  #ratio1,
+  #divided,
+  #ratio2,
+  #gcd,
+  #gcd_value {
+    display: inline-block;
+    margin: 3px;
+  }
 
-#ratio1 {
-  background-color: #ff9999;
-}
+  #gcd {
+    margin-left: 10px;
+  }
 
-#ratio2 {
-  background-color: #99ff99;
-}
+  #ratio1 {
+    background-color: #ff9999;
+  }
+
+  #ratio2 {
+    background-color: #99ff99;
+  }
 </style>
-  <main>
-    <div id="row">
-      <input type="text" id="ratio1" value="3/2" placeholder="Enter fraction 1">
-      × <div id="divided">4/3</div> =
-      <input type="text" id="ratio2" value="2/1" placeholder="Enter fraction 2">
-      <div id="gcd">Тоника: <div id="gcd_value"></div></div>
-    </div>
-    <canvas id="myCanvas"></canvas>
-  </main>
+</head>
+<body>
+  <div id="row">
+    <input type="text" id="ratio1" value="3/2" placeholder="Enter fraction 1">
+    × <div id="divided">4/3</div> =
+    <input type="text" id="ratio2" value="2/1" placeholder="Enter fraction 2">
+    <div id="gcd">Тоника: <div id="gcd_value"></div></div>
+  </div>
+  <canvas id="myCanvas"></canvas>
+</body>
 <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
 <script>
 
+const canvas = document.getElementById('myCanvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
+const ctx = canvas.getContext("2d");
 
 class Rational {
   constructor(numerator, denominator) {
@@ -105,10 +106,7 @@ class Rational {
 }
 
 
-const canvas = document.getElementById('myCanvas');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const ctx = canvas.getContext("2d");
+
 
 let notes = [];
 let selectedNote = null;
@@ -187,7 +185,6 @@ function mousePressed(event) {
   playedHarmonic = null;
   const rect = canvas.getBoundingClientRect();
   for (let note of notes) {
-      console.log(event.clientX, note.x, canvas.offsetLeft)
       distX = event.clientX - (note.x - 2*circleR) - canvas.offsetLeft ;
       distY = event.clientY - note.y - canvas.offsetTop + rectHeight/2;
       const d = Math.hypot(distX, distY);
@@ -227,6 +224,7 @@ class Harmonic {
     this.noteLength = noteLength;
     this.x = x;
     this.vol = vol;
+    this.volX = vol*4-8;
     this.noteColor = noteColor;
     this.freq = freq;
     const analyser = new Tone.Analyser("waveform", 256).toDestination();
@@ -243,7 +241,7 @@ class Harmonic {
         releaseCurve : "exponential",
       },
       portamento: 0,
-      volume: this.vol
+      volume: this.volX
     }).toDestination();
    this.synth.connect(analyser);
   }
@@ -318,15 +316,6 @@ class Note {
   }
 }
 
-updateCanvasSize();
-setup();
-setInterval(draw, 1000 / 60);
-
-function updateCanvasSize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
 
 document.getElementById('ratio1').addEventListener('input', setup);
 document.getElementById('ratio2').addEventListener('input', setup);
@@ -363,10 +352,10 @@ document.getElementById('ratio2').addEventListener('input', updateResult);
 
 function updateCanvasSize() {
   canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
 }
 
-// Вызываем функцию при загрузке страницы, чтобы отобразить начальный результат
+// // Вызываем функцию при загрузке страницы, чтобы отобразить начальный результат
 updateResult();
 updateCanvasSize();
 setup();
