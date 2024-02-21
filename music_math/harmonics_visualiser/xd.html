@@ -178,7 +178,7 @@ let distX = 0;
 function mouseDragged(event) {
   let rect = canvas.getBoundingClientRect();
   if (selectedNote) {
-    selectedNote.x = event.clientX - rect.left - distX;
+    selectedNote.x = event.clientX - rect.left - distX + 2*circleR;
     draw();
   }
 }
@@ -187,10 +187,11 @@ function mousePressed(event) {
   playedHarmonic = null;
   const rect = canvas.getBoundingClientRect();
   for (let note of notes) {
-      distX = event.clientX - note.x - canvas.offsetLeft;
-      distY = event.clientY - note.y - canvas.offsetTop;
+      console.log(event.clientX, note.x, canvas.offsetLeft)
+      distX = event.clientX - (note.x - 2*circleR) - canvas.offsetLeft ;
+      distY = event.clientY - note.y - canvas.offsetTop + rectHeight/2;
       const d = Math.hypot(distX, distY);
-      if (d < 15) {
+      if ( d < 15) {
         selectedNote = note;
         note.playSound();
         break;
@@ -201,8 +202,8 @@ function mousePressed(event) {
     for (let harmonic of note.harmonics) {
       if (event.clientX - rect.left > harmonic.x &&
           event.clientX - rect.left < harmonic.x + harmonic.noteLength &&
-          event.clientY - rect.top > harmonic.y - 2 &&
-          event.clientY - rect.top < harmonic.y + harmonic.h + 2) {
+          event.clientY - rect.top > harmonic.y - rectHeight/2 &&
+          event.clientY - rect.top < harmonic.y + harmonic.h + rectHeight/2) {
 
         
         playedHarmonic = harmonic;
