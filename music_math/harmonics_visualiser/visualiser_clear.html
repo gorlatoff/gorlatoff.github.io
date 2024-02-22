@@ -61,8 +61,6 @@
 <script>
 
 const canvas = document.getElementById('myCanvas');
-// canvas.width = window.innerWidth;
-// canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
 const ctx = canvas.getContext("2d");
 
 class Rational {
@@ -160,6 +158,33 @@ function setup() {
   notes.push(new Note(100, 200, 100, 150, 15, color2));
   notes.push(new Note(100, 300, 200, 150, 15, color3));
 }
+
+function updateResult() {
+  let ratio1Input = document.getElementById('ratio1').value;
+  let ratio2Input = document.getElementById('ratio2').value;
+
+  // Парсим строки в рациональные дроби
+  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
+  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
+
+  let note1 = new Rational(numerator1, denominator1);
+  let note2 = new Rational(numerator2, denominator2);
+
+  // Вычисляем тонику
+  let tonica = Rational.gcdOfRationals(note1, note2);
+
+  // Вычисляем результат деления
+  let divisionResult = Rational.divide(note2, note1);
+
+  // Вычисляем НОД
+  let gcdResult = Rational.gcdOfRationals(note1, note2);
+  gcdResult = `${gcdResult.numerator}/${gcdResult.denominator}`
+
+  // Обновляем результат в HTML
+  document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
+  document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
+}
+
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -319,32 +344,6 @@ class Note {
 document.getElementById('ratio1').addEventListener('input', setup);
 document.getElementById('ratio2').addEventListener('input', setup);
 
-function updateResult() {
-  let ratio1Input = document.getElementById('ratio1').value;
-  let ratio2Input = document.getElementById('ratio2').value;
-
-  // Парсим строки в рациональные дроби
-  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
-  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
-
-  let note1 = new Rational(numerator1, denominator1);
-  let note2 = new Rational(numerator2, denominator2);
-
-  // Вычисляем тонику
-  let tonica = Rational.gcdOfRationals(note1, note2);
-
-  // Вычисляем результат деления
-  let divisionResult = Rational.divide(note2, note1);
-
-  // Вычисляем НОД
-  let gcdResult = Rational.gcdOfRationals(note1, note2);
-  gcdResult = `${gcdResult.numerator}/${gcdResult.denominator}`
-
-  // Обновляем результат в HTML
-  document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
-  document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
-}
-
 // Вызываем функцию при изменении значений в полях ввода
 document.getElementById('ratio1').addEventListener('input', updateResult);
 document.getElementById('ratio2').addEventListener('input', updateResult);
@@ -354,7 +353,7 @@ function updateCanvasSize() {
   canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
 }
 
-// // Вызываем функцию при загрузке страницы, чтобы отобразить начальный результат
+// Вызываем функции при загрузке страницы, чтобы отобразить начальный результат
 updateResult();
 updateCanvasSize();
 setup();
