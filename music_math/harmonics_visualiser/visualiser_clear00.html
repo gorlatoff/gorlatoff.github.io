@@ -104,56 +104,74 @@ class Rational {
 }
 
 
+const circleR = 5;
+const rectHeight = 4;
+const checkNumber = (number) => Number.isInteger(number) && (number > 0 && number < 20);
+
 let notes = [];
 let selectedNote = null;
 let playedHarmonic = null;
-const circleR = 5;
-const rectHeight = 4;
+let ratio1Input = document.getElementById('ratio1').value;
+let ratio2Input = document.getElementById('ratio2').value;
+let note1, note2, tonica;
 
-// let ratio1Input = document.getElementById('ratio1').value;
-// let ratio2Input = document.getElementById('ratio2').value;
+// Парсим строки в рациональные дроби
+function parseRatioInput(ratioInput) {
+ let [numerator, denominator] = ratioInput.split('/').map(Number);
+ return checkNumber(numerator) && checkNumber(denominator) ? new Rational(numerator, denominator) : null;
+}
 
-// // Парсим строки в рациональные дроби
-// let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
-// let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
+ratio1Input = parseRatioInput(ratio1Input);
+ratio2Input = parseRatioInput(ratio2Input);
+note1 = ratio1Input;
+note2 = ratio2Input;
 
-// let note1 = new Rational(numerator1, denominator1);
-// let note2 = new Rational(numerator2, denominator2);
+if (note1 && note2) {
+ // Вычисляем тонику
+ tonica = Rational.gcdOfRationals(note1, note2);
+}
 
+let color1 = { r: 128, g: 128, b: 128, a: 0.5 }; // серый с прозрачностью 50%
+let color2 = { r: 255, g: 0, b: 0, a: 1 }; // красный
+let color3 = { r: 0, g: 255, b: 0, a: 1 }; // зеленый
+
+// Добавляем ноты в массив с использованием объектов цвета
+if (note1 && note2) {
+ notes = [];
+ notes.push(new Note(100, 100, 10, 600, 25, color1));
+ notes.push(new Note(100, 200, 100, 150, 15, color2));
+ notes.push(new Note(100, 300, 200, 150, 15, color3));
+}
 
 function setup() {
-  let ratio1Input = document.getElementById('ratio1').value;
-  let ratio2Input = document.getElementById('ratio2').value;
+ ratio1Input = document.getElementById('ratio1').value;
+ ratio2Input = document.getElementById('ratio2').value;
 
-  // Парсим строки в рациональные дроби
-  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
-  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
+ note1 = parseRatioInput(ratio1Input);
+ note2 = parseRatioInput(ratio2Input);
 
-  const checkNumber = (number) => {
-    return Number.isInteger(number) && (number > 0 && number < 20);
-  };
-
-  if (checkNumber(numerator1) &&
-      checkNumber(denominator1) &&
-      checkNumber(numerator2) &&
-      checkNumber(denominator2)) {
-    note1 = new Rational(numerator1, denominator1);
-    note2 = new Rational(numerator2, denominator2);
-  }
-
-  // Вычисляем тонику
-  let tonica = Rational.gcdOfRationals(note1, note2);
-
-  // Пример использования объекта цвета
-  let color1 = { r: 128, g: 128, b: 128, a: 0.5 }; // серый с прозрачностью 50%
-  let color2 = { r: 255, g: 0, b: 0, a: 1 }; // красный
-  let color3 = { r: 0, g: 255, b: 0, a: 1 }; // зеленый
-
-  // Добавляем ноты в массив с использованием объектов цвета
-  notes = [new Note(100, tonica, 10, 600, 25, color1), 
-           new Note(100, note1, 100, 150, 15, color2),
-           new Note(100, note2, 200, 150, 15, color3)]
+ if (note1 && note2) {
+   // Вычисляем тонику
+   tonica = Rational.gcdOfRationals(note1, note2);
+ }
 }
+
+function updateResult() {
+ if (note1 && note2) {
+   // Вычисляем результат деления
+   let divisionResult = Rational.divide(note2, note1);
+
+   // Вычисляем НОД
+   let gcdResult = Rational.gcdOfRationals(note1, note2);
+   gcdResult = `${gcdResult.numerator}/${gcdResult.denominator}`
+
+   // Обновляем результат в HTML
+   document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
+   document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
+ }
+}
+
+
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -161,39 +179,6 @@ function draw() {
     note.display();
   }
 }
-
-
-function updateResult() {
-  let ratio1Input = document.getElementById('ratio1').value;
-  let ratio2Input = document.getElementById('ratio2').value;
-
-  // Парсим строки в рациональные дроби
-  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
-  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
-
-  let note1 = new Rational(numerator1, denominator1);
-  let note2 = new Rational(numerator2, denominator2);
-  // Вычисляем тонику
-  let tonica = Rational.gcdOfRationals(note1, note2);
-
-  // Вычисляем результат деления
-  let divisionResult = Rational.divide(note2, note1);
-
-  // Вычисляем НОД
-  let gcdResult = Rational.gcdOfRationals(note1, note2);
-  gcdResult = `${gcdResult.numerator}/${gcdResult.denominator}`
-
-  // Обновляем результат в HTML
-  document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
-  document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
-
-
-
-  draw();
-}
-
-
-
 
 function mouseReleased() {
   selectedNote = null;
@@ -309,8 +294,9 @@ function drawCircle(x, y, radius, fillColor) {
 }
 
 class Note {
-  constructor(freq, ratio, x, noteLength, numHarmonics, noteColor) {
-    this.freq = freq * ratio.numerator / ratio.denominator;
+  constructor(baseFreq, freq, x, noteLength, numHarmonics, noteColor) {
+    this.baseFreq = baseFreq;
+    this.freq = freq;
     this.x = x;
     this.noteLength = noteLength;
     this.numHarmonics = numHarmonics;
