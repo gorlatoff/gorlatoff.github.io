@@ -57,7 +57,7 @@
   </div>
   <canvas id="myCanvas"></canvas>
 </body>
-<script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+<script src="Tone.js"></script>
 <script>
 
 const canvas = document.getElementById('myCanvas');
@@ -103,14 +103,11 @@ class Rational {
   }
 }
 
-
 let notes = [];
 let selectedNote = null;
 let playedHarmonic = null;
 const circleR = 5;
 const rectHeight = 4;
-
-
 
 function setup() {
   let ratio1Input = document.getElementById('ratio1').value;
@@ -144,28 +141,6 @@ function setup() {
   notes = [new Note(100, tonica, 10, 600, 25, color1), 
            new Note(100, note1, 100, 150, 15, color2),
            new Note(100, note2, 200, 150, 15, color3)]
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (let note of notes) {
-    note.display();
-  }
-}
-
-
-function updateResult() {
-  let ratio1Input = document.getElementById('ratio1').value;
-  let ratio2Input = document.getElementById('ratio2').value;
-
-  // Парсим строки в рациональные дроби
-  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
-  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
-
-  let note1 = new Rational(numerator1, denominator1);
-  let note2 = new Rational(numerator2, denominator2);
-  // Вычисляем тонику
-  let tonica = Rational.gcdOfRationals(note1, note2);
 
   // Вычисляем результат деления
   let divisionResult = Rational.divide(note2, note1);
@@ -177,13 +152,14 @@ function updateResult() {
   // Обновляем результат в HTML
   document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
   document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
-
-
-
-  draw();
 }
 
-
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let note of notes) {
+    note.display();
+  }
+}
 
 
 function mouseReleased() {
@@ -195,7 +171,6 @@ function mouseDragged(event) {
   let rect = canvas.getBoundingClientRect();
   if (selectedNote) {
     selectedNote.x = event.clientX - rect.left - distX + 2*circleR;
-    draw();
   }
 }
 
@@ -332,13 +307,8 @@ class Note {
   }
 }
 
-
 document.getElementById('ratio1').addEventListener('input', setup);
 document.getElementById('ratio2').addEventListener('input', setup);
-
-// Вызываем функцию при изменении значений в полях ввода
-document.getElementById('ratio1').addEventListener('input', updateResult);
-document.getElementById('ratio2').addEventListener('input', updateResult);
 
 function updateCanvasSize() {
   canvas.width = window.innerWidth;
@@ -347,7 +317,6 @@ function updateCanvasSize() {
 
 // Вызываем функции при загрузке страницы, чтобы отобразить начальный результат
 setup();
-updateResult();
 updateCanvasSize();
 setInterval(draw, 1000 / 60);
 
