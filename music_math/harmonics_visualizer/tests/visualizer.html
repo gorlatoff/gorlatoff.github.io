@@ -212,28 +212,15 @@ function map(value, inMin, inMax, outMin, outMax) {
   return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
 }
 
-
-const compressor = new Tone.Compressor({
-  threshold: -30, // Порог срабатывания компрессии в децибелах (-inf до 0)
-  ratio: 12, // Соотношение компрессии (число >= 1)
-  attack: 0.03, // Время нарастания компрессии в секундах (0 до 1)
-  release: 0.1, // Время спада компрессии в секундах (0 до 1)
-  knee: 30, // Ширина "мягкого" перехода компрессии в децибелах (0 до 40)
-  // Другие параметры компрессора...
-}).toMaster(); // Подключение компрессора к основному аудио-выходу
-
-
-
-
 class Harmonic {
-  constructor(freq, vol, noteLength, x, noteColor, volX) {
+  constructor(freq, vol, noteLength, x, noteColor) {
     this.noteLength = noteLength;
     this.x = x;
     this.vol = vol;
-    this.volX = volX*8 - 5;
+    this.volX = vol*4-8;
     this.noteColor = noteColor;
     this.freq = freq;
-    // const analyser = new Tone.Analyser("waveform", 256).toDestination();
+    const analyser = new Tone.Analyser("waveform", 256).toDestination();
     
     this.synth = new Tone.Synth({
       oscillator: {
@@ -248,10 +235,8 @@ class Harmonic {
       },
       portamento: 0,
       volume: this.volX
-    }).toDestination().connect(compressor); ;
-
-  // this.synth.connect(compressor);
-   // this.synth.connect(analyser);
+    }).toDestination();
+   this.synth.connect(analyser);
   }
   
   display() {
@@ -301,8 +286,7 @@ class Note {
     for (let i = 1; i <= this.numHarmonics; i++) {
       let harmonicFreq = this.freq * i;
       let vol = 1000*(numHarmonics - i) / (numHarmonics * harmonicFreq);
-      let volX = -i;
-      this.harmonics.push(new Harmonic(harmonicFreq, vol, this.noteLength, this.x, this.color, volX));
+      this.harmonics.push(new Harmonic(harmonicFreq, vol, this.noteLength, this.x, this.color));
     }
   }
 
@@ -340,23 +324,6 @@ window.addEventListener('resize', updateCanvasSize);
 canvas.addEventListener('mousedown', mousePressed);
 canvas.addEventListener('mousemove', mouseDragged);
 canvas.addEventListener('mouseup', mouseReleased);
-
-
-
-
-
-// const compressor = new Tone.Compressor({
-//     threshold: -20,
-//     ratio: 12,
-//     attack: 0.03,
-//     release: 0.1,
-//     knee: 30,
-// }).toMaster();
-
-// Tone.Master.chain(compressor);
-
-// // // Подключаем компрессор к мастер-каналу
-// Tone.Master.connect(compressor);
 
 Tone.start();  
 </script>
