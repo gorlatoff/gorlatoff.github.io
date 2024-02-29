@@ -1,0 +1,406 @@
+
+<html>
+	<head>
+		<title>Harmonic Entropy Calculator</title>
+		<style>
+			#HEPlotDiv {width:800px; height:400px; margin:0 auto; float:center}
+			#controls {width:400px; margin:30 auto; padding:0 10 10 10;float:center; font: 8pt sans-serif; border: 1px solid #808080}
+			.controlheader {margin: 10 auto; width:100%; float:center; text-align:center; font: 12pt sans-serif;font-weight:bold;}
+			.controlrow {margin:5 0; height:25; vertical-align:center}
+			.label {padding:0 10 0 0; display:inline-block; width:150; text-align:right}
+			.slider {display:inline-block; width:220}
+			.textinput {margin:0; width:220; border:1px solid #C0C0C0}
+			#go {width:100%; margin:0 0 40 0}
+			#normlabel {margin:0; font-size:8pt}
+		</style>
+		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/le-frog/jquery-ui.css">
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dsp.js"></script>
+		<script>
+// Global Variables
+let plot;
+let r = [];
+let oldN, oldSeries;
+let plotted = false;
+
+const log2 = x => Math.log(x) / Math.log(2);
+
+function gcd(x, y) {
+   while (y != 0) {
+      let z = x % y;
+      x = y;
+      y = z;
+   }
+   return x;
+}
+
+function convolve(olda, oldb) {
+   let a = olda.concat();
+   let b = oldb.concat();
+
+   let len = a.length;
+   let minlen = 1;
+   while (minlen < len) //2 is to avoid circular convolution distortion
+      minlen *= 2;
+
+   const padding = minlen - len;
+   for (let i = len; i < minlen; i++) {
+      a[i] = 0;
+      b[i] = 0;
+   }
+
+   let f_a = new FFT(minlen, 1);
+   let f_b = new FFT(minlen, 1);
+   f_a.forward(a);
+   f_b.forward(b);
+
+   //Do the multiplication out
+   let f_out = new FFT(minlen, 1);
+   for (let i = minlen - 1; i >= 0; i--) {
+      f_out.real[i] = f_a.real[i] * f_b.real[i] - f_a.imag[i] * f_b.imag[i];
+      f_out.imag[i] = f_a.real[i] * f_b.imag[i] + f_a.imag[i] * f_b.real[i];
+   }
+
+   let out = f_out.inverse().slice(0, len);
+   return out;
+}
+
+function harmonicEntropy(HEinfo) {
+   //globals
+   let a = parseFloat(HEinfo.a);
+   let s = parseFloat(HEinfo.s);
+   let res = parseFloat(HEinfo.res);
+   let scents = 1200 * log2(HEinfo.s + 1);
+   let padding = Math.round(100 * scents);
+   let min = parseFloat(HEinfo.mincents) - padding;
+   let max = parseFloat(HEinfo.maxcents) + padding;
+   let dist = HEinfo.dist;
+   let series = HEinfo.series;
+   let normalize = HEinfo.normalize;
+   let locr = r;
+
+   a = (a == 1) ? a = 1.0000000001 : a = a;
+   let rcount = 0;
+
+   //build kernel
+   let k = new Array();
+   let ak = new Array();
+
+   for (let i = (max - min) / res; i >= 0; i--) {
+      k[i] = 0;
+      ak[i] = 0;
+   }
+
+   for (let i = locr.length - 1; i >= 0; i--) {
+      let rcent = 1200 * log2(locr[i][0] / locr[i][1]);
+      let rcompl = Math.sqrt(locr[i][0] * locr[i][1]);
+
+      //check for bounds to optimize
+      if (rcent < min || rcent > max)
+         continue;
+
+      rcount++;
+
+      //start building kernel, first check for rounded off case that doesn't need interpolation
+      if (rcent == Math.round(rcent)) {
+         let index = (rcent - min) / res;
+         k[index] += 1 / rcompl;
+         ak[index] += 1 / Math.pow(rcompl, a);
+      }
+      //or else we do need interpolation
+      else {
+         let clow = Math.ceil(rcent) - rcent;
+         let chigh = rcent - Math.floor(rcent);
+
+         let index = (Math.floor(rcent) - min) / res;
+         k[index] += 1 / rcompl * clow;
+         k[index + 1] += 1 / rcompl * chigh;
+
+         ak[index] += 1 / Math.pow(rcompl, a) * clow;
+         ak[index + 1] += 1 / Math.pow(rcompl, a) * chigh;
+      }
+   }
+
+
+   //do convolution
+   //first pad to a power of two to make the convolution easier for numerous reasons
+   let oldlen = k.length;
+   let minlen = 1;
+   while (minlen < 2 * k.length) //2 is to avoid circular convolution distortion
+      minlen *= 2;
+
+   for (let i = k.length; i < minlen; i++) {
+      k[i] = 0;
+      ak[i] = 0;
+   }
+
+   //now work out gaussian
+   let g = new Array(minlen);
+   let ag = new Array(minlen);
+   let g_sum = 0;
+   let ag_sum = 0;
+   for (let i = minlen - 1; i >= 0; i--) {
+      let c = i * res + min;
+      let gval = (1 / (scents * 2 * Math.PI)) * Math.exp(-(Math.pow(c - min, 2) / (2 * scents * scents))) + (1 / (scents * 2 * Math.PI)) * Math.exp(-(Math.pow(c - (minlen * res + min), 2) / (2 * scents * scents)));
+      g[i] = gval;
+      g_sum += gval;
+   }
+   //normalize gaussian
+   for (let i = g.length - 1; i >= 0; i--) {
+      g[i] /= g_sum;
+      ag[i] = Math.pow(g[i], a);
+      ag_sum += ag[i];
+   }
+
+   const ent = convolve(ak, ag);
+   const nrm = convolve(k, g);
+
+   let nrmfct;
+   if (normalize) {
+      nrmfct = Math.log(rcount);
+   } else
+      nrmfct = 1;
+
+   //trim answer and out
+   let out = new Array();
+   for (let i = oldlen - padding / res - 1; i >= padding / res; i--) {
+      let outval = ((1 / (1 - a)) * Math.log(ent[i] / Math.pow(nrm[i], a)) / nrmfct);
+      out[i - padding / res] = [(i * res + min), outval];
+   }
+   gg = g;
+   gag = g;
+   gk = k;
+   gak = ak;
+   gent = ent;
+   gnrm = nrm;
+   gout = out;
+   return out;
+}
+
+function plotHE(HEinfo) {
+   $(function () {
+      let HE = harmonicEntropy(HEinfo);
+      plot = $.plot($("#HEPlotDiv"), [{
+         color: "#00C000",
+         data: HE
+      }], {
+         xaxis: {
+            tickSize: (HEinfo.maxcents - HEinfo.mincents) / 12
+         },
+         yaxis: {
+            autoscaleMargin: 0.03,
+            labelWidth: 30,
+            reserveSpace: true
+         },
+         grid: {
+            hoverable: true,
+            clickable: true
+         }
+      });
+
+      const showTooltip = (id, cls, color, item, extrastr = '') => {
+         const x = item.pageX;
+         const y = item.pageY;
+         const dyad = item.datapoint[0].toFixed(3);
+         const ent = item.datapoint[1].toFixed(3);
+
+         $(`<div id="${id}" class="${cls}">Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}</div>`)
+           .css({
+              position: 'absolute',
+              display: 'none',
+              top: y + 5,
+              left: x + 5,
+              border: '1px solid #fdd',
+              font: '8pt sans-serif',
+              padding: '2px',
+              'background-color': color,
+              cursor: 'move',
+              opacity: 0.80,
+           })
+           .appendTo('body')
+           .show()
+           .draggable()
+           .dblclick(() => {
+              $(`#${id}`).remove();
+              plot.unhighlight(item.series, item.datapoint);
+           });
+      };
+
+      let previousPoint = null;
+      $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
+         if (item) {
+            if (previousPoint != item.dataIndex) {
+               previousPoint = item.dataIndex;
+
+               $("#tooltip").remove();
+               showTooltip("tooltip", "tooltip", "#ffeeee", item);
+            }
+         } else {
+            $("#tooltip").remove();
+            previousPoint = null;
+         }
+      });
+
+      $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
+         if (item) {
+            let x = item.datapoint[0].toFixed(3);
+            let y = item.datapoint[1].toFixed(3);
+
+            let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
+            let prevPoints = $("#" + name);
+            if (prevPoints.length == 0) {
+               showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
+               plot.highlight(item.series, item.datapoint);
+            }
+         }
+      });
+   });
+}
+
+function preCalcRatios(HEinfo) {
+   if (HEinfo.N != oldN || HEinfo.series != oldseries) {
+      $("#progress-dialog").dialog({
+         height: 100,
+         width: 400,
+         modal: true
+      });
+      r.length = 0;
+
+      oldN = HEinfo.N;
+      oldseries = HEinfo.series;
+
+      let n = HEinfo.N;
+      setTimeout(function () {
+         let start = +new Date();
+
+         do {
+            for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+               if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
+                  r.push([i, n / i]); //does numerator on left, denominator on right
+                  if (n / i != i)
+                     r.push([n / i, i]);
+               }
+            }
+         } while (--n >= 0 && (+new Date() - start < 50));
+
+
+		const progressBar = document.getElementById("progressbar");
+
+		if (n > 0) {
+		  const progress = 100 * (HEinfo.N - n) / HEinfo.N;
+		  progressBar.value = progress;
+		  setTimeout(arguments.callee, 25);
+		} else {
+		  progressBar.value = 100;
+		  $("#progress-dialog").dialog("close");
+		  setTimeout(function () {
+		    plotHE(HEinfo)
+		  }, 1);
+		}
+
+      }, 25);
+   } else {
+      plotHE(HEinfo);
+   }
+}
+
+
+	</script>
+	</head>
+
+	<body>
+			<div id="HEPlotDiv"></div>
+			<div id=controls>
+				<div class=controlrow>
+					<span class=label id="sval">s: 1.00%</span>
+					<div id="sliders" class=slider></div>
+				</div>
+				<div class=controlrow>
+					<span class=label id="aval">a: 1.0</span>
+					<div id="slidera" class=slider></div>
+				</div>
+				<div class=controlrow>
+					<span class=label id="Nval">N: </span>
+					<input id="textN" class=textinput value="10000">
+				</div>
+				<div class=controlrow>
+					<span class=label id="minval">min cents: </span>
+					<input id="textmin" class=textinput value="0">
+				</div>
+				<div class=controlrow>
+					<span class=label id="maxval">max cents: </span>
+					<input id="textmax" class=textinput value="2400">
+				</div>
+				<div class=controlrow><span class=label id="resval">resolution: 1.00 cents</span>
+					<div id="sliderres" class=slider></div>
+				</div>
+				<div class=controlrow><input type=button id="go" value="Go!"></div>	
+			</div>
+
+			</div>
+			<div id="progress-dialog" title="Calculating Ratios..." style="display:none">
+				<div id="progressbar"></div>
+			</div>
+			
+		<script>
+			$(function() {
+				$( "#slidera" ).slider({
+					value:1,
+					min: 0,
+					max: 7,
+					step: 0.1,
+					slide: function( event, ui ) {
+						$("#aval").text("a: " + ui.value.toFixed(1))
+					}
+				});
+				
+				$( "#sliders" ).slider({
+					value:1,
+					min: 0.3,
+					max: 2,
+					step:0.05,
+					slide: function( event, ui ) {
+						$("#sval").text("s: " + ui.value.toFixed(2) + "%")
+					}
+				});
+				
+				$( "#sliderres" ).slider({
+					value:0,
+					min: -2,
+					max: 0,
+					slide: function( event, ui ) {
+						$("#resval").text("resolution: " + Math.pow(10, ui.value).toFixed(2) + " cents")
+					}
+				});
+				
+				$("#seriesradio").buttonset();
+				
+				$("#distradio").buttonset();
+
+				$("#go").button().click(function(){
+					plotted = true;
+					if(plot !== undefined)
+						plot.unhighlight();
+					$(".permatip").remove();
+					const HEinfo = {
+						N: parseInt($("#textN").val()),
+						s: parseFloat($("#sliders").slider("option", "value")/100),
+						a: parseFloat($("#slidera").slider("option", "value")),
+						series: $("input[name=seriesradiobuts]:checked").attr("id"),
+						dist: $("input[name=distradiobuts]:checked").attr("id"),
+						mincents: parseFloat($("#textmin").val()),
+						maxcents: parseFloat($("#textmax").val()),
+						res: Math.pow(10,parseFloat($("#sliderres").slider("option", "value"))),
+					}
+					preCalcRatios(HEinfo);
+				});
+				
+				$("#progressbar").progressbar({
+					value: 0
+				});
+			});
+		</script>
+	</body>
+</html>
