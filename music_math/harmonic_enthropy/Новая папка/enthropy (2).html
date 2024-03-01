@@ -169,6 +169,14 @@ function harmonicEntropy(HEinfo) {
       let outval = ((1 / (1 - a)) * Math.log(ent[i] / Math.pow(nrm[i], a)) / nrmfct);
       out[i - padding / res] = [(i * res + min), outval];
    }
+   // gg = g;
+   // gag = g;
+   // gk = k;
+   // gak = ak;
+   // gent = ent;
+   // gnrm = nrm;
+   // gout = out;
+   // return out;
 
    let HE_reflected = out.map((point) => [point[0], -point[1]]);
 
