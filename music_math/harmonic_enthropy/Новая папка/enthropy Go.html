@@ -21,7 +21,7 @@
 // Global Variables
 let plot;
 let r = [];
-let oldN;
+let oldN, oldSeries;
 let plotted = false;
 
 const log2 = x => Math.log(x) / Math.log(2);
@@ -75,6 +75,8 @@ function harmonicEntropy(HEinfo) {
    let padding = Math.round(100 * scents);
    let min = parseFloat(HEinfo.mincents) - padding;
    let max = parseFloat(HEinfo.maxcents) + padding;
+   let dist = HEinfo.dist;
+   let series = HEinfo.series;
    let normalize = HEinfo.normalize;
    let locr = r;
 
@@ -261,6 +263,7 @@ function plotHE(HEinfo) {
 }
 
 function preCalcRatios(HEinfo) {
+   if (HEinfo.N != oldN || HEinfo.series != oldseries) {
       $("#progress-dialog").dialog({
          height: 100,
          width: 400,
@@ -269,6 +272,7 @@ function preCalcRatios(HEinfo) {
       r.length = 0;
 
       oldN = HEinfo.N;
+      oldseries = HEinfo.series;
 
       let n = HEinfo.N;
       setTimeout(function () {
@@ -300,6 +304,9 @@ function preCalcRatios(HEinfo) {
 		}
 
       }, 60);
+   } else {
+      plotHE(HEinfo);
+   }
 }
 
 
@@ -348,6 +355,8 @@ function preCalcRatios(HEinfo) {
                   N: parseInt($("#textN").val()),
                   s: parseFloat($("#sliders").slider("option", "value")/100),
                   a: parseFloat($("#slidera").slider("option", "value")),
+                  // series: $("input[name=seriesradiobuts]:checked").attr("id"),
+                  // dist: $("input[name=distradiobuts]:checked").attr("id"),
                   mincents: parseFloat($("#textmin").val()),
                   maxcents: parseFloat($("#textmax").val()),
                   res: Math.pow(10,parseFloat($("#sliderres").slider("option", "value"))),
@@ -388,10 +397,13 @@ function preCalcRatios(HEinfo) {
 				
             updatePlot();
 
-            $("#sliders, #slidera, #textN, #textmin, #textmax, #sliderres").click("change", function() {
-               updatePlot();
-            });   
-
+            $("#sliders, #slidera, #textN, #textmin, #textmax, #sliderres").on("change", function() {
+              updatePlot();
+            });
+				
+				$("#progressbar").progressbar({
+					value: 0
+				});
 			});
 		</script>
 	</body>
