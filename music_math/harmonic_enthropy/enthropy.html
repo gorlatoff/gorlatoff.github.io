@@ -3,8 +3,8 @@
 	<head>
 		<title>Harmonic Entropy Calculator</title>
 		<style>
-			#HEPlotDiv {width:90%; height:50%; margin:0 auto; float:center}
-			#controls {width:400px; height:33%; margin: 0 auto; padding:0 10 10 10; float:center; font: 10pt sans; border: 1px solid #808080}
+			#HEPlotDiv {width:96%; height:50%; margin:0 auto; float:center}
+			#controls {width:400px; height:20%; margin: 0 auto; padding:0 10 10 10; float:center; font: 10pt sans; border: 1px solid #808080}
 			.controlheader {margin: 10 auto; width:100%; float:center; text-align:center; font: 12pt sans-serif;font-weight:bold;}
 			.controlrow {margin:5 0; height:25; vertical-align:center}
 			.label {padding:0 10 0 0; display:inline-block; width:150; text-align:right}
@@ -197,7 +197,6 @@ function plotHE(HEinfo) {
             autoscaleMargin: 0.03,
             labelWidth: 30,
             reserveSpace: true,
-        	// inverseAxisFlags: { y: true } // Invert the y-axis
          },
          grid: {
             hoverable: true,
@@ -316,7 +315,6 @@ function preCalcRatios(HEinfo) {
 	</head>
 
 	<body>
-			<div id="HEPlotDiv"></div>
 			<div id=controls>
 				<div class=controlrow>
 					<span class=label id="sval">s: 1.00%</span>
@@ -343,7 +341,7 @@ function preCalcRatios(HEinfo) {
 				</div>
 				<div class=controlrow><input type=button id="go" value="Go!"></div>	
 			</div>
-
+            <div id="HEPlotDiv"></div>
 			</div>
 			<div id="progress-dialog" title="Calculating Ratios..." style="display:none">
 				<div id="progressbar"></div>
