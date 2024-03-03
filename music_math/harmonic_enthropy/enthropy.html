@@ -2,7 +2,9 @@
 <html>
 	<head>
 		<title>Harmonic Entropy Calculator</title>
+      <link rel="stylesheet" href="jquery-ui.css">
 		<style>
+
 			#HEPlotDiv {width:98%; height:50%; margin:0 auto; float:center}
 			#controls {width:400px; height:30%; margin: 0 auto; padding:0 10 10 10; float:center; font: 10pt sans; border: 1px solid #808080}
 			.controlheader {margin: 10 auto; width:100%; float:center; text-align:center; font: 12pt sans-serif;font-weight:bold;}
@@ -11,8 +13,33 @@
 			.slider {display:inline-block; width:220}
 			.textinput {margin:0; width:220; border:1px solid #C0C0C0}
 			#normlabel {margin:0; font-size:8pt}
+
+         .ui-progressbar {
+           width: 100%;
+           height: 4px;
+           position: relative;
+           background: rgba(0, 0, 0, 0.1);
+           border-radius: 5px;
+           overflow: hidden;
+         }
+         .ui-progressbar div {
+           background: #00ADFF;
+           position: absolute;
+           left: 0;
+           top: 0;
+           bottom: 0;
+         }
+         .ui-progressbar div:after {
+           background: rgba(40, 40, 40, 0.1);
+           background-size: 40px 40px;
+           position: absolute;
+           content: '';
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+         }
 		</style>
-		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/le-frog/jquery-ui.css">
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
@@ -20,7 +47,7 @@
 		<script>
 // Global Variables
 let plot;
-let r = [];
+// let r = [];
 let oldN;
 let plotted = false;
 
@@ -266,7 +293,7 @@ function preCalcRatios(HEinfo) {
          width: 400,
          modal: true
       });
-      r.length = 0;
+      r = [];
 
       oldN = HEinfo.N;
 
@@ -285,15 +312,9 @@ function preCalcRatios(HEinfo) {
          } while (--n >= 0 && (+new Date() - start < 50));
 
 
-		const progressBar = document.getElementById("progressbar");
-
 		if (n > 0) {
-		  const progress = 100 * (HEinfo.N - n) / HEinfo.N;
-		  progressBar.value = progress;
 		  setTimeout(arguments.callee, 60);
 		} else {
-		  progressBar.value = 100;
-		  $("#progress-dialog").dialog("close");
 		  setTimeout(function () {
 		    plotHE(HEinfo)
 		  }, 1);
@@ -301,8 +322,6 @@ function preCalcRatios(HEinfo) {
 
       }, 60);
 }
-
-
 	</script>
 	</head>
 
@@ -334,8 +353,6 @@ function preCalcRatios(HEinfo) {
 			</div>
             <div id="HEPlotDiv"></div>
 			</div>
-			<div id="progress-dialog" title="Calculating Ratios..." style="display:none">
-				<div id="progressbar"></div>
 			</div>
 			
 		<script>
@@ -364,6 +381,7 @@ function preCalcRatios(HEinfo) {
 					step: 0.1,
 					slide: function( event, ui ) {
 						$("#aval").text("a: " + ui.value.toFixed(1))
+                  updatePlot();
 					}
 				});
 				
@@ -374,6 +392,7 @@ function preCalcRatios(HEinfo) {
 					step:0.05,
 					slide: function( event, ui ) {
 						$("#sval").text("s: " + ui.value.toFixed(2) + "%")
+                  updatePlot();
 					}
 				});
 				
@@ -383,15 +402,15 @@ function preCalcRatios(HEinfo) {
 					max: 0,
 					slide: function( event, ui ) {
 						$("#resval").text("resolution: " + Math.pow(10, ui.value).toFixed(2) + " cents")
+                  updatePlot();
 					}
 				});
 				
             updatePlot();
 
-            $("#sliders, #slidera, #textN, #textmin, #textmax, #sliderres").click("change", function() {
-               updatePlot();
-            });   
-
+            document.getElementById('textN').addEventListener('input', updatePlot);
+            document.getElementById('textmin').addEventListener('input', updatePlot);
+            document.getElementById('textmax').addEventListener('input', updatePlot);
 			});
 		</script>
 	</body>
