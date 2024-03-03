@@ -2,54 +2,51 @@
 <html>
 	<head>
 		<title>Harmonic Entropy Calculator</title>
-      <link rel="stylesheet" href="jquery-ui.css">
+		<link rel="stylesheet" href="jquery-ui.css">
+	  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+	  	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dsp.js"></script>
 		<style>
-
-			#HEPlotDiv {width:98%; height:50%; margin:0 auto; float:center}
-			#controls {width:400px; height:30%; margin: 0 auto; padding:0 10 10 10; float:center; font: 10pt sans; border: 1px solid #808080}
+			#HEPlotDiv {width:800px; height:400px; margin:0 auto; float:center}
+			#controls {width:400px; margin:30 auto; padding:0 10 10 10;float:center; font: 8pt sans-serif; border: 1px solid #808080}
 			.controlheader {margin: 10 auto; width:100%; float:center; text-align:center; font: 12pt sans-serif;font-weight:bold;}
 			.controlrow {margin:5 0; height:25; vertical-align:center}
 			.label {padding:0 10 0 0; display:inline-block; width:150; text-align:right}
 			.slider {display:inline-block; width:220}
 			.textinput {margin:0; width:220; border:1px solid #C0C0C0}
-			#normlabel {margin:0; font-size:8pt}
+			.ui-dialog-titlebar {font-size:9pt}
+			#go {width:50%; margin:0 0 40 0}
 
-         .ui-progressbar {
-           width: 100%;
-           height: 4px;
-           position: relative;
-           background: rgba(0, 0, 0, 0.1);
-           border-radius: 5px;
-           overflow: hidden;
-         }
-         .ui-progressbar div {
-           background: #00ADFF;
-           position: absolute;
-           left: 0;
-           top: 0;
-           bottom: 0;
-         }
-         .ui-progressbar div:after {
-           background: rgba(40, 40, 40, 0.1);
-           background-size: 40px 40px;
-           position: absolute;
-           content: '';
-           top: 0;
-           left: 0;
-           width: 100%;
-           height: 100%;
-         }
+			.progress {
+			  width: 100%;
+			  height: 10px;
+			  position: relative;
+			  background: rgba(0, 0, 0, 0.1);
+			}
+
+			.progress div {
+			  background: #00ADFF;
+			  position: absolute;
+			  left: 0;
+			  top: 0;
+			  bottom: 0;
+			}
+
+			.progress div:after {
+			  background: blue;
+			  top: 0;
+			  left: 0;
+			  width: 100%;
+			  height: 100%;
+			}
 		</style>
-		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/dsp.js"></script>
+
 		<script>
-// Global Variables
-let plot;
-// let r = [];
-let oldN;
-let plotted = false;
+var plot;
+var r = new Array();
+var oldN;
+var plotted = false;
 
 const log2 = x => Math.log(x) / Math.log(2);
 
@@ -62,7 +59,7 @@ function gcd(x, y) {
    return x;
 }
 
-function convolve(olda, oldb) {
+function conv(olda, oldb) {
    let a = olda.concat();
    let b = oldb.concat();
 
@@ -92,120 +89,113 @@ function convolve(olda, oldb) {
    let out = f_out.inverse().slice(0, len);
    return out;
 }
+			
 
 function harmonicEntropy(HEinfo) {
-   //globals
-   let a = parseFloat(HEinfo.a);
-   let s = parseFloat(HEinfo.s);
-   let res = parseFloat(HEinfo.res);
-   let scents = 1200 * log2(HEinfo.s + 1);
-   let padding = Math.round(100 * scents);
-   let min = parseFloat(HEinfo.mincents) - padding;
-   let max = parseFloat(HEinfo.maxcents) + padding;
-   let normalize = HEinfo.normalize;
-   let locr = r;
+  //globals
+  let a = parseFloat(HEinfo.a);
+  let s = parseFloat(HEinfo.s);
+  let res = parseFloat(HEinfo.res);
+  let scents = 1200 * log2(HEinfo.s + 1);
+  let padding = Math.round(100 * scents);
+  let min = parseFloat(HEinfo.mincents) - padding;
+  let max = parseFloat(HEinfo.maxcents) + padding;
+  let locr = r;
 
-   a = (a == 1) ? a = 1.0000000001 : a = a;
-   let rcount = 0;
+  a = (a == 1) ? a = 1.0000000001 : a = a;
+  let rcount = 0;
 
-   //build kernel
-   let k = new Array();
-   let ak = new Array();
+  //build kernel
+  let k = new Array();
+  let ak = new Array();
 
-   for (let i = (max - min) / res; i >= 0; i--) {
-      k[i] = 0;
-      ak[i] = 0;
-   }
+  for (let i = (max - min) / res; i >= 0; i--) {
+    k[i] = 0;
+    ak[i] = 0;
+  }
 
-   for (let i = locr.length - 1; i >= 0; i--) {
-      let rcent = 1200 * log2(locr[i][0] / locr[i][1]);
-      let rcompl = Math.sqrt(locr[i][0] * locr[i][1]);
+  for (let i = locr.length - 1; i >= 0; i--) {
+    let rcent = 1200 * log2(locr[i][0] / locr[i][1]);
+    let rcompl = Math.sqrt(locr[i][0] * locr[i][1]);
 
-      //check for bounds to optimize
-      if (rcent < min || rcent > max)
-         continue;
+    //check for bounds to optimize
+    if (rcent < min || rcent > max) continue;
 
-      rcount++;
+    rcount++;
 
-      //start building kernel, first check for rounded off case that doesn't need interpolation
-      if (rcent == Math.round(rcent)) {
-         let index = (rcent - min) / res;
-         k[index] += 1 / rcompl;
-         ak[index] += 1 / Math.pow(rcompl, a);
-      }
-      //or else we do need interpolation
-      else {
-         let clow = Math.ceil(rcent) - rcent;
-         let chigh = rcent - Math.floor(rcent);
+    //start building kernel, first check for rounded off case that doesn't need interpolation
+    if (rcent == Math.round(rcent)) {
+      let index = (rcent - min) / res;
+      k[index] += 1 / rcompl;
+      ak[index] += 1 / Math.pow(rcompl, a);
+    }
+    //or else we do need interpolation
+    else {
+      let clow = Math.ceil(rcent) - rcent;
+      let chigh = rcent - Math.floor(rcent);
 
-         let index = (Math.floor(rcent) - min) / res;
-         k[index] += 1 / rcompl * clow;
-         k[index + 1] += 1 / rcompl * chigh;
+      let index = (Math.floor(rcent) - min) / res;
+      k[index] += 1 / rcompl * clow;
+      k[index + 1] += 1 / rcompl * chigh;
 
-         ak[index] += 1 / Math.pow(rcompl, a) * clow;
-         ak[index + 1] += 1 / Math.pow(rcompl, a) * chigh;
-      }
-   }
+      ak[index] += 1 / Math.pow(rcompl, a) * clow;
+      ak[index + 1] += 1 / Math.pow(rcompl, a) * chigh;
+    }
+  }
 
+  //do convolution
+  //first pad to a power of two to make the convolution easier for numerous reasons
+  let oldlen = k.length;
+  let minlen = 1;
+  while (minlen < 2 * k.length) //2 is to avoid circular convolution distortion
+  minlen *= 2;
 
-   //do convolution
-   //first pad to a power of two to make the convolution easier for numerous reasons
-   let oldlen = k.length;
-   let minlen = 1;
-   while (minlen < 2 * k.length) //2 is to avoid circular convolution distortion
-      minlen *= 2;
+  for (let i = k.length; i < minlen; i++) {
+    k[i] = 0;
+    ak[i] = 0;
+  }
 
-   for (let i = k.length; i < minlen; i++) {
-      k[i] = 0;
-      ak[i] = 0;
-   }
+  //now work out gaussian
+  let g = new Array(minlen);
+  let ag = new Array(minlen);
+  let g_sum = 0;
+  let ag_sum = 0;
+  for (let i = minlen - 1; i >= 0; i--) {
+    let c = i * res + min;
+    let gval = (1 / (scents * 2 * Math.PI)) * Math.exp( - (Math.pow(c - min, 2) / (2 * scents * scents))) + (1 / (scents * 2 * Math.PI)) * Math.exp( - (Math.pow(c - (minlen * res + min), 2) / (2 * scents * scents)));
+    g[i] = gval;
+    g_sum += gval;
+  }
+  //normalize gaussian
+  for (let i = g.length - 1; i >= 0; i--) {
+    g[i] /= g_sum;
+    ag[i] = Math.pow(g[i], a);
+    ag_sum += ag[i];
+  }
 
-   //now work out gaussian
-   let g = new Array(minlen);
-   let ag = new Array(minlen);
-   let g_sum = 0;
-   let ag_sum = 0;
-   for (let i = minlen - 1; i >= 0; i--) {
-      let c = i * res + min;
-      let gval = (1 / (scents * 2 * Math.PI)) * Math.exp(-(Math.pow(c - min, 2) / (2 * scents * scents))) + (1 / (scents * 2 * Math.PI)) * Math.exp(-(Math.pow(c - (minlen * res + min), 2) / (2 * scents * scents)));
-      g[i] = gval;
-      g_sum += gval;
-   }
-   //normalize gaussian
-   for (let i = g.length - 1; i >= 0; i--) {
-      g[i] /= g_sum;
-      ag[i] = Math.pow(g[i], a);
-      ag_sum += ag[i];
-   }
+  const ent = conv(ak, ag);
+  const nrm = conv(k, g);
 
-   const ent = convolve(ak, ag);
-   const nrm = convolve(k, g);
+  //trim answer and out
+  let out = [];
+  for (let i = oldlen - padding / res - 1; i >= padding / res; i--) {
+    let outval = ((1 / (1 - a)) * Math.log(ent[i] / Math.pow(nrm[i], a)));
+    out[i - padding / res] = [(i * res + min), outval];
+  }
 
-   let nrmfct;
-   if (normalize) {
-      nrmfct = Math.log(rcount);
-   } else
-      nrmfct = 1;
+  let HE_reflected = out.map((point) =>[point[0], -point[1]]);
 
-   //trim answer and out
-   let out = new Array();
-   for (let i = oldlen - padding / res - 1; i >= padding / res; i--) {
-      let outval = ((1 / (1 - a)) * Math.log(ent[i] / Math.pow(nrm[i], a)) / nrmfct);
-      out[i - padding / res] = [(i * res + min), outval];
-   }
+  gg = g;
+  gag = g;
+  gk = k;
+  gak = ak;
+  gent = ent;
+  gnrm = nrm;
+  gout = HE_reflected; // Use the reflected array
 
-   let HE_reflected = out.map((point) => [point[0], -point[1]]);
-
-   gg = g;
-   gag = g;
-   gk = k;
-   gak = ak;
-   gent = ent;
-   gnrm = nrm;
-   gout = HE_reflected; // Use the reflected array
-
-   return HE_reflected; // Return the reflected array
+  return HE_reflected; // Return the reflected array
 }
+		
 
 function plotHE(HEinfo) {
    $(function () {
@@ -252,7 +242,6 @@ function plotHE(HEinfo) {
            .draggable()
            .dblclick(() => {
               $(`#${id}`).remove();
-              plot.unhighlight(item.series, item.datapoint);
            });
       };
 
@@ -280,138 +269,129 @@ function plotHE(HEinfo) {
             let prevPoints = $("#" + name);
             if (prevPoints.length == 0) {
                showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
-               plot.highlight(item.series, item.datapoint);
             }
          }
       });
    });
 }
-
-function preCalcRatios(HEinfo) {
-      $("#progress-dialog").dialog({
-         height: 100,
-         width: 400,
-         modal: true
-      });
-      r = [];
-
-      oldN = HEinfo.N;
-
-      let n = HEinfo.N;
-      setTimeout(function () {
-         let start = +new Date();
-
-         do {
-            for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
-               if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
-                  r.push([i, n / i]); //does numerator on left, denominator on right
-                  if (n / i != i)
-                     r.push([n / i, i]);
-               }
-            }
-         } while (--n >= 0 && (+new Date() - start < 50));
-
-
-		if (n > 0) {
-		  setTimeout(arguments.callee, 60);
-		} else {
-		  setTimeout(function () {
-		    plotHE(HEinfo)
-		  }, 1);
-		}
-
-      }, 60);
-}
-	</script>
-	</head>
-
-	<body>
-			<div id=controls>
-				<div class=controlrow>
-					<span class=label id="sval">s: 1.00%</span>
-					<div id="sliders" class=slider></div>
-				</div>
-				<div class=controlrow>
-					<span class=label id="aval">a: 1.0</span>
-					<div id="slidera" class=slider></div>
-				</div>
-				<div class=controlrow>
-					<span class=label id="Nval">N: </span>
-					<input id="textN" class=textinput value="10000">
-				</div>
-				<div class=controlrow>
-					<span class=label id="minval">min cents: </span>
-					<input id="textmin" class=textinput value="0">
-				</div>
-				<div class=controlrow>
-					<span class=label id="maxval">max cents: </span>
-					<input id="textmax" class=textinput value="1200">
-				</div>
-				<div class=controlrow><span class=label id="resval">resolution: 1.00 cents</span>
-					<div id="sliderres" class=slider></div>
-				</div>
-			</div>
-            <div id="HEPlotDiv"></div>
-			</div>
-			</div>
 			
+function preCalcRatios(HEinfo) {
+  var progress = document.querySelector('.progress div');
+  progress.style.width = '0%';
+
+  if (HEinfo.N != oldN) {
+    r.length = 0;
+
+    oldN = HEinfo.N;
+    var n = HEinfo.N;
+
+    setTimeout(function() {
+      var start = +new Date();
+      do {
+        for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+          if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
+            r.push([i, n / i]); //does numerator on left, denominator on right
+            if (n / i != i) r.push([n / i, i]);
+          }
+        }
+      } while (-- n >= 0 && ( + new Date () - start < 50));
+
+      if (n > 0) {
+        progress.style.width = 100 * (HEinfo.N - n) / HEinfo.N + '%';
+        setTimeout(arguments.callee, 60);
+      } else {
+        progress.style.width = '0%';
+        setTimeout(function() {
+          plotHE(HEinfo)
+        },
+        1);
+      }
+    },
+    25);
+  } else {
+    plotHE(HEinfo);
+  }
+}
+		</script>
+	</head>
+	<body>
+		
+			<div id="HEPlotDiv"></div>
+			<div id=controls>
+
+
+		        <div class="controlrow">
+		          <span class="label" id="Nval">N: </span>
+		          <input id="textN" class="textinput" value="10000" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="minval">min cents: </span>
+		          <input id="textmin" class="textinput" value="0" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="maxval">max cents: </span>
+		          <input id="textmax" class="textinput" value="2400" />
+		        </div>
+
+		        <div class="controlrow">
+		          <span class="label" id="aval">a: 1.0</span>
+		          <input type="range" id="slidera" class="slider" min="0" max="7" step="0.1" value="1" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="sval">s: 1.00%</span>
+		          <input type="range" id="sliders" class="slider" min="0.3" max="2" step="0.05" value="1" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="resval">resolution: 1.00 cents</span>
+		          <input type="range" id="sliderres" class="slider" min="-1" max="0" value="0" />
+		        </div>
+
+				<input type=button id="go" value="Go!">
+
+				<div class="progress">
+				  <div style='width: 0%'></div>
+				</div>	
+				</div>
+				
 		<script>
-         function updatePlot(){
-               plotted = true;
-               if(plot !== undefined)
-                  plot.unhighlight();
-               $(".permatip").remove();
-               const HEinfo = {
-                  N: parseInt($("#textN").val()),
-                  s: parseFloat($("#sliders").slider("option", "value")/100),
-                  a: parseFloat($("#slidera").slider("option", "value")),
-                  mincents: parseFloat($("#textmin").val()),
-                  maxcents: parseFloat($("#textmax").val()),
-                  res: Math.pow(10,parseFloat($("#sliderres").slider("option", "value"))),
-               }
-               preCalcRatios(HEinfo);
-         }
-         
+document.getElementById("slidera").addEventListener("input", function (e) {
+  document.getElementById("aval").textContent = "a: " + e.target.value;
+});
 
-			$(function() {
-				$( "#slidera" ).slider({
-					value:1,
-					min: 0,
-					max: 7,
-					step: 0.1,
-					slide: function( event, ui ) {
-						$("#aval").text("a: " + ui.value.toFixed(1))
-                  updatePlot();
-					}
-				});
-				
-				$( "#sliders" ).slider({
-					value:1,
-					min: 0.3,
-					max: 2,
-					step:0.05,
-					slide: function( event, ui ) {
-						$("#sval").text("s: " + ui.value.toFixed(2) + "%")
-                  updatePlot();
-					}
-				});
-				
-				$( "#sliderres" ).slider({
-					value:0,
-					min: -2,
-					max: 0,
-					slide: function( event, ui ) {
-						$("#resval").text("resolution: " + Math.pow(10, ui.value).toFixed(2) + " cents")
-                  updatePlot();
-					}
-				});
-				
-            updatePlot();
+document.getElementById("sliders").addEventListener("input", function (e) {
+  document.getElementById("sval```aple").textContent = "s: " + e.target.value.toFixed(2) + "%";
+});
 
-            document.getElementById('textN').addEventListener('input', updatePlot);
-            document.getElementById('textmin').addEventListener('input', updatePlot);
-            document.getElementById('textmax').addEventListener('input', updatePlot);
-			});
+document.getElementById("sliderres").addEventListener("input", function (e) {
+  document.getElementById("resval").textContent =
+    "resolution: " + Math.pow(10, e.target.value).toFixed(2) + " cents";
+});
+
+$(function() {
+	document.getElementById("go").addEventListener("click", function () {
+	  plotted = true;
+	  const plotElement = document.getElementById("plot"); // You need to define 'plot' according to your HTML structure
+	  if (plotElement !== null) plotElement.unhighlight();
+	  const permatipElements = document.getElementsByClassName("permatip");
+	  while (permatipElements.length > 0) {
+	    permatipElements[0].parentNode.removeChild(permatipElements[0]);
+	  }
+	  const HEinfo = {
+	    N: parseInt(document.getElementById("textN").value),
+	    mincents: parseFloat(document.getElementById("textmin").value),
+	    maxcents: parseFloat(document.getElementById("textmax").value),
+	    s: parseFloat(document.getElementById("sliders").value / 100),
+	    a: parseFloat(document.getElementById("slidera").value),
+	    res: Math.pow(10, parseFloat(document.getElementById("sliderres").value)),
+	  };
+	  preCalcRatios(HEinfo);
+	});
+
+	$("#progressbar").progressbar({
+		value: 0
+	});
+});
+
 		</script>
 	</body>
 </html>
