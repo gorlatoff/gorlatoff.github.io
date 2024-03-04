@@ -228,85 +228,6 @@ function harmonicEntropy(HEinfo) {
 }
 		
 
-// function plotHE(HEinfo) {
-//    $(function () {
-//       let HE = harmonicEntropy(HEinfo);
-//       plot = $.plot($("#HEPlotDiv"), [{
-//          color: "#00C000",
-//          data: HE
-//       }], {
-//          xaxis: {
-//             tickSize: (HEinfo.maxcents - HEinfo.mincents) / 12
-//          },
-//          yaxis: {
-//             autoscaleMargin: 0.03,
-//             labelWidth: 30,
-//             reserveSpace: true,
-//          },
-//          grid: {
-//             hoverable: true,
-//             clickable: true
-//          }
-//       });
-
-      // const showTooltip = (id, cls, color, item, extrastr = '') => {
-      //    const x = item.pageX;
-      //    const y = item.pageY;
-      //    const dyad = item.datapoint[0].toFixed(3);
-      //    const ent = item.datapoint[1].toFixed(3);
-
-      //    $(`<div id="${id}" class="${cls}">Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}</div>`)
-      //      .css({
-      //         position: 'absolute',
-      //         display: 'none',
-      //         top: y + 5,
-      //         left: x + 5,
-      //         border: '1px solid #fdd',
-      //         font: '8pt sans-serif',
-      //         padding: '2px',
-      //         'background-color': color,
-      //         cursor: 'move',
-      //         opacity: 0.80,
-      //      })
-      //      .appendTo('body')
-      //      .show()
-      //      .draggable()
-      //      .dblclick(() => {
-      //         $(`#${id}`).remove();
-      //      });
-      // };
-
-      // let previousPoint = null;
-      // $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
-      //    if (item) {
-      //       if (previousPoint != item.dataIndex) {
-      //          previousPoint = item.dataIndex;
-
-      //          $("#tooltip").remove();
-      //          showTooltip("tooltip", "tooltip", "#ffeeee", item);
-      //       }
-      //    } else {
-      //       $("#tooltip").remove();
-      //       previousPoint = null;
-      //    }
-      // });
-
-      // $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
-      //    if (item) {
-      //       let x = item.datapoint[0].toFixed(3);
-      //       let y = item.datapoint[1].toFixed(3);
-
-      //       let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
-      //       let prevPoints = $("#" + name);
-      //       if (prevPoints.length == 0) {
-      //          showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
-      //       }
-      //    }
-      // });
-//    });
-// }
-
-
 function plotHE(HEinfo) {
    $(function () {
       let HE = harmonicEntropy(HEinfo);
@@ -322,25 +243,106 @@ function plotHE(HEinfo) {
             labelWidth: 30,
             reserveSpace: true,
          },
+         grid: {
+            hoverable: true,
+            clickable: true
+         }
       });
 
+      const showTooltip = (id, cls, color, item, extrastr = '') => {
+         const x = item.pageX;
+         const y = item.pageY;
+         const dyad = item.datapoint[0].toFixed(3);
+         const ent = item.datapoint[1].toFixed(3);
+
+         $(`<div id="${id}" class="${cls}">Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}</div>`)
+           .css({
+              position: 'absolute',
+              display: 'none',
+              top: y + 5,
+              left: x + 5,
+              border: '1px solid #fdd',
+              font: '8pt sans-serif',
+              padding: '2px',
+              'background-color': color,
+              cursor: 'move',
+              opacity: 0.80,
+           })
+           .appendTo('body')
+           .show()
+           .draggable()
+           .dblclick(() => {
+              $(`#${id}`).remove();
+           });
+      };
+
+      let previousPoint = null;
+      $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
+         if (item) {
+            if (previousPoint != item.dataIndex) {
+               previousPoint = item.dataIndex;
+
+               $("#tooltip").remove();
+               showTooltip("tooltip", "tooltip", "#ffeeee", item);
+            }
+         } else {
+            $("#tooltip").remove();
+            previousPoint = null;
+         }
+      });
+
+      $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
+         if (item) {
+            let x = item.datapoint[0].toFixed(3);
+            let y = item.datapoint[1].toFixed(3);
+
+            let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
+            let prevPoints = $("#" + name);
+            if (prevPoints.length == 0) {
+               showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
+            }
+         }
+      });
    });
 }
+			
+// function preCalcRatios(HEinfo) {
+//   let progress = document.querySelector('.progress div');
+//   progress.style.width = '0%';
 
+//   if (HEinfo.N != oldN) {
+//     r.length = 0;
 
-// function plotHE(HEinfo) {
-//    let ctx = document.getElementById("myChart").getContext("2d");
-//    let HE = harmonicEntropy(HEinfo);
-//    let chart = new Chart(ctx, {
-//       type: 'line',
-//       data: {
-//          datasets: [{
-//             data: HE
-//          }]
+//     oldN = HEinfo.N;
+//     let n = HEinfo.N;
+
+//     setTimeout(function() {
+//       let start = +new Date();
+//       do {
+//         for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+//           if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
+//             r.push([i, n / i]); //does numerator on left, denominator on right
+//             if (n / i != i) r.push([n / i, i]);
+//           }
+//         }
+//       } while (-- n >= 0 && ( + new Date () - start < 50));
+
+//       if (n > 0) {
+//         progress.style.width = 100 * (HEinfo.N - n) / HEinfo.N + '%';
+//         setTimeout(arguments.callee, 60);
+//       } else {
+//         progress.style.width = '0%';
+//         setTimeout(function() {
+//           plotHE(HEinfo)
+//         },
+//         1);
 //       }
-//    });
+//     },
+//     25);
+//   } else {
+//     plotHE(HEinfo);
+//   }
 // }
-
 
 function preCalcRatios(HEinfo) {
   const progress = document.querySelector('.progress div');
@@ -400,8 +402,6 @@ function updatePlot(){
     };
     preCalcRatios(HEinfo);
 }
-
-updatePlot();
 
 document.getElementById("slidera").addEventListener("input", function (e) {
   document.getElementById("aval").textContent = "a: " + e.target.value;

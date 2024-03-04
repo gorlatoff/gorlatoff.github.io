@@ -40,61 +40,27 @@
 			  height: 100%;
 			}
 		</style>
-  <body>
-      <div id="HEPlotDiv"></div>
-      <div id=controls>
-            <div class="controlrow">
-              <span class="label" id="Nval">N: </span>
-              <input id="textN" class="textinput" value="10000" />
-            </div>
-            <div class="controlrow">
-              <span class="label" id="minval">min cents: </span>
-              <input id="textmin" class="textinput" value="0" />
-            </div>
-            <div class="controlrow">
-              <span class="label" id="maxval">max cents: </span>
-              <input id="textmax" class="textinput" value="1200" />
-            </div>
 
-            <div class="controlrow">
-              <span class="label" id="aval">a: 1.0</span>
-              <input type="range" id="slidera" class="slider" min="0" max="5" step="0.1" value="2" />
-            </div>
-            <div class="controlrow">
-              <span class="label" id="sval">s: 1.00%</span>
-              <input type="range" id="sliders" class="slider" min="0.4" max="2" step="0.05" value="1" />
-            </div>
-            <div class="controlrow">
-              <span class="label" id="resval">resolution: 1.00 cents</span>
-              <input type="range" id="sliderres" class="slider" min="-1" max="0" value="0" />
-            </div>
-
-        <input type=button id="go" value="Go!">
-
-        <div class="progress">
-          <div style='width: 0%'></div>
-        </div>  
-
-        </div>
-  </body>       
-	<script>
-let plot;
-let r = [];
-let oldN;
-let plotted = false;
+		<script>
+var plot;
+var r = new Array();
+var oldN;
+var plotted = false;
 
 const log2 = x => Math.log(x) / Math.log(2);
 
 function gcd(x, y) {
-  while (y !== 0) {
-    [x, y] = [y, x % y];
-  }
-  return x;
+   while (y != 0) {
+      let z = x % y;
+      x = y;
+      y = z;
+   }
+   return x;
 }
 
-function convolve(olda, oldb) {
-   let a = [...olda];
-   let b = [...oldb];
+function conv(olda, oldb) {
+   let a = olda.concat();
+   let b = oldb.concat();
 
    let len = a.length;
    let minlen = 1;
@@ -126,11 +92,13 @@ function convolve(olda, oldb) {
 
 function harmonicEntropy(HEinfo) {
   //globals
-  let { a, s, res, mincents, maxcents } = HEinfo;
+  let a = parseFloat(HEinfo.a);
+  let s = parseFloat(HEinfo.s);
+  let res = parseFloat(HEinfo.res);
   let scents = 1200 * log2(HEinfo.s + 1);
   let padding = Math.round(100 * scents);
-  let min = mincents - padding;
-  let max = maxcents + padding;
+  let min = parseFloat(HEinfo.mincents) - padding;
+  let max = parseFloat(HEinfo.maxcents) + padding;
   let locr = r;
 
   a = (a == 1) ? a = 1.0000000001 : a = a;
@@ -204,8 +172,8 @@ function harmonicEntropy(HEinfo) {
     ag_sum += ag[i];
   }
 
-  const ent = convolve(ak, ag);
-  const nrm = convolve(k, g);
+  const ent = conv(ak, ag);
+  const nrm = conv(k, g);
 
   //trim answer and out
   let out = [];
@@ -228,85 +196,6 @@ function harmonicEntropy(HEinfo) {
 }
 		
 
-// function plotHE(HEinfo) {
-//    $(function () {
-//       let HE = harmonicEntropy(HEinfo);
-//       plot = $.plot($("#HEPlotDiv"), [{
-//          color: "#00C000",
-//          data: HE
-//       }], {
-//          xaxis: {
-//             tickSize: (HEinfo.maxcents - HEinfo.mincents) / 12
-//          },
-//          yaxis: {
-//             autoscaleMargin: 0.03,
-//             labelWidth: 30,
-//             reserveSpace: true,
-//          },
-//          grid: {
-//             hoverable: true,
-//             clickable: true
-//          }
-//       });
-
-      // const showTooltip = (id, cls, color, item, extrastr = '') => {
-      //    const x = item.pageX;
-      //    const y = item.pageY;
-      //    const dyad = item.datapoint[0].toFixed(3);
-      //    const ent = item.datapoint[1].toFixed(3);
-
-      //    $(`<div id="${id}" class="${cls}">Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}</div>`)
-      //      .css({
-      //         position: 'absolute',
-      //         display: 'none',
-      //         top: y + 5,
-      //         left: x + 5,
-      //         border: '1px solid #fdd',
-      //         font: '8pt sans-serif',
-      //         padding: '2px',
-      //         'background-color': color,
-      //         cursor: 'move',
-      //         opacity: 0.80,
-      //      })
-      //      .appendTo('body')
-      //      .show()
-      //      .draggable()
-      //      .dblclick(() => {
-      //         $(`#${id}`).remove();
-      //      });
-      // };
-
-      // let previousPoint = null;
-      // $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
-      //    if (item) {
-      //       if (previousPoint != item.dataIndex) {
-      //          previousPoint = item.dataIndex;
-
-      //          $("#tooltip").remove();
-      //          showTooltip("tooltip", "tooltip", "#ffeeee", item);
-      //       }
-      //    } else {
-      //       $("#tooltip").remove();
-      //       previousPoint = null;
-      //    }
-      // });
-
-      // $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
-      //    if (item) {
-      //       let x = item.datapoint[0].toFixed(3);
-      //       let y = item.datapoint[1].toFixed(3);
-
-      //       let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
-      //       let prevPoints = $("#" + name);
-      //       if (prevPoints.length == 0) {
-      //          showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
-      //       }
-      //    }
-      // });
-//    });
-// }
-
-
 function plotHE(HEinfo) {
    $(function () {
       let HE = harmonicEntropy(HEinfo);
@@ -322,69 +211,151 @@ function plotHE(HEinfo) {
             labelWidth: 30,
             reserveSpace: true,
          },
+         grid: {
+            hoverable: true,
+            clickable: true
+         }
       });
 
+      const showTooltip = (id, cls, color, item, extrastr = '') => {
+         const x = item.pageX;
+         const y = item.pageY;
+         const dyad = item.datapoint[0].toFixed(3);
+         const ent = item.datapoint[1].toFixed(3);
+
+         $(`<div id="${id}" class="${cls}">Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}</div>`)
+           .css({
+              position: 'absolute',
+              display: 'none',
+              top: y + 5,
+              left: x + 5,
+              border: '1px solid #fdd',
+              font: '8pt sans-serif',
+              padding: '2px',
+              'background-color': color,
+              cursor: 'move',
+              opacity: 0.80,
+           })
+           .appendTo('body')
+           .show()
+           .draggable()
+           .dblclick(() => {
+              $(`#${id}`).remove();
+           });
+      };
+
+      let previousPoint = null;
+      $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
+         if (item) {
+            if (previousPoint != item.dataIndex) {
+               previousPoint = item.dataIndex;
+
+               $("#tooltip").remove();
+               showTooltip("tooltip", "tooltip", "#ffeeee", item);
+            }
+         } else {
+            $("#tooltip").remove();
+            previousPoint = null;
+         }
+      });
+
+      $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
+         if (item) {
+            let x = item.datapoint[0].toFixed(3);
+            let y = item.datapoint[1].toFixed(3);
+
+            let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
+            let prevPoints = $("#" + name);
+            if (prevPoints.length == 0) {
+               showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
+            }
+         }
+      });
    });
 }
-
-
-// function plotHE(HEinfo) {
-//    let ctx = document.getElementById("myChart").getContext("2d");
-//    let HE = harmonicEntropy(HEinfo);
-//    let chart = new Chart(ctx, {
-//       type: 'line',
-//       data: {
-//          datasets: [{
-//             data: HE
-//          }]
-//       }
-//    });
-// }
-
-
+			
 function preCalcRatios(HEinfo) {
-  const progress = document.querySelector('.progress div');
+  var progress = document.querySelector('.progress div');
   progress.style.width = '0%';
 
-  if (HEinfo.N !== oldN) {
+  if (HEinfo.N != oldN) {
     r.length = 0;
 
     oldN = HEinfo.N;
-    let n = HEinfo.N;
+    var n = HEinfo.N;
 
-    const animationLoop = () => {
-      if (n > 0) {
-        const start = performance.now();
-        do {
-          for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
-            if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
-              r.push([i, n / i]);
-              if (n / i !== i) r.push([n / i, i]);
-            }
+    setTimeout(function() {
+      var start = +new Date();
+      do {
+        for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+          if (n / i == Math.round(n / i) && gcd(i, n / i) == 1) {
+            r.push([i, n / i]); //does numerator on left, denominator on right
+            if (n / i != i) r.push([n / i, i]);
           }
-        } while (--n >= 0 && performance.now() - start < 50);
+        }
+      } while (-- n >= 0 && ( + new Date () - start < 50));
 
+      if (n > 0) {
         progress.style.width = 100 * (HEinfo.N - n) / HEinfo.N + '%';
-        requestAnimationFrame(animationLoop);
+        setTimeout(arguments.callee, 60);
       } else {
         progress.style.width = '0%';
-        setTimeout(() => {
-          plotHE(HEinfo);
-        }, 1);
+        setTimeout(function() {
+          plotHE(HEinfo)
+        },
+        1);
       }
-    };
-
-    setTimeout(() => {
-      animationLoop();
-    }, 25);
+    },
+    25);
   } else {
     plotHE(HEinfo);
   }
 }
+		</script>
+	</head>
+	<body>
+		
+			<div id="HEPlotDiv"></div>
+			<div id=controls>
 
+
+		        <div class="controlrow">
+		          <span class="label" id="Nval">N: </span>
+		          <input id="textN" class="textinput" value="10000" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="minval">min cents: </span>
+		          <input id="textmin" class="textinput" value="0" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="maxval">max cents: </span>
+		          <input id="textmax" class="textinput" value="1200" />
+		        </div>
+
+		        <div class="controlrow">
+		          <span class="label" id="aval">a: 1.0</span>
+		          <input type="range" id="slidera" class="slider" min="0" max="7" step="0.1" value="1" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="sval">s: 1.00%</span>
+		          <input type="range" id="sliders" class="slider" min="0.3" max="2" step="0.05" value="1" />
+		        </div>
+		        <div class="controlrow">
+		          <span class="label" id="resval">resolution: 1.00 cents</span>
+		          <input type="range" id="sliderres" class="slider" min="-1" max="0" value="0" />
+		        </div>
+
+				<input type=button id="go" value="Go!">
+
+				<div class="progress">
+				  <div style='width: 0%'></div>
+				</div>	
+				</div>
+				
+		<script>
 function updatePlot(){
     plotted = true;
-    const plotElement = document.getElementById("plot");
+    const plotElement = document.getElementById("plot"); // You need to define 'plot' according to your HTML structure
     if (plotElement !== null) plotElement.unhighlight();
     const permatipElements = document.getElementsByClassName("permatip");
     while (permatipElements.length > 0) {
@@ -401,15 +372,13 @@ function updatePlot(){
     preCalcRatios(HEinfo);
 }
 
-updatePlot();
-
 document.getElementById("slidera").addEventListener("input", function (e) {
   document.getElementById("aval").textContent = "a: " + e.target.value;
   updatePlot();
 });
 
 document.getElementById("sliders").addEventListener("input", function (e) {
-  document.getElementById("sval").textContent = "s: " + parseFloat(e.target.value).toFixed(2) + "%";
+  document.getElementById("sval").textContent = "s: " + e.target.value.toFixed(2) + "%";
   updatePlot();
 });
 
@@ -420,15 +389,15 @@ document.getElementById("sliderres").addEventListener("input", function (e) {
 });
 
 $(function() {
-  document.getElementById("go").addEventListener("click", function () {
+	document.getElementById("go").addEventListener("click", function () {
     updatePlot();
-  });
+	});
 
-  $("#progressbar").progressbar({
-    value: 0
-  });
+	$("#progressbar").progressbar({
+		value: 0
+	});
 });
-		</script>
-	</head>
 
+		</script>
+	</body>
 </html>
