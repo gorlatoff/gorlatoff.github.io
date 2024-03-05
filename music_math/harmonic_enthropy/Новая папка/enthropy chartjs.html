@@ -83,6 +83,7 @@
 let plot;
 let r = [];
 let oldN;
+let plotted = false;
 
 const log2 = x => Math.log(x) / Math.log(2);
 
@@ -232,8 +233,6 @@ function harmonicEntropy(HEinfo) {
 const canvas = document.getElementById('myChart');
 const ctx = canvas.getContext('2d');
 
-let myChart;
-
 function plotHE(HEinfo) {
   let HE = harmonicEntropy(HEinfo);
     
@@ -244,26 +243,41 @@ function plotHE(HEinfo) {
       data: HE.map((point) => point[1]),
       backgroundColor: 'rgba(255, 99, 132, 0.2)',
       borderColor: 'rgba(255, 99, 132, 1)',
-      borderWidth: 1,
-      pointStyle: 'none'
+      borderWidth: 1
     }]
   };
 
   let options = {
     maintainAspectRatio: false,
+
+    // scales: {
+    //    xAxes: [{
+    //       ticks: {
+    //          stepSize: (HEinfo.maxcents - HEinfo.mincents) / 12
+    //       }
+    //    }],
+    //    yAxes: [{
+    //       ticks: {
+    //          beginAtZero: true
+    //       }
+    //    }]
+    // },
+
+    onClick: function(event, elements) {
+      if (elements.length > 0) {
+        const index = elements[0]._index;
+        const value = data.datasets[0].data[index];
+        console.log(`Clicked on index ` + index + ` with value ` + value);
+      }
+    }
   };
 
-  // Destroy the previous chart instance if it exists
-  if (myChart) {
-    myChart.destroy();
-  }
-
-  // Create a new chart instance
-  myChart = new Chart(ctx, {
+  let myChart = new Chart(ctx, {
     type: 'line',
     data: data,
     options: options
   });
+
 }
 
 
@@ -308,6 +322,13 @@ function preCalcRatios(HEinfo) {
 }
 
 function updatePlot(){
+    plotted = true;
+    const plotElement = document.getElementById("plot");
+    if (plotElement !== null) plotElement.unhighlight();
+    const permatipElements = document.getElementsByClassName("permatip");
+    while (permatipElements.length > 0) {
+      permatipElements[0].parentNode.removeChild(permatipElements[0]);
+    }
     const HEinfo = {
       N: parseInt(document.getElementById("textN").value),
       mincents: parseFloat(document.getElementById("textmin").value),
