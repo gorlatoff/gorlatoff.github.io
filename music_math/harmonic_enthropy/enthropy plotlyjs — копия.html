@@ -4,6 +4,7 @@
 		<title>Harmonic Entropy Calculator</title>
 		<script src="https://cdn.jsdelivr.net/npm/dsp.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 		<style>
 			#HEPlotDiv {width:98%; height:50%; margin:0 auto; float:center}
 			#controls {width:400px; height:40%; margin:30 auto; padding:0 10 10 10;float:center; font: 8pt sans-serif; border: 1px solid #808080}
@@ -40,10 +41,10 @@
 		</style>
   <body>
 
-      <div style="height: 50%">
+<!--       <div style="height: 50%">
         <canvas id="myChart"></canvas>
-      </div>
-      
+      </div> -->
+      <div id="HEPlotDiv"></div>
       <div id=controls>
             <div class="controlrow">
               <span class="label" id="Nval">N: </span>
@@ -228,43 +229,96 @@ function harmonicEntropy(HEinfo) {
   return HE_reflected; // Return the reflected array
 }
 		
-
-const canvas = document.getElementById('myChart');
-const ctx = canvas.getContext('2d');
-
-let myChart;
+let myPlot;
 
 function plotHE(HEinfo) {
   let HE = harmonicEntropy(HEinfo);
-    
-  let data = {
-    labels: HE.map((point) => point[0]),
-    datasets: [{
-      label: 'My Dataset',
-      data: HE.map((point) => point[1]),
-      backgroundColor: 'rgba(255, 99, 132, 0.2)',
-      borderColor: 'rgba(255, 99, 132, 1)',
-      borderWidth: 1,
-      pointStyle: 'none'
-    }]
+  
+  let data = [{
+    x: HE.map((point) => point[0]),
+    y: HE.map((point) => point[1]),
+    mode: 'lines',
+    line: {
+      color: 'rgba(255, 99, 132, 1)',
+      width: 2
+    }
+  }];
+
+  let layout = {
+    xaxis: {
+      title: 'X-axis'
+    },
+    yaxis: {
+      title: 'Y-axis'
+    },
+    margin: {
+      l: 60,
+      r: 30,
+      b: 60,
+      t: 30
+    }
   };
 
-  let options = {
-    maintainAspectRatio: false,
-  };
-
-  // Destroy the previous chart instance if it exists
-  if (myChart) {
-    myChart.destroy();
+  // Destroy the previous plot instance if it exists
+  if (myPlot) {
+    Plotly.purge('HEPlotDiv');
   }
 
-  // Create a new chart instance
-  myChart = new Chart(ctx, {
-    type: 'line',
-    data: data,
-    options: options
+  // Create a new plot instance
+  myPlot = Plotly.newPlot('HEPlotDiv', data, layout, {
+    staticPlot: true,
+    responsive: true
   });
 }
+// const canvas = document.getElementById('myChart');
+// const ctx = canvas.getContext('2d');
+
+// let myChart;
+
+// function plotHE(HEinfo) {
+//   let HE = harmonicEntropy(HEinfo);
+    
+//   let data = {
+//     labels: HE.map((point) => point[0]),
+
+
+//     datasets: [{
+//       label: 'My Dataset',
+//       data: HE.map((point) => point[1]),
+//       backgroundColor: 'rgba(255, 99, 132, 0.2)',
+//       borderColor: 'rgba(255, 99, 132, 1)',
+//       borderWidth: 1,
+//       pointStyle: 'rect',
+//     }]
+//   };
+
+//   let options = {
+//     maintainAspectRatio: false,
+//     animation: {
+//         duration: 0
+//     },
+//     point:{
+//         borderWidth: 10,
+//         radius: 20,
+//         backgroundColor: 'rgba(0,0,0,0)'
+//     },    
+//   };
+
+//   // Destroy the previous chart instance if it exists
+//   if (myChart) {
+//     myChart.destroy();
+//   }
+
+
+//   // Create a new chart instance
+//   myChart = new Chart(ctx, {
+//     type: 'line',
+//     data: data,
+//     options: options
+//   });
+
+//   myChart.update('none');
+// }
 
 
 function preCalcRatios(HEinfo) {
