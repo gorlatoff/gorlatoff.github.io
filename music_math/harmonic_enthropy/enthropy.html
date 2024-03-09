@@ -267,100 +267,100 @@ function harmonicEntropy(HEinfo) {
 }
 		
 
-function plotHE(HEinfo) {
-   $(function () {
-      let HE = harmonicEntropy(HEinfo);
-      plot = $.plot($("#HEPlotDiv"), [{
-         color: "#00C000",
-         data: HE
-      }], {
-         xaxis: {
-            tickSize: (HEinfo.maxcents - HEinfo.mincents) / 12
-         },
-         yaxis: {
-            autoscaleMargin: 0.0,
-            labelWidth: 30,
-            reserveSpace: true,
-         },
-         grid: {
-            hoverable: true,
-            clickable: true
-         }
-      });
-
-      const showTooltip = (id, cls, color, item, extrastr = '') => {
-         const $tooltip = $(`#${id}`);
-         if ($tooltip.length === 0) {
-            $(`<div id="${id}" class="${cls}"></div>`)
-              .css({
-                 position: 'absolute',
-                 display: 'none',
-                 border: '1px solid #fdd',
-                 font: '8pt sans-serif',
-                 padding: '2px',
-                 'background-color': color,
-                 cursor: 'move',
-                 opacity: 0.80,
-              })
-              .appendTo('body')
-              .draggable();
-         }
-
-         const x = item.pageX;
-         const y = item.pageY;
-         const dyad = item.datapoint[0].toFixed(3);
-         const ent = item.datapoint[1].toFixed(3);
-
-         $(`#${id}`)
-           .html(`Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}`)
-           .css({ top: y + 5, left: x + 5 })
-           .show();
-
-         if (cls === 'permatip') {
-            $(`#${id}`).dblclick(() => {
-               $(`#${id}`).remove();
-            });
-         }
-      };
-
-      let previousPoint = null;
-      $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
-         if (item) {
-            if (previousPoint != item.dataIndex) {
-               previousPoint = item.dataIndex;
-
-               showTooltip("tooltip", "tooltip", "#ffeeee", item);
-            }
-         } else {
-            $("#tooltip").hide();
-            previousPoint = null;
-         }
-      });
-
-      $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
-         if (item) {
-            let x = item.datapoint[0].toFixed(3);
-            let y = item.datapoint[1].toFixed(3);
-
-            let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
-            showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
-         }
-      });
-   });
-}
-
 // function plotHE(HEinfo) {
 //    $(function () {
 //       let HE = harmonicEntropy(HEinfo);
 //       plot = $.plot($("#HEPlotDiv"), [{
 //          color: "#00C000",
 //          data: HE
-//       }], 
-//       {
+//       }], {
+//          xaxis: {
+//             tickSize: (HEinfo.maxcents - HEinfo.mincents) / 12
+//          },
+//          yaxis: {
+//             autoscaleMargin: 0.0,
+//             labelWidth: 30,
+//             reserveSpace: true,
+//          },
+//          grid: {
+//             hoverable: true,
+//             clickable: true
+//          }
 //       });
 
+//       const showTooltip = (id, cls, color, item, extrastr = '') => {
+//          const $tooltip = $(`#${id}`);
+//          if ($tooltip.length === 0) {
+//             $(`<div id="${id}" class="${cls}"></div>`)
+//               .css({
+//                  position: 'absolute',
+//                  display: 'none',
+//                  border: '1px solid #fdd',
+//                  font: '8pt sans-serif',
+//                  padding: '2px',
+//                  'background-color': color,
+//                  cursor: 'move',
+//                  opacity: 0.80,
+//               })
+//               .appendTo('body')
+//               .draggable();
+//          }
+
+//          const x = item.pageX;
+//          const y = item.pageY;
+//          const dyad = item.datapoint[0].toFixed(3);
+//          const ent = item.datapoint[1].toFixed(3);
+
+//          $(`#${id}`)
+//            .html(`Dyad: ${dyad} cents<br>HE: ${ent} nats ${extrastr}`)
+//            .css({ top: y + 5, left: x + 5 })
+//            .show();
+
+//          if (cls === 'permatip') {
+//             $(`#${id}`).dblclick(() => {
+//                $(`#${id}`).remove();
+//             });
+//          }
+//       };
+
+//       let previousPoint = null;
+//       $("#HEPlotDiv").bind("plothover", function (event, pos, item) {
+//          if (item) {
+//             if (previousPoint != item.dataIndex) {
+//                previousPoint = item.dataIndex;
+
+//                showTooltip("tooltip", "tooltip", "#ffeeee", item);
+//             }
+//          } else {
+//             $("#tooltip").hide();
+//             previousPoint = null;
+//          }
+//       });
+
+//       $("#HEPlotDiv").bind("plotclick", function (event, pos, item) {
+//          if (item) {
+//             let x = item.datapoint[0].toFixed(3);
+//             let y = item.datapoint[1].toFixed(3);
+
+//             let name = "permatipx" + x.toString().replace(/\./gi, "p") + "y" + y.toString().replace(/\./gi, "p");
+//             showTooltip(name, "permatip", "#ffbbbb", item, "<br><small><i>Double-click to remove</i></small>");
+//          }
+//       });
 //    });
 // }
+
+function plotHE(HEinfo) {
+   $(function () {
+      let HE = harmonicEntropy(HEinfo);
+      plot = $.plot($("#HEPlotDiv"), [{
+         color: "#00C000",
+         data: HE
+      }], 
+      {
+      });
+
+   });
+}
 
 
 function preCalcRatios(HEinfo) {
