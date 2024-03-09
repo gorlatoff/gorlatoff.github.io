@@ -95,7 +95,7 @@
             </div>
             <div class="controlrow">
               <span class="label" id="maxval">max cents: </span>
-              <input id="textmax" class="textinput" value="1" />
+              <input id="textmax" class="textinput" value="1200" />
             </div>
 
             <div class="controlrow">
@@ -413,8 +413,8 @@ function updatePlot(){
     }
     const HEinfo = {
       N: parseInt(document.getElementById("textN").value),
-      mincents: parseFloat(document.getElementById("textmin").value)*1200,
-      maxcents: parseFloat(document.getElementById("textmax").value)*1200,
+      mincents: parseFloat(document.getElementById("textmin").value),
+      maxcents: parseFloat(document.getElementById("textmax").value),
       s: parseFloat(document.getElementById("sliders").value / 100),
       a: parseFloat(document.getElementById("slidera").value),
       res: Math.pow(10, parseFloat(document.getElementById("sliderres").value)),
