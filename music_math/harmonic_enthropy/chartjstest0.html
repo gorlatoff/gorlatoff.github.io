@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chart Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #myChart {
+            width: 400px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myChart"></canvas>
+
+    <script>
+        var ctx = document.getElementById('myChart').getContext('2d');
+
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                datasets: [{
+                    label: 'Пример данных',
+                    data: [12, 19, 3, 5, 2, 3]
+                }]
+            },
+            options: {
+                onClick: function(event, elements) {
+                    if (elements && elements.length > 0) {
+                        var index = elements[0]._index;
+                        var datasetIndex = elements[0]._datasetIndex;
+                        var value = myChart.data.datasets[datasetIndex].data[index];
+
+                        // Обработка клика на точку графика
+                        console.log('Кликнуто по точке с координатами X:', index, 'Y:', value);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
