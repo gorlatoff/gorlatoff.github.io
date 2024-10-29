@@ -1,0 +1,101 @@
+Это заготовка для авторского сайта для товарища, он пишет книги. Нужно допилить до минимально работающего состояния.
+
+Нужно сделать простую вещь: 
+в dropdown menu каждый новый элемент должен переноситься, сделай эту очередь вертикальной
+
+И сложную:
+При клике на каждый элемент меню сайт проматывается до этого элемента. Это касается и каждой из главных секций, и всех книг из подменю.
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторский сайт писателя</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style type="text/css">
+        .dropdown {
+            display: none;
+            position: absolute;
+            background-color: #black;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .menu-item:hover .dropdown {
+            display: block;
+        }
+        .menu-item {
+            position: relative;
+/*            display: inline-block;*/
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">Имя автора</div>
+        <nav class="menu">
+            <ul>
+                <li><a href="#hero">Главная</a></li>
+                <li><a href="#about">Об авторе</a></li>
+                <li class="menu-item">
+                    <a href="#books">Произведения</a>
+                    <div class="dropdown">
+                        <a href="#samsara">Сансара</a>
+                        <a href="#bozidar">Božidar</a>
+                    </div>
+                </li>
+                <li><a href="#contacts">Контакты</a></li>
+            </ul>
+        </nav>
+        <button class="profile-btn">Профиль</button>
+    </header>
+
+    <section class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <h1>Dea by 'Ardistrut and Apphiver</h1>
+            <h2>Alexey Bondarenko</h2>
+            <p>Текст о писателе, его достижениях и творчестве.</p>
+            <button class="main-btn">Номинирован на премию</button>
+        </div>
+    </section>
+
+    <section class="biography">
+        <img src="author.webp" alt="Фото автора">
+        <div>
+            <h2>Биография</h2>
+            <p>Здесь должен быть текст о жизни и творческом пути автора. Текст будет придуманный, поскольку оригинальный текст не читается.</p>
+        </div>
+    </section>
+
+<section class="books" id="books">
+        <h2>Книги</h2>
+        <div class="book-item" id="samsara">
+            <img src="book1.jpg" alt="Обложка книги Сансара">
+            <div>
+                <h3>Сансара</h3>
+                <p>Описание произведения и текст о нем.</p>
+                <a href="https://dzen.ru/a/ZhjVsxu5WlGdoxoW" target="_blank">Читать книгу</a>
+            </div>
+        </div>
+        <div class="book-item" id="bozidar">
+            <img src="book2.jpg" alt="Обложка книги Božidar">
+            <div>
+                <h3>Božidar</h3>
+                <p>Краткое описание книги. О чем она и почему стоит ее прочитать.</p>
+                <a href="https://example.com/random" target="_blank">Читать книгу</a> <!-- Случайную ссылку нужно будет заменить на правильную -->
+            </div>
+        </div>
+    </section>
+    <footer class="footer" id="contacts">
+        <p>Контакты:</p>
+        <p>Email: <a href="mailto:example@email.com">example@email.com</a></p>
+        <p>Telegram: <a href="https://t.me/username">username</a></p>
+    </footer>
+
+    <script>
+
+    </script>
+</body>
+</html>
