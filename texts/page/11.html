@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-
+window.addEventListener('unload', () => {
+    // Попробуем удалить из sessionStorage и localStorage, если использовалось
+    sessionStorage.clear();
+    localStorage.clear();
+});
 window.addEventListener('load', () => {
     const slider = document.getElementById('slider');
     // Устанавливаем начальную позицию слайдера на первый слайд
@@ -127,11 +131,7 @@ class Slider {
 // Initialize slider
 new Slider('slider');
 
-window.addEventListener('load', () => {
-    // Установка начальной позиции слайдера в 0
-    const slider = document.getElementById('slider');
-    slider.style.transform = 'translateY(0px)';  // Или вызов функции сброса
-});
+
 </script>
 </head>
 <style>
