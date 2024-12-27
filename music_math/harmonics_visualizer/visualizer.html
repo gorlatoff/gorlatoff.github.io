@@ -1,3 +1,4 @@
+```
 <html>
 <style>
   html, body {
@@ -249,9 +250,6 @@ class Harmonic {
       portamento: 0,
       volume: this.volX
     }).toDestination().connect(compressor); ;
-
-  // this.synth.connect(compressor);
-   // this.synth.connect(analyser);
   }
   
   display() {
@@ -340,23 +338,6 @@ window.addEventListener('resize', updateCanvasSize);
 canvas.addEventListener('mousedown', mousePressed);
 canvas.addEventListener('mousemove', mouseDragged);
 canvas.addEventListener('mouseup', mouseReleased);
-
-
-
-
-
-// const compressor = new Tone.Compressor({
-//     threshold: -20,
-//     ratio: 12,
-//     attack: 0.03,
-//     release: 0.1,
-//     knee: 30,
-// }).toMaster();
-
-// Tone.Master.chain(compressor);
-
-// // // Подключаем компрессор к мастер-каналу
-// Tone.Master.connect(compressor);
 
 Tone.start();  
 </script>

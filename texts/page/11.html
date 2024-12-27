@@ -4,21 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-window.addEventListener('unload', () => {
-    // Попробуем удалить из sessionStorage и localStorage, если использовалось
-    sessionStorage.clear();
-    localStorage.clear();
-});
 window.addEventListener('load', () => {
     const slider = document.getElementById('slider');
-    // Устанавливаем начальную позицию слайдера на первый слайд
-    slider.style.transform = 'translateY(0)';  // Устанавливаем начальную позицию
+    
+    // Сбросить слайдер, чтобы всегда начинать с первого слайда
+    slider.style.transform = 'translateY(0px)';
 
-    // Можно также использовать метод класса для установки
+    // Убедимся, что создаем новый экземпляр Slider класса и обновляем позицию
     const sliderInstance = new Slider('slider');
-    sliderInstance.snapTo(0);  // Перейти к первому слайду при загрузке
+    sliderInstance.snapTo(0);
 });
-
 
 const SliderConfig = {
     TRANSITION: 'transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000)',
@@ -40,17 +35,12 @@ class Slider {
     }
 
     initEvents() {
-        // Привязываем обработчики к элементу слайдера, а не к window
         ['mousedown', 'touchstart'].forEach(event => 
             this.slider.addEventListener(event, e => this.startDrag(e)));
-        
-        // Эти обработчики оставляем на window для корректной работы драга
         ['mousemove', 'touchmove'].forEach(event => 
             window.addEventListener(event, e => this.drag(e), { passive: false }));
-        
         ['mouseup', 'touchend'].forEach(event => 
             window.addEventListener(event, () => this.endDrag()));
-        
         this.slider.addEventListener('wheel', e => this.handleWheel(e), { passive: false });
     }
 
@@ -238,6 +228,18 @@ new Slider('slider');
     .slide-content:not(:hover) .separator {
         transition-duration: 2s;
     }
+   #slider {
+       scroll-snap-type: y mandatory;
+       overflow-y: scroll;
+       height: 100vh;
+   }
+
+   .slide {
+       scroll-snap-align: start;
+       height: 100vh;
+   }
+   
+
 </style>
 <title>Zakaznik</title>
 <body>

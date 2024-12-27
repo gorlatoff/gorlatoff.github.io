@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music Sequencer</title>
+    <style>
+        #container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+        #instruments {
+            width: 200px;
+        }
+        .instrument {
+            padding: 10px;
+            margin: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        .instrument.active {
+            background-color: #a0f0a0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="instruments">
+            <button onclick="createInstrument()">Add Instrument</button>
+            <div id="instrumentList"></div>
+        </div>
+        <canvas id="sequencer" width="800" height="400"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById('sequencer');
+const ctx = canvas.getContext('2d');
+
+const PIXELS_PER_BEAT = 100;
+const NOTE_HEIGHT = 20;
+const DOUBLE_CLICK_DELAY = 300;
+const GRID_SIZE = 0.25;
+const MIN_DURATION = GRID_SIZE;
+
+const allNotes = ['B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'];
+const trackData = {
+    instruments: new Map()
+};
+
+let currentInstrument = null;
+let lastClickTime = 0;
+let isDragging = false;
+let mouseDownNote = null;
+let mouseDownTime = null;
+let draggedNote = null;
+let dragStartX = null;
+let dragStartY = null;
+let dragMode = null;
+let cursorPosition = 0;
+
+const synthMap = new Map();
+
+function createInstrument(name = 'Synth') {
+    const id = Date.now().toString();
+    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    synthMap.set(id, synth);
+    trackData.instruments.set(id, []);
+    updateInstrumentPanel();
+    return id;
+}
+
+function updateInstrumentPanel() {
+    const container = document.getElementById('instrumentList');
+    container.innerHTML = '';
+    
+    trackData.instruments.forEach((notes, id) => {
+        const div = document.createElement('div');
+        div.className = `instrument ${id === currentInstrument ? 'active' : ''}`;
+        div.textContent = `Instrument ${id}`;
+        div.onclick = () => selectInstrument(id);
+        container.appendChild(div);
+    });
+}
+
+function selectInstrument(id) {
+    currentInstrument = id;
+    updateInstrumentPanel();
+}
+
+function drawGrid() {
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 0.5;
+    
+    // Вертикальные линии
+    for (let x = 0; x <= canvas.width; x += GRID_SIZE * PIXELS_PER_BEAT) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    
+    // Горизонтальные линии
+    for (let y = 0; y <= canvas.height; y += NOTE_HEIGHT) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+function drawNotes() {
+    trackData.instruments.forEach((notes, instrumentId) => {
+        notes.forEach(note => {
+            const x = note.time * PIXELS_PER_BEAT;
+            const y = (allNotes.length - allNotes.indexOf(note.note) - 1) * NOTE_HEIGHT;
+            
+            ctx.fillStyle = instrumentId === currentInstrument ? '#4CAF50' : '#2196F3';
+            ctx.fillRect(x, y, note.duration * PIXELS_PER_BEAT, NOTE_HEIGHT - 1);
+        });
+    });
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawNotes();
+    
+    if (isDragging && mouseDownNote) {
+        const currentTime = cursorPosition / PIXELS_PER_BEAT;
+        const duration = Math.max(GRID_SIZE, currentTime - mouseDownTime);
+        ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
+        ctx.fillRect(
+            mouseDownTime * PIXELS_PER_BEAT,
+            (allNotes.length - allNotes.indexOf(mouseDownNote) - 1) * NOTE_HEIGHT,
+            duration * PIXELS_PER_BEAT,
+            NOTE_HEIGHT - 1
+        );
+    }
+}
+
+function getNoteAt(instrumentId, x, y) {
+    const time = x / PIXELS_PER_BEAT;
+    const noteIndex = allNotes.length - Math.floor(y / NOTE_HEIGHT) - 1;
+    
+    if (noteIndex < 0 || noteIndex >= allNotes.length) return null;
+    
+    const notes = trackData.instruments.get(instrumentId);
+    return notes.find(n => 
+        n.note === allNotes[noteIndex] &&
+        time >= n.time &&
+        time <= n.time + n.duration
+    );
+}
+
+function addNoteToTrack(instrumentId, note, time, duration) {
+    const notes = trackData.instruments.get(instrumentId);
+    notes.push({ note, time, duration });
+}
+
+function removeNoteFromTrack(instrumentId, note, time) {
+    const notes = trackData.instruments.get(instrumentId);
+    const index = notes.findIndex(n => n.note === note && n.time === time);
+    if (index !== -1) {
+        notes.splice(index, 1);
+    }
+}
+
+function handleMouseDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const clickTime = new Date().getTime();
+    
+    let foundNote = null;
+    let foundInstrument = null;
+    
+    trackData.instruments.forEach((notes, instrumentId) => {
+        const note = getNoteAt(instrumentId, x, y);
+        if (note) {
+            foundNote = note;
+            foundInstrument = instrumentId;
+        }
+    });
+    
+    if (foundNote) {
+        currentInstrument = foundInstrument;
+        updateInstrumentPanel();
+        
+        if (clickTime - lastClickTime < DOUBLE_CLICK_DELAY) {
+            removeNoteFromTrack(foundInstrument, foundNote.note, foundNote.time);
+        } else {
+            const synth = synthMap.get(foundInstrument);
+            foundNote.playStartTime = Tone.now();
+            synth.triggerAttackRelease(foundNote.note, foundNote.duration);
+            
+            draggedNote = foundNote;
+            dragStartX = x;
+            dragStartY = y;
+            
+            const noteX = foundNote.time * PIXELS_PER_BEAT;
+            const noteWidth = foundNote.duration * PIXELS_PER_BEAT;
+            
+            if (Math.abs(x - noteX) < 10) {
+                dragMode = 'resize-left';
+            } else if (Math.abs(x - (noteX + noteWidth)) < 10) {
+                dragMode = 'resize-right';
+            } else {
+                dragMode = 'move';
+            }
+        }
+    } else if (currentInstrument) {
+        const gridX = Math.floor(x / (GRID_SIZE * PIXELS_PER_BEAT)) * GRID_SIZE;
+        mouseDownNote = allNotes[allNotes.length - Math.floor(y / NOTE_HEIGHT) - 1];
+        mouseDownTime = gridX;
+        isDragging = true;
+        
+        addNoteToTrack(currentInstrument, mouseDownNote, mouseDownTime, MIN_DURATION);
+        const synth = synthMap.get(currentInstrument);
+        synth.triggerAttackRelease(mouseDownNote, MIN_DURATION);
+    }
+    
+    lastClickTime = clickTime;
+    render();
+}
+
+function handleMouseMove(e) {
+    if (!isDragging && !draggedNote) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    cursorPosition = e.clientX - rect.left;
+    
+    if (draggedNote) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const dx = Math.round((x - dragStartX) / (GRID_SIZE * PIXELS_PER_BEAT)) * GRID_SIZE;
+        
+        if (dragMode === 'move') {
+            const newNote = allNotes[allNotes.length - Math.floor(y / NOTE_HEIGHT) - 1];
+            const newTime = Math.max(0, draggedNote.time + dx);
+            
+            removeNoteFromTrack(currentInstrument, draggedNote.note, draggedNote.time);
+            addNoteToTrack(currentInstrument, newNote, newTime, draggedNote.duration);
+            draggedNote = getNoteAt(currentInstrument, x, y);
+            dragStartX = x;
+            dragStartY = y;
+        } else if (dragMode === 'resize-right') {
+            const newDuration = Math.max(MIN_DURATION, draggedNote.duration + dx);
+            removeNoteFromTrack(currentInstrument, draggedNote.note, draggedNote.time);
+            addNoteToTrack(currentInstrument, draggedNote.note, draggedNote.time, newDuration);
+            draggedNote = getNoteAt(currentInstrument, x, y);
+            dragStartX = x;
+        }
+    } else if (isDragging && mouseDownNote) {
+        const currentTime = Math.floor(cursorPosition / (GRID_SIZE * PIXELS_PER_BEAT)) * GRID_SIZE;
+        const duration = Math.max(GRID_SIZE, currentTime - mouseDownTime);
+        
+        removeNoteFromTrack(currentInstrument, mouseDownNote, mouseDownTime);
+        addNoteToTrack(currentInstrument, mouseDownNote, mouseDownTime, duration);
+    }
+    
+    render();
+}
+
+function handleMouseUp() {
+    if (mouseDownNote) {
+        const synth = synthMap.get(currentInstrument);
+        synth.triggerRelease();
+    }
+    
+    draggedNote = null;
+    dragMode = null;
+    isDragging = false;
+    mouseDownNote = null;
+    mouseDownTime = null;
+    render();
+}
+
+canvas.addEventListener('mousedown', handleMouseDown);
+canvas.addEventListener('mousemove', handleMouseMove);
+canvas.addEventListener('mouseup', handleMouseUp);
+canvas.addEventListener('mouseleave', handleMouseUp);
+
+createInstrument();
+render();
+</script>
+</body>
+</html>

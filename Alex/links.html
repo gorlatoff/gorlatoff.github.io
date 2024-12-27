@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ссылки</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.jpg">
+    <script src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <ul>
+                    <li><a href="main.html">Главная</a></li>
+                    <li><a href="author.html">Об авторе</a></li>
+                    <li><a href="texts.html">Произведения</a></li>
+                    <li><a href="links.html">Ссылки</a></li>
+                </ul>
+            </nav>
+            <div class="lang-switcher">
+                <img src="flag_ru.png" alt="Русский" title="Русский">
+                <img src="flag_isv.png" alt="Межславянский" title="Межславянский" onclick="replacePartAndRedirect('.html', '_isv.html')">
+            </div>
+        </div>
+    </header>
+
+    <div class="content-page">
+        <div class="container">
+            <h2>Ссылки</h2>
+            <div class="links-list">
+                <ol>
+                    <li><a href="#">Межславянский словарь</a></li>
+                    <li><a href="#">О межславянском языке</a>: грамматика, произношение, ссылки на полезные инструменты</li>
+                    <li><a href="#">Сайт Яна ван Стенбергена</a>: история создания языка, грамматика, фонетика, склонитель и многое другое (на английском и межславянском)</li>
+                    <li><a href="#">Сайт Мелаца</a>: песни и авторская литература на межславянском</li>
+                    <li><a href="#">Сайт Михаила Горлатова</a>: межславянский фразник, список рекомендованных слов, транслитератор, ссылки на другие ресурсы</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© Все права защищены 2024</p>
+            <a href="#"><img src="icon-envelope.png" alt="Email"></a>
+        </div>
+    </footer>
+</body>
+</html>

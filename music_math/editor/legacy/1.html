@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Audio API Example</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        button {
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="400" height="200"></canvas>
+    <button id="button1">Play Sound 1</button>
+    <button id="button2">Play Sound 2</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const button1 = document.getElementById('button1');
+        const button2 = document.getElementById('button2');
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+
+            oscillator.start();
+
+            oscillator.onended = () => {
+                oscillator.stop();
+            };
+
+            setTimeout(() => {
+                oscillator.stop();
+            }, 500);
+        }
+
+        button1.addEventListener('click', () => {
+            playSound(440); // A4 note
+            drawText('Playing Sound 1');
+        });
+
+        button2.addEventListener('click', () => {
+            playSound(880); // A5 note
+            drawText('Playing Sound 2');
+        });
+
+        function drawText(text) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '20px Arial';
+            ctx.fillText(text, 10, 30);
+        }
+    </script>
+</body>
+</html>

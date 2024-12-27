@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.jpg">
+    <script src="script.js"></script>
+</head>
+<style>
+/* Стили для главной страницы */
+.main-content {
+    background-image: url('background-1.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    padding: 100px 0;
+}
+
+.main-content h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+
+.main-content p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+}
+
+.main-content .buttons button {
+    background-color: #e67e22;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+</style>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <ul>
+                    <li><a href="main.html">Главная</a></li>
+                    <li><a href="author.html">Об авторе</a></li>
+                    <li><a href="texts.html">Произведения</a></li>
+                    <li><a href="links.html">Ссылки</a></li>
+                </ul>
+            </nav>
+            <div class="lang-switcher">
+                <img src="flag_ru.png" alt="Русский" title="Русский">
+                <img src="flag_isv.png" alt="Межславянский" title="Межславянский" onclick="replacePartAndRedirect('.html', '_isv.html')">
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <h1>ЖИЗНЬ — ЭТО ИСТОРИИ</h1>
+        <p>Закройте глаза, и они оживут...</p>
+        <div class="buttons">
+            <button>ДОБРО ПОЖАЛОВАТЬ!</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© Все права защищены 2024</p>
+            <a href="#"><img src="icon-envelope.png" alt="Email"></a>
+        </div>
+    </footer>
+</body>
+</html>

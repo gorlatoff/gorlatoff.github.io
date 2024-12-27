@@ -1,0 +1,526 @@
+Мы с тобой работаем над миди-редактором, ориентированным на
+
+<общая картина, к чему нужно стремиться>
+а) Одновременную работу над несколькими инструментами в piano-roll. Это значит одновременное отображение каждого музыкального инструмента на одном piano-roll и непринужденное переключение между инструментами, которые ты редактируешь в данный момент (по клику на этот инструмент на панели и по клику на любую ноту, которая к нему относится.
+
+б) Ладовую организацию гармонии, это значит, что:
+Для каждого инструмента задается фиксированный лад, за пределы которого выходить нельзя, неактивные высоты нот на piano-roll отмечаются серым. Для каждого инструмента мы задаем лады. Списки ладов перечислены в виде словаря {"список нот": "заданное название для каждой"}.
+
+в) Поведение для нот следующее:
+При клике на пиано-ролл создается минимальная нота, соответствующая размеру сетки, при дальнейшем растягивании вправо она может увеличиваться в длине. Также можно изменять длину ноты перетягиванием правого края. Ноты можно перетягивать вверх-вниз по высоте и влево-вправо по времени. При клике на ноту она изменяет свой цвет в сторону большей светлоты, проигрывает соответствующий звук, а также происходит выбор соответствующего инструмента. Тут нужно следить, произошел ли клик на пустое место или на ноту (если второе, то мы взаимодействуем с существующей нотой, а не создаем новую). Внутри каждой ноты подписано её название. Фон пиано-ролла черный, а прозрачность зависит от громкости ноты.
+
+Ещё должны быть другие классические атрибуты миди-редактора (сетка с настраиваемой длиной, bpm, панель с инструментами, где каждый можно включать и отключать (при отключении он становится серым) и настраивать громкость. У piano-roll должна быть прокрутка по вертикали и горизонтали и деление на октавы, а также левая панель (там не классические клавиши, а горизонтальные прямоугольники с названиями нот, при клике на них звучит нота.
+
+Архитектура - модульная и удобная для AI, так чтобы каждый отдельный модуль можно было послать в чат для переписывания. Ориентируемся на компактный в работе и в результате, гибкий, а также удобный для восприятия и расширения код.
+</общая картина, к чему нужно стремиться>
+
+Для начала, создай проект со следующей архитектурой:
+
+midi-editor/
+├── src/
+│   ├── components/
+│   │   ├── InstrumentPanel.svelte
+│   │   ├── PianoRoll/
+│   │   │   ├── index.svelte
+│   │   │   ├── Grid.svelte      // Сетка с делениями
+│   │   │   ├── Note.svelte      // Компонент ноты
+│   │   │   └── Sidebar.svelte   // Левая панель с названиями нот
+│   │   ├── Toolbar.svelte
+│   │   └── Transport.svelte
+│   ├── stores/
+│   │   ├── instruments.js  // Состояние инструментов
+│   │   ├── notes.js        // Состояние нот
+│   │   └── settings.js     // Настройки (BPM, размер сетки)
+│   ├── lib/
+│   │   ├── synth.js       // Работа со звуком
+│   │   ├── scales.js      // Логика ладов
+│   │   └── utils.js       // Общие утилиты
+│   └── App.svelte
+
+Сначала создадим базовый App.svelte и простые заглушки компонентов. Это позволит увидеть общую структуру приложения и постепенно заменять заглушки на реальные компоненты.
+
+
+1. Сначала App.svelte:
+```
+<script>
+  import Transport from './components/Transport.svelte';
+  import Toolbar from './components/Toolbar.svelte';
+  import InstrumentPanel from './components/InstrumentPanel.svelte';
+  import PianoRoll from './components/PianoRoll/index.svelte';
+</script>
+
+<main>
+  <div class="workspace">
+    <InstrumentPanel />
+    <div class="sequencer">
+      <Toolbar />
+      <div class="piano-roll-container">
+        <PianoRoll />
+      </div>
+      <Transport />
+    </div>
+  </div>
+</main>
+
+<style>
+  main {
+    height: 100vh;
+    background: #252525;
+    color: white;
+    overflow: hidden;
+  }
+
+  .workspace {
+    display: flex;
+    height: 100%;
+  }
+
+  .sequencer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .piano-roll-container {
+    flex: 1;
+    overflow: auto;
+  }
+</style>
+```
+
+2.Заглушка для Transport.svelte:
+```
+<script>
+  let isPlaying = false;
+</script>
+
+<div class="transport">
+  <button on:click={() => isPlaying = !isPlaying}>
+    {isPlaying ? '⏹' : '▶'}
+  </button>
+  <span>BPM: 120</span>
+  <span>Time: 0:00</span>
+</div>
+
+<style>
+  .transport {
+    height: 50px;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+  }
+
+  button {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
+```
+
+3. Заглушка для Toolbar.svelte:
+```
+<div class="toolbar">
+  <div>
+    <label>
+      <input type="checkbox"> Snap to Grid
+    </label>
+    <select>
+      <option>1/4</option>
+      <option>1/8</option>
+      <option>1/16</option>
+    </select>
+  </div>
+  <div>
+    <button>Export</button>
+    <button>Import</button>
+  </div>
+</div>
+
+<style>
+  .toolbar {
+    height: 40px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    justify-content: space-between;
+  }
+
+  button {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+</style>
+```
+
+4. Заглушка для InstrumentPanel.svelte:
+```
+<div class="instrument-panel">
+  <h3>Instruments</h3>
+  <div class="instruments-list">
+    <button>Piano</button>
+    <button>Bass</button>
+    <button>Lead</button>
+  </div>
+</div>
+
+<style>
+  .instrument-panel {
+    width: 200px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    padding: 20px;
+  }
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #fff;
+  }
+
+  button {
+    background: #333;
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+</style>
+```
+
+5. Заглушка для PianoRoll/index.svelte:
+```
+<div class="piano-roll">
+  <div class="piano">
+    [Piano Keys]
+  </div>
+  <div class="grid">
+    [Grid Area]
+  </div>
+</div>
+
+<style>
+  .piano-roll {
+    display: flex;
+    height: 100%;
+  }
+
+  .piano {
+    width: 100px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .grid {
+    flex: 1;
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+  }
+</style>
+```
+
+6. Создайте main.js:
+```
+import App from './App.svelte';
+
+const app = new App({
+  target: document.body
+});
+
+export default app;
+```
+
+7. Обновите index.html:
+```
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piano Sequencer</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+Отличная идея! Давайте создадим базовый App.svelte и простые заглушки компонентов. Это позволит увидеть общую структуру приложения и постепенно заменять заглушки на реальные компоненты.
+
+1. Сначала App.svelte:
+```svelte
+<script>
+  import Transport from './components/Transport.svelte';
+  import Toolbar from './components/Toolbar.svelte';
+  import InstrumentPanel from './components/InstrumentPanel.svelte';
+  import PianoRoll from './components/PianoRoll/index.svelte';
+</script>
+
+<main>
+  <div class="workspace">
+    <InstrumentPanel />
+    <div class="sequencer">
+      <Toolbar />
+      <div class="piano-roll-container">
+        <PianoRoll />
+      </div>
+      <Transport />
+    </div>
+  </div>
+</main>
+
+<style>
+  main {
+    height: 100vh;
+    background: #252525;
+    color: white;
+    overflow: hidden;
+  }
+
+  .workspace {
+    display: flex;
+    height: 100%;
+  }
+
+  .sequencer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .piano-roll-container {
+    flex: 1;
+    overflow: auto;
+  }
+</style>
+```
+
+2. Заглушка для Transport.svelte:
+```svelte
+<script>
+  let isPlaying = false;
+</script>
+
+<div class="transport">
+  <button on:click={() => isPlaying = !isPlaying}>
+    {isPlaying ? '⏹' : '▶'}
+  </button>
+  <span>BPM: 120</span>
+  <span>Time: 0:00</span>
+</div>
+
+<style>
+  .transport {
+    height: 50px;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+  }
+
+  button {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
+```
+
+3. Заглушка для Toolbar.svelte:
+```svelte
+<div class="toolbar">
+  <div>
+    <label>
+      <input type="checkbox"> Snap to Grid
+    </label>
+    <select>
+      <option>1/4</option>
+      <option>1/8</option>
+      <option>1/16</option>
+    </select>
+  </div>
+  <div>
+    <button>Export</button>
+    <button>Import</button>
+  </div>
+</div>
+
+<style>
+  .toolbar {
+    height: 40px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    justify-content: space-between;
+  }
+
+  button {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+</style>
+```
+
+4. Заглушка для InstrumentPanel.svelte:
+```svelte
+<div class="instrument-panel">
+  <h3>Instruments</h3>
+  <div class="instruments-list">
+    <button>Piano</button>
+    <button>Bass</button>
+    <button>Lead</button>
+  </div>
+</div>
+
+<style>
+  .instrument-panel {
+    width: 200px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    padding: 20px;
+  }
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #fff;
+  }
+
+  button {
+    background: #333;
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+</style>
+```
+
+5. Заглушка для PianoRoll/index.svelte:
+```svelte
+<div class="piano-roll">
+  <div class="piano">
+    [Piano Keys]
+  </div>
+  <div class="grid">
+    [Grid Area]
+  </div>
+</div>
+
+<style>
+  .piano-roll {
+    display: flex;
+    height: 100%;
+  }
+
+  .piano {
+    width: 100px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .grid {
+    flex: 1;
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+  }
+</style>
+```
+
+6. Создайте main.js:
+```javascript
+import App from './App.svelte';
+
+const app = new App({
+  target: document.body
+});
+
+export default app;
+```
+
+7. Обновите index.html:
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piano Sequencer</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+Теперь вы можете:
+
+1. Запустить проект
+2. Увидеть базовую структуру интерфейса
+3. Убедиться, что всё правильно отображается
+4. Начать постепенно заменять заглушки на полноценные компоненты
+
+Каждая заглушка имеет базовый стиль и разметку, но минимум функциональности. Это позволяет:
+- Видеть, как компоненты располагаются на странице
+- Проверить базовую стилизацию
+- Постепенно добавлять функциональность
+- Легко находить ошибки, так как код минимален
+
+С чего хотели бы начать улучшать? Например, можем начать с Transport или InstrumentPanel?

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tone.js Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+</head>
+<body>
+    <button id="button1">Play Sound 1</button>
+    <button id="button2">Play Sound 2</button>
+
+    <script>
+        const button1 = document.getElementById('button1');
+        const button2 = document.getElementById('button2');
+
+        const synthA = new Tone.Synth().toDestination();
+        const synthB = new Tone.Synth().toDestination();
+
+        button1.addEventListener('click', () => {
+            synthA.triggerAttackRelease('A4', '8n');
+        });
+
+        button2.addEventListener('click', () => {
+            synthB.triggerAttackRelease('A5', '8n');
+        });
+    </script>
+</body>
+</html>

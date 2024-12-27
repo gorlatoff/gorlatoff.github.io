@@ -1,0 +1,350 @@
+```
+<html>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #333;
+    color: white;
+    font-family: Noto Sans, Roboto, sans-serif;
+    display: grid;
+    grid-template-rows: auto 1fr; /* Первая строка будет автоматически подгоняться под размер контента, вторая - займет оставшееся пространство */
+  }
+
+  #row {
+    user-select: none;
+    padding-left: 10px;
+  }
+
+  canvas {
+    background-color: rgba(9, 9, 15, 1);
+  }
+
+  input {
+    width: 24px;
+    text-align: center;
+    border: none;
+  }
+
+  #ratio1,
+  #divided,
+  #ratio2,
+  #gcd,
+  #gcd_value {
+    display: inline-block;
+    margin: 3px;
+  }
+
+  #gcd {
+    margin-left: 10px;
+  }
+
+  #ratio1 {
+    background-color: #ff9999;
+  }
+
+  #ratio2 {
+    background-color: #99ff99;
+  }
+</style>
+</head>
+<body>
+  <div id="row">
+    <input type="text" id="ratio1" value="3/2" placeholder="Enter fraction 1">
+    × <div id="divided">4/3</div> =
+    <input type="text" id="ratio2" value="2/1" placeholder="Enter fraction 2">
+    <div id="gcd">Тоника: <div id="gcd_value"></div></div>
+  </div>
+  <canvas id="myCanvas"></canvas>
+</body>
+<script src="Tone.js"></script>
+<script>
+
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext("2d");
+
+class Rational {
+  constructor(numerator, denominator) {
+    this.numerator = numerator;
+    this.denominator = denominator;
+    this.reduce();
+  }
+
+  reduce() {
+    const divisor = Rational.gcd(this.numerator, this.denominator);
+    this.numerator /= divisor;
+    this.denominator /= divisor;
+  }
+  toDecimal() {
+    return this.numerator / this.denominator;
+  }
+
+  static multiply(a, b) {
+    return new Rational(a.numerator * b.numerator, a.denominator * b.denominator);
+  }
+
+  static divide(a, b) {
+    return new Rational(a.numerator * b.denominator, a.denominator * b.numerator);
+  }
+
+  static gcd(n, m) {
+    return m === 0 ? n : Rational.gcd(m, n % m); // Corrected here
+  }
+
+  static nok(n, m) {
+    return n * m / Rational.gcd(n, m); // Corrected here
+  }
+
+  // greatest common divisor of two rational numbers
+  static gcdOfRationals(a, b) {
+    const gcdOfNumerators = Rational.gcd(a.numerator, b.numerator);
+    const gcdOfDenominators = Rational.nok(a.denominator, b.denominator); // Corrected here
+    return new Rational(gcdOfNumerators, gcdOfDenominators);
+  }
+}
+
+let notes = [];
+let selectedNote = null;
+let playedHarmonic = null;
+const circleR = 5;
+const rectHeight = 4;
+
+function setup() {
+  let ratio1Input = document.getElementById('ratio1').value;
+  let ratio2Input = document.getElementById('ratio2').value;
+
+  // Парсим строки в рациональные дроби
+  let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
+  let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
+
+  const checkNumber = (number) => {
+    return Number.isInteger(number) && (number > 0 && number < 20);
+  };
+
+  if (checkNumber(numerator1) &&
+      checkNumber(denominator1) &&
+      checkNumber(numerator2) &&
+      checkNumber(denominator2)) {
+    note1 = new Rational(numerator1, denominator1);
+    note2 = new Rational(numerator2, denominator2);
+  }
+
+  // Вычисляем тонику
+  let tonica = Rational.gcdOfRationals(note1, note2);
+
+  // Пример использования объекта цвета
+  let color1 = { r: 128, g: 128, b: 128, a: 0.5 }; // серый с прозрачностью 50%
+  let color2 = { r: 255, g: 0, b: 0, a: 1 }; // красный
+  let color3 = { r: 0, g: 255, b: 0, a: 1 }; // зеленый
+
+  // Добавляем ноты в массив с использованием объектов цвета
+  notes = [new Note(100, tonica, 10, 600, 25, color1), 
+           new Note(100, note1, 100, 150, 15, color2),
+           new Note(100, note2, 200, 150, 15, color3)]
+
+  // Вычисляем результат деления
+  let divisionResult = Rational.divide(note2, note1);
+
+  // Вычисляем НОД
+  let gcdResult = Rational.gcdOfRationals(note1, note2);
+  gcdResult = `${gcdResult.numerator}/${gcdResult.denominator}`
+
+  // Обновляем результат в HTML
+  document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
+  document.getElementById('gcd_value').innerHTML = `${gcdResult}`;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let note of notes) {
+    note.display();
+  }
+}
+
+
+function mouseReleased() {
+  selectedNote = null;
+}
+
+let distX = 0;
+function mouseDragged(event) {
+  let rect = canvas.getBoundingClientRect();
+  if (selectedNote) {
+    selectedNote.x = event.clientX - rect.left - distX + 2*circleR;
+  }
+}
+
+function mousePressed(event) {
+  playedHarmonic = null;
+  const rect = canvas.getBoundingClientRect();
+  for (let note of notes) {
+      distX = event.clientX - (note.x - 2*circleR) - canvas.offsetLeft ;
+      distY = event.clientY - note.y - canvas.offsetTop + rectHeight/2;
+      const d = Math.hypot(distX, distY);
+      if ( d < 15) {
+        selectedNote = note;
+        note.playSound();
+        break;
+      }
+  }
+  for (let note of notes) {
+    // harmonic clicks
+    for (let harmonic of note.harmonics) {
+      if (event.clientX - rect.left > harmonic.x &&
+          event.clientX - rect.left < harmonic.x + harmonic.noteLength &&
+          event.clientY - rect.top > harmonic.y - rectHeight/2 &&
+          event.clientY - rect.top < harmonic.y + harmonic.h + rectHeight/2) {
+
+        
+        playedHarmonic = harmonic;
+        console.log(playedHarmonic.vol)
+        harmonic.synth.triggerAttack(harmonic.freq);
+      }
+    }
+  }
+}
+
+function logScale(note){
+  return Math.log(note) / Math.log(2^(1/12))
+}
+
+function map(value, inMin, inMax, outMin, outMax) {
+  return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+}
+
+
+const compressor = new Tone.Compressor({
+  threshold: -30, // Порог срабатывания компрессии в децибелах (-inf до 0)
+  ratio: 12, // Соотношение компрессии (число >= 1)
+  attack: 0.03, // Время нарастания компрессии в секундах (0 до 1)
+  release: 0.1, // Время спада компрессии в секундах (0 до 1)
+  knee: 30, // Ширина "мягкого" перехода компрессии в децибелах (0 до 40)
+  // Другие параметры компрессора...
+}).toMaster(); // Подключение компрессора к основному аудио-выходу
+
+
+
+
+class Harmonic {
+  constructor(freq, vol, noteLength, x, noteColor, volX) {
+    this.noteLength = noteLength;
+    this.x = x;
+    this.vol = vol;
+    this.volX = volX*8 - 5;
+    this.noteColor = noteColor;
+    this.freq = freq;
+    // const analyser = new Tone.Analyser("waveform", 256).toDestination();
+    
+    this.synth = new Tone.Synth({
+      oscillator: {
+        type: "sine",
+      },
+      envelope: {
+        attack: 0.1,
+        decay: 0.9,
+        sustain: 0.,
+        release: 0.5,
+        releaseCurve : "exponential",
+      },
+      portamento: 0,
+      volume: this.volX
+    }).toDestination().connect(compressor); ;
+
+  // this.synth.connect(compressor);
+   // this.synth.connect(analyser);
+  }
+  
+  display() {
+    this.h = rectHeight;
+
+    // Преобразуем LogY в диапазон высоты канваса
+    let logY = map(logScale(this.freq), 5, 12, 0, canvas.height);
+    this.y = canvas.height - logY; // Пропорциональная высота
+
+    this.noteColor2 = this.createColorWithVolume(this.noteColor, this.vol);
+    ctx.fillStyle = this.noteColor2;
+
+    // Создаем градиент
+    let gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.noteLength, this.y);
+    gradient.addColorStop(0,  this.rgbaToCss(this.noteColor2)); // Непрозрачный цвет слева
+    gradient.addColorStop(1, 'rgba(9, 9, 15, 0)');
+    ctx.fillStyle = gradient;
+    
+    ctx.fillRect(this.x, this.y, this.noteLength, this.h);
+  }
+
+  createColorWithVolume(color, volume) {
+    return { r: color.r, g: color.g, b: color.b, a: volume };
+  }
+
+  rgbaToCss(color) {
+    return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
+  }
+}
+
+function drawCircle(x, y, radius, fillColor) {
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2*Math.PI);
+  ctx.fill();
+}
+
+class Note {
+  constructor(freq, ratio, x, noteLength, numHarmonics, noteColor) {
+    this.freq = freq * ratio.numerator / ratio.denominator;
+    this.x = x;
+    this.noteLength = noteLength;
+    this.numHarmonics = numHarmonics;
+    this.harmonics = [];
+    this.color = noteColor;
+
+    for (let i = 1; i <= this.numHarmonics; i++) {
+      let harmonicFreq = this.freq * i;
+      let vol = 1000*(numHarmonics - i) / (numHarmonics * harmonicFreq);
+      let volX = -i;
+      this.harmonics.push(new Harmonic(harmonicFreq, vol, this.noteLength, this.x, this.color, volX));
+    }
+  }
+
+  display() {
+    drawCircle(this.x - circleR, this.y + rectHeight/2, circleR, 'white');
+    for (let harmonic of this.harmonics) {
+      harmonic.x = this.x;
+      harmonic.display();
+    }
+
+    let logY = map(logScale(this.freq), 5, 12, 0, canvas.height); // Преобразуем LogY в диапазон высоты канваса
+    this.y = canvas.height - logY;
+  }
+  playSound() {
+    for (let harmonic of this.harmonics) {
+      harmonic.synth.triggerAttackRelease(harmonic.freq, 0.5);
+    }
+  }
+}
+
+document.getElementById('ratio1').addEventListener('input', setup);
+document.getElementById('ratio2').addEventListener('input', setup);
+
+function updateCanvasSize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
+}
+
+// Вызываем функции при загрузке страницы, чтобы отобразить начальный результат
+setup();
+updateCanvasSize();
+setInterval(draw, 1000 / 60);
+
+window.addEventListener('resize', updateCanvasSize);
+canvas.addEventListener('mousedown', mousePressed);
+canvas.addEventListener('mousemove', mouseDragged);
+canvas.addEventListener('mouseup', mouseReleased);
+
+Tone.start();  
+</script>
+</html>
+```
+
+Предложи как улучшить код, приоритеты: полное сохранение поведения, понятность, краткость,/элегантность кода.

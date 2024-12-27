@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Об авторе</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.jpg">
+    <script src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <ul>
+                    <li><a href="main.html">Главная</a></li>
+                    <li><a href="author.html">Об авторе</a></li>
+                    <li><a href="texts.html">Произведения</a></li>
+                    <li><a href="links.html">Ссылки</a></li>
+                </ul>
+            </nav>
+            <div class="lang-switcher">
+                <img src="flag_ru.png" alt="Русский" title="Русский">
+                <img src="flag_isv.png" alt="Межславянский" title="Межславянский" onclick="replacePartAndRedirect('.html', '_isv.html')">
+            </div>
+        </div>
+    </header>
+
+    <div class="content-page">
+        <div class="container author-content">
+            <img src="author.png" alt="Автор">
+            <div>
+                <h2>Добро пожаловать!</h2>
+                <p>Приветствую всех! Меня зовут Алексей Бондаренко или кратко — Алекс Бонд. На этих страницах вы можете познакомиться с моей прозой на русском и межславянском языках. Для вашего удобства, веб-сайт полностью сделан на двух языках, а межславянская версия выполнена в двух системах письма: кириллице и латинице. В разделе <a>Ссылки</a> размещены дополнительные ресурсы, в том числе, относящиеся к межславянскому языку. Для обратной связи, вы можете написать на электронную почту, указанную внизу страницы. Приятного просмотра!</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© Все права защищены 2024</p>
+            <a href="#"><img src="icon-envelope.png" alt="Email"></a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,152 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: #222;
+    color: #333;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+
+header {
+    background-color: #222;
+    color: #fff;
+    padding: 10px 0;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+}
+
+nav li {
+    margin-right: 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #fff;
+}
+
+
+a {
+    font-weight: bold; /* Жирный текст для ссылок */
+    text-decoration-line: underline; /* Подчёркивание */
+    text-decoration-style: solid; /* Сплошная линия в обычном состоянии */
+    text-decoration-thickness: 2px; /* Толщина линии */
+    color: black; /* Цвет текста */
+    transition: all 0.2s ease-in-out; /* Плавные изменения состояния */
+}
+
+a:hover {
+    text-decoration-style: dotted; /* Пунктирная линия при наведении */
+}
+
+
+.lang-switcher img {
+    height: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+footer {
+    background-color: #222;
+    color: #aaa;
+    padding: 20px 0;
+    text-align: center;
+}
+
+footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/*footer a {
+    color: #aaa;
+    text-decoration: none;
+}
+*/
+
+
+/* Общие стили для контента страниц (кроме главной) */
+.content-page {
+    padding: 20px 0;
+    background-image: url('background-2.jpg');
+    background-size: cover;
+    background-position: center;
+    background-color: lightgrey; /* Добавил фон для лучшей читаемости */
+}
+
+.content-page h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Стили для страницы автора */
+.author-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+.author-content img {
+    max-width: 300px;
+    height: auto;
+}
+
+.author-content p {
+    line-height: 1.6;
+}
+
+/* Стили для страницы произведений */
+.texts-list ol {
+    list-style-type: decimal;
+    padding-left: 20px;
+}
+
+.texts-list li {
+    margin-bottom: 10px;
+}
+
+.audio-player {
+/*    background-color: rgba(238, 238, 238, 0.8); /* Добавил фон для лучшей читаемости */*/
+    padding: 10px;
+    margin-top: 20px;
+    display: flex;
+    align-items: left;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.audio-player audio {
+    width: 70%;
+}
+
+/* Стили для страницы ссылок */
+.links-list ol {
+    list-style-type: decimal;
+    padding-left: 20px;
+}
+
+.links-list li {
+    margin-bottom: 10px;
+}
+
+/*.links-list a {
+    color: #007bff;
+    text-decoration: none;
+}*/

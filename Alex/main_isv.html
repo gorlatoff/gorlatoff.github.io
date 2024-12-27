@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glavna</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.jpg">
+    <script src="script.js"></script>
+</head>
+<style>
+/* Стили для главной страницы */
+.main-content {
+    background-image: url('background-1.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    padding: 100px 0;
+}
+
+.main-content h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+
+.main-content p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+}
+
+.main-content .buttons button {
+    background-color: #e67e22;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+</style>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <ul>
+                    <li><a href="main_isv.html">Glavna</a></li>
+                    <li><a href="author_isv.html">Ob avtoru</a></li>
+                    <li><a href="texts_isv.html">Tvorby</a></li>
+                    <li><a href="links_isv.html">Linky</a></li>
+                </ul>
+            </nav>
+            <div class="lang-switcher">
+                <img src="flag_ru.png" alt="Русский" title="Русский" onclick="replacePartAndRedirect('_isv.html', '.html')">
+                <img src="flag_isv.png" alt="Межславянский" title="Межславянский">
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <h1>ŽIVOT SKLADAJE SE IZ HISTORIJ</h1>
+        <p>Zatvorite oči i one budut ožiti…</p>
+        <div class="buttons">
+            <button>DOBRODOŠLI!</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© Все права защищены 2024</p>
+            <a href="#"><img src="icon-envelope.png" alt="Email"></a>
+        </div>
+    </footer>
+</body>
+</html>
