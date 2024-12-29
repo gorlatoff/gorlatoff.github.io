@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кварто-Квинтовый Круг</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+<style>
+    :root {
+        --bg-color: #212121;
+        --header-color: #e0e0e0;
+        --canvas-bg-color: #2e2e2e;
+        --button-bg-color: #b39ddb;
+        --button-hover-bg-color: #9675cd;
+        --button-text-color: #ffffff;
+        --text-color: #e0e0e0;
+        --central-text-color: #ffffff;
+        --active-sector-color: #c77dff;
+        --adjacent-sector-color: #9b59d6;
+        --sector-hover-color: #a25bcd;
+        --cents-text-color: #808080; /* Цвет текста для центов */
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        color: var(--header-color);
+        font-size: 28px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .container {
+        position: relative;
+        width: 400px;
+        height: 400px;
+        margin-bottom: 30px;
+    }
+
+    canvas {
+        background-color: var(--canvas-bg-color);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s ease;
+    }
+
+    canvas:hover {
+        transform: scale(1.03);
+    }
+
+    #centralText {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 36px;
+        font-weight: bold;
+        color: var(--central-text-color);
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+    }
+
+    .active-sector {
+        fill: var(--active-sector-color) !important;
+    }
+
+    .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .controls button {
+        background-color: var(--button-bg-color);
+        color: var(--button-text-color);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .controls button:hover {
+        background-color: var(--button-hover-bg-color);
+    }
+
+    .controls select {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #333;
+        color: #eee;
+    }
+
+    .cents-text {
+        font-size: 12px;
+        color: var(--cents-text-color);
+        margin-top: 2px;
+    }
+</style>
+</head>
+<body>
+
+    <h1>Кварто-Квинтовый Круг</h1>
+    <div class="container">
+        <canvas id="circleCanvas" width="400" height="400"></canvas>
+        <div id="centralText"></div>
+    </div>
+    <div class="controls">
+        <button id="equalTemperament">Equal Temperament</button>
+        <button id="pythagoreanScale">Pythagorean Scale</button>
+        <button id="justIntonation">Just Intonation</button>
+    </div>
+
+    <script>
+        class Note {
+            constructor(name, frequency, cents) {
+                this.name = name;
+                this.frequency = frequency;
+                this.cents = cents;
+            }
+        }
+
+        class Scheme {
+            constructor(notes) {
+                this.notes = notes;
+            }
+        }
+
+const schemes = [
+    new Scheme([ // Equal Temperament
+        new Note('C', 261.63, 0),
+        new Note('G', 392.00, 700),
+        new Note('D', 293.66, 200),
+        new Note('A', 440.00, 900),
+        new Note('E', 329.63, 400),
+        new Note('B', 493.88, 1100),
+        new Note('F♯', 369.99, 600),
+        new Note('C♯', 277.18, 100),
+        new Note('G♯', 415.30, 800),
+        new Note('D♯', 311.13, 300),
+        new Note('A♯', 466.16, 1000),
+        new Note('F', 349.23, 500)
+    ]),
+    new Scheme([ // Pythagorean Scale
+        new Note('1/1', 261.63, 0),        // C
+        new Note('3/2', 392.44, 2.04),   // G
+        new Note('9/8', 294.33, 3.92),   // D
+        new Note('27/16', 441.49, 5.88),  // A
+        new Note('81/64', 331.12, 7.84),  // E
+        new Note('243/128', 496.68, 9.80), // B
+        new Note('729/512', 372.51, 11.76),// F♯
+        new Note('256/243', 279.38, 13.72), // C♯
+        new Note('128/81', 419.07, 15.68), // G♯
+        new Note('32/27', 314.31, 17.64), // D♯
+        new Note('16/9', 471.46, 19.60), // A♯
+        new Note('4/3', 348.84, -1.96),   // F
+    ]),
+    new Scheme([ // Just Intonation
+        new Note('1/1', 261.63, 0),     // C
+        new Note('3/2', 392.00, 1.96),     // G
+        new Note('9/8', 294.33, 3.92),     // D
+        new Note('5/3', 440.00, -13.69),    // A
+        new Note('5/4', 327.03, -13.69),    // E
+        new Note('15/8', 490.55, -11.73),   // B
+        new Note('45/32', 368.31, -9.77),   // F♯
+        new Note('25/16', 414.89, -5.85),    // C#
+        new Note('8/5', 418.60, -1.96),   // G#
+        new Note('6/5', 313.95, 15.64),   // D#
+        new Note('16/9', 466.16, -3.92),  // A#
+        new Note('4/3', 348.84, -1.96),   // F
+    ])
+];
+
+        const instruments = {
+            synth: new Tone.Synth().toDestination(),
+        };
+
+        let currentScheme = 0;
+        let currentInstrument = 'synth';
+        let selectedSector = null;
+
+        const canvas = document.getElementById('circleCanvas');
+        const ctx = canvas.getContext('2d');
+        const radius = canvas.width / 2;
+        const innerRadius = radius * 0.66;
+        const outerRadius = radius;
+        const sectorAngle = (2 * Math.PI) / 12;
+        const centralText = document.getElementById('centralText');
+
+        function drawCircle() {
+            const rootStyles = getComputedStyle(document.documentElement);
+            const defaultSectorColor = rootStyles.getPropertyValue('--canvas-bg-color').trim();
+            const activeSectorColor = rootStyles.getPropertyValue('--active-sector-color').trim();
+            const adjacentSectorColor = rootStyles.getPropertyValue('--adjacent-sector-color').trim();
+            const strokeColor = rootStyles.getPropertyValue('--header-color').trim();
+            const textColor = rootStyles.getPropertyValue('--central-text-color').trim();
+            const centsTextColor = rootStyles.getPropertyValue('--cents-text-color').trim();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            schemes[currentScheme].notes.forEach((note, i) => {
+                const startAngle = i * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+                const endAngle = (i + 1) * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+
+                ctx.beginPath();
+                ctx.arc(radius, radius, outerRadius, startAngle, endAngle);
+                ctx.arc(radius, radius, innerRadius, endAngle, startAngle, true);
+                ctx.closePath();
+
+                ctx.fillStyle = defaultSectorColor;
+                if (selectedSector !== null) {
+                    if (i === selectedSector) {
+                        ctx.fillStyle = activeSectorColor;
+                    } else if (i === (selectedSector + 1) % 12 || i === (selectedSector + 11) % 12) {
+                        ctx.fillStyle = adjacentSectorColor;
+                    }
+                }
+                ctx.fill();
+
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = strokeColor;
+                ctx.stroke();
+
+                const textAngle = startAngle + sectorAngle / 2;
+                const textRadius = (innerRadius + outerRadius) / 2;
+                const x = radius + textRadius * Math.cos(textAngle);
+                const y = radius + textRadius * Math.sin(textAngle);
+                ctx.fillStyle = textColor;
+                ctx.font = '16px Roboto';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(note.name, x, y);
+
+                // Рисуем частоту в центах
+                ctx.fillStyle = centsTextColor;
+                ctx.font = '10px Roboto';
+                ctx.fillText(`${note.cents} cents`, x, y + 15);
+            });
+        }
+
+        function getSector(x, y) {
+            const dx = x - radius;
+            const dy = y - radius;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < innerRadius || distance > outerRadius) return null;
+            let angle = Math.atan2(dy, dx) + Math.PI / 2 + sectorAngle/2;
+            if (angle < 0) angle += 2 * Math.PI;
+            return Math.floor(angle / sectorAngle) % 12;
+        }
+
+        canvas.addEventListener('click', async (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const sector = getSector(x, y);
+            if (sector !== null) {
+                selectedSector = sector;
+                drawCircle();
+                centralText.textContent = schemes[currentScheme].notes[sector].name;
+                const baseFreq = schemes[currentScheme].notes[sector].frequency;
+                const cents = schemes[currentScheme].notes[sector].cents;
+                const freq = baseFreq * Math.pow(2, cents / 1200);
+                await Tone.start();
+                instruments[currentInstrument].triggerAttackRelease(freq, "8n");
+            }
+        });
+
+        document.getElementById('equalTemperament').addEventListener('click', () => {
+            currentScheme = 0;
+            selectedSector = null;
+            centralText.textContent = '';
+            drawCircle();
+        });
+
+        document.getElementById('pythagoreanScale').addEventListener('click', () => {
+            currentScheme = 1;
+            selectedSector = null;
+            centralText.textContent = '';
+            drawCircle();
+        });
+
+        document.getElementById('justIntonation').addEventListener('click', () => {
+            currentScheme = 2;
+            selectedSector = null;
+            centralText.textContent = '';
+            drawCircle();
+        });
+
+        drawCircle();
+    </script>
+</body>
+</html>

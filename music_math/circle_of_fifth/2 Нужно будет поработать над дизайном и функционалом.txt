@@ -1,0 +1,279 @@
+Нужно будет поработать над дизайном и функционалом. 
+
+```
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кварто-Квинтовый Круг</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+<style>
+    :root {
+        --bg-color: #212121; /* Фон страницы */
+        --header-color: #e0e0e0; /* Цвет заголовка */
+        --canvas-bg-color: #2e2e2e; /* Фон круга (немного темнее для контраста) */
+        --button-bg-color: #b39ddb; /* Цвет кнопок */
+        --button-hover-bg-color: #9675cd; /* Цвет кнопок при наведении */
+        --button-text-color: #ffffff; /* Цвет текста на кнопках */
+        --text-color: #e0e0e0; /* Основной цвет текста */
+        --central-text-color: #ffffff; /* Цвет центрального текста */
+        --active-sector-color: #c77dff; /* Цвет активного сектора (яркий фиолетовый) */
+        --adjacent-sector-color: #9b59d6; /* Цвет примыкающих секторов */
+        --sector-hover-color: #a25bcd; /* Цвет секторов при наведении */
+    }
+
+    /* Настройки для body (центровка, фон) */
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+    }
+
+    /* Заголовок страницы */
+    h1 {
+        color: var(--header-color);
+        font-size: 28px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* Контейнер для круга */
+    .container {
+        position: relative;
+        width: 400px;
+        height: 400px;
+        margin-bottom: 30px;
+    }
+
+    /* Стили для canvas (основной круг) */
+    canvas {
+        background-color: var(--canvas-bg-color);
+        border-radius: 50%; /* Круглый холст */
+        cursor: pointer; /* Курсор при наведении */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Тень для глубины */
+        transition: transform 0.2s ease; /* Лёгкая анимация на hover */
+    }
+
+    canvas:hover {
+        transform: scale(1.03); /* Лёгкое увеличение круга при наведении */
+    }
+
+    /* Центральный текст в круге */
+    #centralText {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 36px; /* Увеличенный текст для акцента */
+        font-weight: bold;
+        color: var(--central-text-color);
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Лёгкая тень */
+        pointer-events: none; /* Чтобы текст не блокировал интерактивность */
+    }
+
+    /* Стили для активных секторов */
+    .active-sector {
+        fill: var(--active-sector-color) !important; /* Яркий акцент на активном секторе */
+
+</style>
+</head>
+<body>
+
+    <h1>Кварто-Квинтовый Круг</h1>
+    <div class="container">
+        <canvas id="circleCanvas" width="400" height="400"></canvas>
+        <div id="centralText"></div>
+    </div>
+    <div class="controls">
+        <button id="toggleButton">Переключить названия</button>
+        <select id="instrumentSelect">
+            <option value="synth">Синтезатор</option>
+            <option value="amsynth">AMSynth</option>
+            <option value="fmsynth">FMSynth</option>
+            <option value="duo">DuoSynth</option>
+        </select>
+    </div>
+
+    <script>
+        class Note {
+            constructor(name, frequency) {
+                this.name = name;
+                this.frequency = frequency;
+            }
+        }
+
+        class Scheme {
+            constructor(notes) {
+                this.notes = notes;
+            }
+        }
+
+        const schemes = [
+            new Scheme([
+                new Note('C', 'C4'),
+                new Note('G', 'G4'),
+                new Note('D', 'D4'),
+                new Note('A', 'A4'),
+                new Note('E', 'E4'),
+                new Note('B', 'B4'),
+                new Note('F♯', 'F#4'),
+                new Note('C♯', 'C#4'),
+                new Note('G♯', 'G#4'),
+                new Note('D♯', 'D#4'),
+                new Note('A♯', 'A#4'),
+                new Note('F', 'F4')
+            ]),
+            new Scheme([
+                new Note('До', 'C4'),
+                new Note('Соль', 'G4'),
+                new Note('Ре', 'D4'),
+                new Note('Ля', 'A4'),
+                new Note('Ми', 'E4'),
+                new Note('Си', 'B4'),
+                new Note('Фа♯', 'F#4'),
+                new Note('До♯', 'C#4'),
+                new Note('Соль♯', 'G#4'),
+                new Note('Ре♯', 'D#4'),
+                new Note('Ля♯', 'A#4'),
+                new Note('Фа', 'F4')
+            ])
+        ];
+
+        const instruments = {
+            synth: new Tone.Synth().toDestination(),
+            amsynth: new Tone.AMSynth().toDestination(),
+            fmsynth: new Tone.FMSynth().toDestination(),
+            duo: new Tone.DuoSynth().toDestination()
+        };
+
+        let currentScheme = 0;
+        let currentInstrument = 'synth';
+        let selectedSector = null;
+
+        const canvas = document.getElementById('circleCanvas');
+        const ctx = canvas.getContext('2d');
+        const radius = canvas.width / 2;
+        const innerRadius = radius * 0.66;
+        const outerRadius = radius;
+        const sectorAngle = (2 * Math.PI) / 12;
+        const centralText = document.getElementById('centralText');
+
+function drawCircle() {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const defaultSectorColor = rootStyles.getPropertyValue('--canvas-bg-color').trim(); // Цвет обычного сектора
+    const activeSectorColor = rootStyles.getPropertyValue('--active-sector-color').trim(); // Акцентный цвет центральной ноты
+    const adjacentSectorColor = rootStyles.getPropertyValue('--adjacent-sector-color').trim(); // Цвет соседних нот
+    const strokeColor = rootStyles.getPropertyValue('--header-color').trim(); // Цвет обводки
+    const textColor = rootStyles.getPropertyValue('--central-text-color').trim(); // Цвет текста
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    schemes[currentScheme].notes.forEach((note, i) => {
+        const startAngle = i * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+        const endAngle = (i + 1) * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+
+        ctx.beginPath();
+        ctx.arc(radius, radius, outerRadius, startAngle, endAngle);
+        ctx.arc(radius, radius, innerRadius, endAngle, startAngle, true);
+        ctx.closePath();
+
+        // Заполнение секторов
+        ctx.fillStyle = defaultSectorColor; // Цвет обычного сектора
+        if (selectedSector !== null) {
+            if (i === selectedSector) {
+                ctx.fillStyle = activeSectorColor; // Цвет центральной ноты
+            } else if (i === (selectedSector + 1) % 12 || i === (selectedSector + 11) % 12) {
+                ctx.fillStyle = adjacentSectorColor; // Цвет соседней ноты
+            }
+        }
+        ctx.fill();
+
+        // Обводка секторов
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = strokeColor;
+        ctx.stroke();
+
+        // Рисование текста
+        const textAngle = startAngle + sectorAngle / 2;
+        const textRadius = (innerRadius + outerRadius) / 2;
+        const x = radius + textRadius * Math.cos(textAngle);
+        const y = radius + textRadius * Math.sin(textAngle);
+        ctx.fillStyle = textColor;
+        ctx.font = '16px Roboto';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(note.name, x, y);
+    });
+}
+
+
+        function getSector(x, y) {
+            const dx = x - radius;
+            const dy = y - radius;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < innerRadius || distance > outerRadius) return null;
+            let angle = Math.atan2(dy, dx) + Math.PI / 2 + sectorAngle/2;
+            if (angle < 0) angle += 2 * Math.PI;
+            return Math.floor(angle / sectorAngle) % 12;
+        }
+
+        canvas.addEventListener('click', async (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const sector = getSector(x, y);
+            if (sector !== null) {
+                selectedSector = sector;
+                drawCircle();
+                centralText.textContent = schemes[currentScheme].notes[sector].name;
+                const freq = schemes[currentScheme].notes[sector].frequency;
+                await Tone.start();
+                instruments[currentInstrument].triggerAttackRelease(freq, "8n");
+            }
+        });
+
+        document.getElementById('toggleButton').addEventListener('click', () => {
+            currentScheme = (currentScheme + 1) % schemes.length;
+            selectedSector = null;
+            centralText.textContent = '';
+            drawCircle();
+        });
+
+        document.getElementById('instrumentSelect').addEventListener('change', (e) => {
+            currentInstrument = e.target.value;
+        });
+
+        drawCircle();
+    </script>
+</body>
+</html>
+```
+Давай начнем с функционала. Вместо "переключить название" сделай три близкие кнопки (режимы "Equal temperation", "Pythagor scale", "Just Intonation".
+
+Note names это классические названия нот. Pythagor scale и Just Intonation это дроби
+
+Для режимов используй схемы как в примере. Частота, название, и во внутреннем круге (да, нужно добавить ещё круг) добавь ещё частоту в cents (она должна быть написана прямо под названием, мелким серым шрифтом) из записанного в scheme. Я понимаю что ты не помнишь точные цифры для пифагорова строя и JI, но сделай правдоподобные, я потом заменю.
+```
+        const schemes = [
+            new Scheme([
+                new Note('C', 'C4'),
+                new Note('G', 'G4'),
+                new Note('D', 'D4'),
+                new Note('A', 'A4'),
+                new Note('E', 'E4'),
+                new Note('B', 'B4'),
+                new Note('F♯', 'F#4'),
+                new Note('C♯', 'C#4'),
+                new Note('G♯', 'G#4'),
+                new Note('D♯', 'D#4'),
+                new Note('A♯', 'A#4'),
+                new Note('F', 'F4')
+            ]),
+```
