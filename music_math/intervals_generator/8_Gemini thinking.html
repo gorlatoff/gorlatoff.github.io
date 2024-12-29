@@ -16,7 +16,52 @@
     --spacing-lg: 1.5rem;
     --border-radius: 8px;
     --transition: all 0.2s ease;
+
+
+    /* Новые переменные для стилизации выпадающего меню */
+    --dropdown-active-text: #1e1e1e; /* Цвет текста активного элемента */
+    --dropdown-item-bg: #282828; /* Цвет фона неактивного элемента */
+    --dropdown-item-hover-bg: #383838; /* Цвет фона неактивного элемента при наведении */
 }
+
+/* Стили для всех select элементов */
+select {
+    background-color: var(--dropdown-item-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    appearance: none; /* Убираем стандартную стрелку */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Добавляем свою стрелку (опционально) 
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23ffffff' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-sm) center;
+    background-size: 8px 10px;*/
+}
+
+/* Стили для option внутри select */
+select option {
+    background-color: var(--dropdown-item-bg);
+    color: var(--text);
+}
+
+
+/* Наведение на option */
+select option:hover:not(:checked) {
+    background-color: var(--dropdown-item-hover-bg);
+}
+
+/* Фокус на select */
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+
+
+
 
 body {
     font-family: 'Roboto', sans-serif;
@@ -148,7 +193,7 @@ input:focus {
 }
 
 
-select {
+/*select {
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border);
     color: var(--text);
@@ -156,10 +201,10 @@ select {
     border-radius: var(--border-radius);
     transition: var(--transition);
     font-size: 0.9rem;
-    -webkit-appearance: none; /* Safari and Chrome */
-    -moz-appearance: none; /* Firefox */
-    appearance: none; /* Standard */
-}
+    -webkit-appearance: none; 
+    -moz-appearance: none; 
+    appearance: none; 
+}*/
 
 
 /*select + .select-arrow::after {
@@ -172,11 +217,11 @@ select {
     pointer-events: none; /* Чтобы клик проходил насквозь */
 }*/
 
-select:focus {
+/*select:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.2);
-}
+}*/
 </style>
 </head>
 <body>
