@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>The Tonnetz – One Key, Many Representations</title>
+        <link rel="stylesheet" href="index.css">
+    </head>
+    <body>
+        <div id="proto" class="columns">
+            <div v-cloak>
+                <clock-octave :notes="notes" :width="500" :height="500" :intervals="1"></clock-octave>
+            </div>
+            <piano-keyboard></piano-keyboard>
+        </div>
+
+        <script src="lib/fallback/fallback.min.js"></script>
+        <script src="js/loadDeps.js"></script>
+        <script src="js/index.js"></script>
+       
+    </body>
+</html>
