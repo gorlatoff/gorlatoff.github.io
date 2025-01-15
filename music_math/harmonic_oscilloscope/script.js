@@ -79,7 +79,8 @@ function drawWaveform() {
   analyser.getByteTimeDomainData(dataArray);
   
     // Clear the canvas with semi-transparent background
-  ctx.fillStyle = 'rgba(256, 256, 256, 0.04)'; // Semi-transparent black background
+  // ctx.fillStyle = 'rgba(256, 256, 256, 0.04)'; // Semi-transparent background
+  ctx.fillStyle = 'rgb(256, 256, 256)'; // Semi-transparent background
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Draw the horizontal center line
@@ -94,8 +95,6 @@ function drawWaveform() {
   ctx.beginPath();
   ctx.strokeStyle = 'rgb(0, 200, 200)';
   ctx.lineWidth = 8;
-  // ctx.lineJoin = 'round'; // Smooth the corners
-  // ctx.lineCap = 'round'; // Smooth the ends
   
   // Scale and center the waveform
   let waveform = Array.from(dataArray).map((value) => (value - 128) / 128);
@@ -105,11 +104,8 @@ function drawWaveform() {
   
   const scale = canvas.height * 0.48;
   const offset = canvas.height / 2;
-  
-  // if (waveform[waveform.length-1]) >
 
   for (let i = 0; i < waveform.length; i++) {
-    // const x = (i / croppedWaveform.length) * canvas.width;
     let x = map(i, 0, waveform.length-1, 0, canvas.width);
     const y = croppedWaveform[i] * scale + offset;
 
