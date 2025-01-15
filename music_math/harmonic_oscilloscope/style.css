@@ -28,12 +28,7 @@ button:hover {
 
 button:active {
   background-color: rgb(20, 60, 71);
-}
-
-#oscillator-container canvas {
-  opacity: 1;
-}
-     
+}     
 
 
 /* Скрываем полосу прокрутки для всех браузеров 
