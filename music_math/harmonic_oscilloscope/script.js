@@ -79,8 +79,8 @@ function drawWaveform() {
   analyser.getByteTimeDomainData(dataArray);
   
     // Clear the canvas with semi-transparent background
-  // ctx.fillStyle = 'rgba(256, 256, 256, 0.04)'; // Semi-transparent background
-  ctx.fillStyle = 'rgb(256, 256, 256)'; // Semi-transparent background
+  ctx.fillStyle = 'rgba(256, 256, 256, 0.04)'; // Semi-transparent background
+  //ctx.fillStyle = 'rgb(256, 256, 256)'; // Semi-transparent background
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Draw the horizontal center line
