@@ -79,7 +79,7 @@ function drawWaveform() {
   analyser.getByteTimeDomainData(dataArray);
   
     // Clear the canvas with semi-transparent background
-  ctx.fillStyle = 'rgba(256, 256, 256, 0.2)'; // Semi-transparent background
+  ctx.fillStyle = 'rgba(256, 256, 256, 0.1)'; // Semi-transparent background
   //ctx.fillStyle = 'rgb(256, 256, 256)'; // Semi-transparent background
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
