@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Генерация и визуализация JI ладов</title>
+  <style>
+    /* Переменные и базовые стили */
+    :root {
+      --bg-primary: #121212;
+      --bg-surface: rgba(255, 255, 255, 0.05);
+      --bg-elevated: rgba(255, 255, 255, 0.08);
+      --text-primary: rgba(255, 255, 255, 0.87);
+      --text-secondary: rgba(255, 255, 255, 0.6);
+      --primary: #bb86fc;
+      --primary-variant: #3700b3;
+      --secondary: #03dac6;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    /* Основная структура приложения */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Панель управления – ограничена по высоте до 1/3 экрана */
+    #control-panel {
+      display: flex;
+      gap: 24px;
+      padding: 24px;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid rgba(60,60,60,0.8);
+      max-height: 33vh;
+      overflow-y: auto;
+      justify-content: space-evenly;
+    }
+
+    /* Левая панель: меню выбора ладов занимает оставшееся пространство */
+    #left-panel {
+      background-color: var(--bg-elevated);
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      overflow-y: auto;
+      min-width: 200px; /* Добавлено: минимальная ширина для левой панели */
+    }
+
+    #left-panel h3 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      border-bottom: 1px solid rgba(60,60,60,0.8);
+      padding-bottom: 5px;
+    }
+
+    /* Двухпанельное меню: категории слева, подменю справа */
+    .menu-container {
+      display: flex;
+      border: 1px solid var(--bg-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+      /* Фиксированная высота – если категорий много, то появится прокрутка */
+      max-height: 300px;
+    }
+
+    /* Основное меню (категории) – фиксированная ширина */
+    .menu {
+      flex: 0 0 150px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-right: 1px solid var(--bg-elevated);
+      background-color: var(--bg-surface);
+      overflow-y: auto;
+      max-height: 300px;
+    }
+
+    .menu li {
+      cursor: pointer;
+      border-bottom: 1px solid var(--bg-elevated);
+      padding: 8px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.2s;
+    }
+
+    .menu li.active,
+    .menu li:hover {
+      background-color: var(--bg-elevated);
+    }
+
+    /* Подменю – заполняет оставшееся пространство, если контента много – появляется прокрутка */
+    .submenu-container {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 300px;
+      background-color: var(--bg-surface);
+    }
+
+    .submenu {
+      display: flex;
+      flex-wrap: nowrap;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: none;
+    }
+
+    .submenu.active {
+      display: block;
+    }
+
+    .submenu li {
+      border-bottom: 1px solid var(--bg-elevated);
+      padding: 8px 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .submenu li:hover {
+      background-color: var(--bg-elevated);
+    }
+
+    .submenu li.selected {
+      background-color: rgba(187,134,252,0.2);
+      color: var(--primary);
+    }
+
+    /* Правая панель: параметры генерации – подстраивается по ширине контента */
+    #right-panel {
+      flex: 0 0 auto; /* Ensures the panel shrinks to fit content */
+      background-color: var(--bg-elevated);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      overflow-y: auto;
+      /* max-width: 400px;  Удалено: чтобы панель не была ограничена в максимальной ширине и могла сжаться */
+    }
+
+    #right-panel h3 {
+      margin: 0 0 16px;
+      font-size: 1.25em;
+      font-weight: 500;
+      color: var(--text-primary);
+      border-bottom: 1px solid rgba(60,60,60,0.8);
+      padding-bottom: 8px;
+    }
+
+    /* Ряды параметров: лейблы выровнены по правому краю, инпуты уже и подстраиваются под контент */
+    #right-panel .param-row {
+      display: flex;
+      align-items: baseline; /* Изменено: align-items: center -> align-items: baseline; чтобы выровнять инпуты и лейблы по базовой линии текста */
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    #right-panel label {
+      margin: 0;
+      text-align: right; /* Оставляем text-align: right; для выравнивания лейблов справа */
+      color: var(--text-secondary);
+      font-size: 0.9em;
+      align-self: baseline; /* Добавлено: выравнивание лейблов по базовой линии */
+    }
+
+    #right-panel input {
+      width: auto; /* Важно: ширина инпута по содержимому */
+      min-width: 50px;
+      padding: 4px 6px;
+      text-align: right;
+      background-color: var(--bg-surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      color: var(--text-primary);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      align-self: baseline; /* Добавлено: выравнивание инпутов по базовой линии */
+    }
+
+    #right-panel button {
+      /* width: 100%;  Удалено: чтобы кнопка не занимала всю ширину панели */
+      padding: 12px 24px;
+      background-color: var(--primary);
+      color: #000;
+      font-weight: 500;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      margin-top: 20px;
+      max-width: 250px; /* Добавлено: ограничение максимальной ширины кнопки */
+      width: auto; /* Добавлено: чтобы кнопка подстраивалась под размер текста, но не была шире max-width */
+      display: block; /* Добавлено: чтобы кнопка оставалась блочным элементом и margin-top работал */
+      margin-left: auto; /* Добавлено: центрирование кнопки в панели (опционально) */
+      margin-right: auto; /* Добавлено: центрирование кнопки в панели (опционально) */
+    }
+
+    #right-panel button:hover {
+      background-color: var(--primary-variant);
+      color: #fff;
+    }
+
+    #right-panel button:active {
+      transform: scale(0.98);
+    }
+
+    #right-panel p {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: var(--text-secondary);
+    }
+
+    /* Панель визуализации */
+    #visualization-panel {
+      flex: 1;
+      position: relative;
+      background-color: #121212;
+    }
+
+    #visualization-panel canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Общие переходы для интерактивных элементов */
+    input, button, .menu li, .submenu li {
+      transition: all 0.2s ease;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      #control-panel {
+        flex-direction: column;
+      }
+      .menu-container {
+        flex-direction: column;
+      }
+      .menu {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--bg-elevated);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Панель управления -->
+    <div id="control-panel">
+      <!-- Левая панель: меню выбора ладов (двухпанельное меню) -->
+      <div id="left-panel">
+        <h3>Выбор ладов</h3>
+        <div class="menu-container">
+          <ul class="menu" id="mainMenu">
+            <!-- Категории будут добавлены динамически -->
+          </ul>
+          <div class="submenu-container" id="submenuContainer">
+            <!-- Подменю для каждой категории -->
+          </div>
+        </div>
+      </div>
+      <!-- Правая панель: параметры генерации -->
+      <div id="right-panel">
+        <h3>Параметры генерации</h3>
+        <div class="param-row">
+          <label for="maxNotes">Макс. число нот:</label>
+          <input type="number" id="maxNotes" value="8" min="3" max="12">
+        </div>
+        <div class="param-row">
+          <label for="searchLimit">Отсечка:</label>
+          <input type="number" id="searchLimit" value="32" min="1" max="100">
+        </div>
+        <div class="param-row">
+          <label for="minConsonance">Мин. конс.:</label>
+          <input type="number" id="minConsonance" step="0.01" value="0.2" min="0" max="1">
+        </div>
+        <button id="genScalesBtn">Сгенерировать лады</button>
+      </div>
+    </div>
+    <!-- Панель визуализации -->
+    <div id="visualization-panel">
+      <canvas id="myCanvas"></canvas>
+    </div>
+  </div>
+  
+  <script>
+    /******************************************************************
+     * Глобальные переменные
+     ******************************************************************/
+    let currentScale = null; // выбранный лад (массив объектов RationalInterval)
+    let generatedScalesArray = []; // "выпрямлённый" список всех ладов
+    
+    /******************************************************************
+     * Класс для работы с рациональными (JI) отношениями
+     ******************************************************************/
+    class RationalInterval {
+      constructor(numerator, denominator) {
+        this.numerator = numerator;
+        this.denominator = denominator;
+        this.simplify();
+      }
+      gcd(a, b) {
+        return b === 0 ? a : this.gcd(b, a % b);
+      }
+      simplify() {
+        let g = this.gcd(this.numerator, this.denominator);
+        this.numerator /= g;
+        this.denominator /= g;
+      }
+      // Приведение отношения в диапазон [1, 2)
+      normalize() {
+        let num = this.numerator;
+        let den = this.denominator;
+        while (num >= 2 * den) { num /= 2; }
+        while (num < den) { num *= 2; }
+        return new RationalInterval(num, den);
+      }
+      toCents() {
+        return 1200 * Math.log2(this.numerator / this.denominator);
+      }
+      toDecimal() {
+        return this.numerator / this.denominator;
+      }
+      // Строковое представление, например, "3:2"
+      toString() {
+        return `${this.numerator}/${this.denominator}`;
+      }
+      valueOf() {
+        return this.toDecimal();
+      }
+      multiply(other) {
+        return new RationalInterval(this.numerator * other.numerator, this.denominator * other.denominator);
+      }
+      divide(other) {
+        return new RationalInterval(this.numerator * other.denominator, this.denominator * other.numerator);
+      }
+    }
+    
+    /******************************************************************
+     * Вспомогательные функции для генерации ладов
+     ******************************************************************/
+    function isPow2(x) {
+      return (x & (x - 1)) === 0;
+    }
+    function factorize(n) {
+      let factors = [];
+      let d = 2;
+      while (n > 1) {
+        while (n % d === 0) {
+          factors.push(d);
+          n /= d;
+        }
+        d++;
+        if (d * d > n) {
+          if (n > 1) { factors.push(n); break; }
+        }
+      }
+      return factors;
+    }
+    // Функция консонантности для отношения: 1/denom + 1/num
+    function consonance(r) {
+      return 1 / r.denominator + 1 / r.numerator;
+    }
+    // Средняя консонантность лада (для всех пар нот)
+    function scaleConsonance(scale) {
+      let pairs = [];
+      let sorted = scale.slice().sort((a, b) => a.toDecimal() - b.toDecimal());
+      for (let i = 0; i < sorted.length; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          let ratio = sorted[j].divide(sorted[i]).normalize();
+          pairs.push(consonance(ratio));
+        }
+      }
+      if (pairs.length === 0) return 1.0;
+      return pairs.reduce((a, b) => a + b, 0) / pairs.length;
+    }
+    // Фильтрация: хотя бы числитель или знаменатель не больше limit
+    function oddLimit(limit, r) {
+      return r.numerator <= limit || r.denominator <= limit;
+    }
+    // Фильтрация по простым множителям (знаменатель – степень 2, числитель не слишком "тяжёлый")
+    function primeLimit(r) {
+      if (!isPow2(r.denominator)) return false;
+      let factors = factorize(r.numerator);
+      if (factors.filter(p => p === 3).length > 4) return false;
+      if (factors.filter(p => p >= 5).length > 2) return false;
+      if (factors.filter(p => p >= 7).length > 1) return false;
+      return true;
+    }
+    const MAX_SCALES = 100;
+    // Вставка нового лада в массив (если такого ещё нет), сортировка по консонантности (по убыванию)
+    function insertScale(scales, newScale, cons, maxSize = MAX_SCALES) {
+      let key = newScale.map(r => r.toString()).sort().join("|");
+      if (scales.some(entry => entry.key === key)) return false;
+      let newEntry = { consonance: cons, scale: newScale, key: key };
+      let pos = 0;
+      while (pos < scales.length && scales[pos].consonance > cons) pos++;
+      scales.splice(pos, 0, newEntry);
+      if (scales.length > maxSize) scales.pop();
+      return true;
+    }
+    // Генерация базовых интервалов из дробей вида y/x, где 1 ≤ x < y ≤ 45
+    // Используем параметр cutoff для фильтрации (oddLimit)
+    function generateBaseIntervals(cutoff) {
+      let baseRatios = [];
+      for (let i = 3; i <= 45; i++) {
+        for (let j = i + 1; j <= 45; j++) {
+          baseRatios.push(new RationalInterval(j, i));
+        }
+      }
+      let filtered = baseRatios.filter(r => primeLimit(r) && oddLimit(cutoff, r));
+      let intervals = [];
+      let seen = new Set();
+      for (let r of filtered) {
+        let nr = r.normalize();
+        let key = nr.toString();
+        if (!seen.has(key)) {
+          seen.add(key);
+          intervals.push(nr);
+        }
+      }
+      return intervals;
+    }
+    // Основная функция генерации ладов. Принимает параметры: maxNotes, searchLimit и minConsonance.
+    // Возвращает объект, где ключ – число нот, а значение – массив объектов {consonance, scale, key}
+    function generateScales(maxNotes = 8, searchLimit = 32, minConsonance = 0.2) {
+      let scalesDB = {};
+      let unison = new RationalInterval(1, 1);
+      scalesDB[1] = [{ consonance: 1.0, scale: [unison], key: unison.toString() }];
+      let intervals = generateBaseIntervals(searchLimit);
+      for (let n = 2; n <= maxNotes; n++) {
+        let newScales = [];
+        let prev = scalesDB[n - 1] || [];
+        for (let entry of prev) {
+          let scale = entry.scale;
+          for (let baseNote of scale) {
+            for (let interval of intervals) {
+              let newNoteUp = baseNote.multiply(interval).normalize();
+              let newNoteDown = baseNote.divide(interval).normalize();
+              for (let newNote of [newNoteUp, newNoteDown]) {
+                if (scale.some(r => r.toString() === newNote.toString())) continue;
+                let candidate = scale.slice();
+                candidate.push(newNote);
+                candidate.sort((a, b) => a.toDecimal() - b.toDecimal());
+                if (candidate.length === n) {
+                  let cons = scaleConsonance(candidate);
+                  if (cons >= minConsonance) {
+                    insertScale(newScales, candidate, cons);
+                  }
+                }
+              }
+            }
+          }
+        }
+        scalesDB[n] = newScales;
+      }
+      return scalesDB;
+    }
+    // Выпрямляем базу ладов: собираем все лады в один массив и сортируем по консонантности (по убыванию)
+    function flattenScales(scalesDB) {
+      generatedScalesArray = [];
+      for (let n in scalesDB) {
+        for (let entry of scalesDB[n]) {
+          generatedScalesArray.push({ n: parseInt(n), consonance: entry.consonance, scale: entry.scale });
+        }
+      }
+      generatedScalesArray.sort((a, b) => b.consonance - a.consonance);
+    }
+    // Функция перевода рационального отношения в центы (округляем)
+    function cents(r) {
+      return Math.round(r.toCents());
+    }
+    
+    /******************************************************************
+     * Визуализация выбранного лада на канве с автомасштабированием
+     ******************************************************************/
+    const canvas = document.getElementById("myCanvas");
+    const context = canvas.getContext("2d");
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+      if (currentScale) drawScale(currentScale);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    
+    function drawScale(scale) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      const marginLeft = canvas.width * 0.05;
+      const usableWidth = canvas.width * 0.9;
+      const marginTop = 20;
+      const marginBottom = 20;
+      const bottom = canvas.height - marginBottom;
+      const allowedArc = bottom - marginTop;
+      
+      let sorted = scale.slice().sort((a, b) => a.toDecimal() - b.toDecimal());
+      
+      function getX(val) {
+        return marginLeft + ((val - 1) / 1) * usableWidth;
+      }
+      
+      // Базовая линия
+      context.strokeStyle = "#555";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(marginLeft, bottom);
+      context.lineTo(marginLeft + usableWidth, bottom);
+      context.stroke();
+      
+      // Вычисляем максимальную разницу между нотами
+      let maxDiff = 0;
+      for (let i = 0; i < sorted.length; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          let diff = sorted[j].toDecimal() - sorted[i].toDecimal();
+          if (diff > maxDiff) maxDiff = diff;
+        }
+      }
+      if (maxDiff === 0) maxDiff = 1;
+      
+      // Отрисовка дуг с автомасштабированием:
+      // Для каждой пары нот вычисляем высоту дуги пропорционально разнице, так чтобы
+      // максимальная дуга равнялась allowedArc.
+      context.lineWidth = 10;
+      context.strokeStyle = "rgba(255,255,255,0.3)";
+      for (let i = 0; i < sorted.length - 1; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          const x1 = getX(sorted[i].toDecimal());
+          const x2 = getX(sorted[j].toDecimal());
+          const diff = sorted[j].toDecimal() - sorted[i].toDecimal();
+          const curveHeight = diff * allowedArc / maxDiff;
+          context.beginPath();
+          context.moveTo(x1, bottom);
+          context.bezierCurveTo(x1, bottom - curveHeight, x2, bottom - curveHeight, x2, bottom);
+          context.stroke();
+        }
+      }
+      
+      // Отрисовка нот с подписями
+      context.font = "12px sans-serif";
+      context.textAlign = "center";
+      const noteRadius = 10;
+      for (let note of sorted) {
+        const x = getX(note.toDecimal());
+        context.beginPath();
+        context.arc(x, bottom, noteRadius, 0, 2 * Math.PI);
+        context.fillStyle = "#212121";
+        context.fill();
+        context.strokeStyle = "#ffffff";
+        context.stroke();
+        context.fillStyle = "#ffffff";
+        context.fillText(note.toString(), x, bottom - noteRadius - 10);
+        context.fillText(cents(note) + " ct", x, bottom + noteRadius + 14);
+      }
+    }
+    
+    /******************************************************************
+     * Построение двухпанельного меню выбора ладов
+     * (левая панель: категории слева, подменю справа)
+     ******************************************************************/
+    function renderScaleMenu() {
+      // Группируем сгенерированные лады по количеству нот, исключая 1- и 2-ступенные
+      let groups = {};
+      for (let entry of generatedScalesArray) {
+        if (entry.n < 3) continue;
+        if (!groups[entry.n]) groups[entry.n] = [];
+        groups[entry.n].push(entry);
+      }
+      // Сортируем ключи (число нот) по убыванию — сначала группы с большим числом нот
+      let keys = Object.keys(groups).map(Number).sort((a, b) => b - a);
+      
+      // Перестраиваем содержимое левой панели
+      const leftPanel = document.getElementById("left-panel");
+      leftPanel.innerHTML = '<h3>Выбор ладов</h3><div class="menu-container"><ul class="menu" id="mainMenu"></ul><div class="submenu-container" id="submenuContainer"></div></div>';
+      
+      const mainMenu = document.getElementById("mainMenu");
+      const submenuContainer = document.getElementById("submenuContainer");
+      
+      // Создаём пункты основного меню и соответствующие подменю
+      keys.forEach(key => {
+        // Элемент основного меню (например, "4-нотные")
+        const li = document.createElement("li");
+        li.textContent = key + "-нотные";
+        li.setAttribute("data-target", "submenu" + key);
+        mainMenu.appendChild(li);
+        
+        // Создаём подменю для данной категории с форматированием вида:
+        // Cons: 0.5; Notes: 1/1, 9/8, 5/4, 45/32, 3/2, 27/16, 15/8
+        const submenu = document.createElement("ul");
+        submenu.classList.add("submenu");
+        submenu.id = "submenu" + key;
+        
+        // Сортируем внутри группы по консонантности (от большего к меньшему)
+        groups[key].sort((a, b) => b.consonance - a.consonance);
+        groups[key].forEach(entry => {
+          const liSub = document.createElement("li");
+          liSub.textContent = entry.scale.map(r => r.toString()).join(", ") + " (Cons: " + entry.consonance.toFixed(1) + ")";
+          liSub.title = "Консонантность: " + entry.consonance.toFixed(3);
+          liSub.addEventListener("click", function(e) {
+            e.stopPropagation();
+            // Снимаем выделение со всех пунктов подменю в этой категории
+            submenu.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
+            liSub.classList.add("selected");
+            currentScale = entry.scale;
+            drawScale(currentScale);
+          });
+          submenu.appendChild(liSub);
+        });
+        submenuContainer.appendChild(submenu);
+      });
+      
+      // Обработчики для переключения подменю по клику
+      document.querySelectorAll("#mainMenu li").forEach(item => {
+        item.addEventListener("click", function () {
+          document.querySelectorAll("#mainMenu li").forEach(li => li.classList.remove("active"));
+          document.querySelectorAll("#submenuContainer .submenu").forEach(ul => ul.classList.remove("active"));
+          item.classList.add("active");
+          const target = item.getAttribute("data-target");
+          const submenu = document.getElementById(target);
+          if (submenu) {
+            submenu.classList.add("active");
+          }
+        });
+      });
+      
+      // Для десктопов: переключение подменю по наведению (при ширине окна >= 600px)
+      if (window.innerWidth >= 600) {
+        document.querySelectorAll("#mainMenu li").forEach(item => {
+          item.addEventListener("mouseenter", function () {
+            document.querySelectorAll("#mainMenu li").forEach(li => li.classList.remove("active"));
+            document.querySelectorAll("#submenuContainer .submenu").forEach(ul => ul.classList.remove("active"));
+            item.classList.add("active");
+            const target = item.getAttribute("data-target");
+            const submenu = document.getElementById(target);
+            if (submenu) {
+              submenu.classList.add("active");
+            }
+          });
+        });
+      }
+      
+      // Активируем первую категорию и выбираем первый пункт подменю, если он есть
+      const firstMenuItem = document.querySelector("#mainMenu li");
+      if (firstMenuItem) {
+        firstMenuItem.classList.add("active");
+        const target = firstMenuItem.getAttribute("data-target");
+        const submenu = document.getElementById(target);
+        if (submenu) submenu.classList.add("active");
+        const firstSubItem = submenu.querySelector("li");
+        if (firstSubItem) {
+          firstSubItem.classList.add("selected");
+          const match = firstMenuItem.textContent.match(/(\d+)/);
+          if (match) {
+            const n = parseInt(match[1]);
+            const entry = groups[n][0];
+            currentScale = entry.scale;
+            drawScale(currentScale);
+          }
+        }
+      }
+    }
+    
+    /******************************************************************
+     * Обработка панели генерации (правая панель)
+     ******************************************************************/
+    const genScalesBtn = document.getElementById("genScalesBtn");
+    const maxNotesInput = document.getElementById("maxNotes");
+    
+    genScalesBtn.addEventListener("click", () => {
+      const maxNotes = parseInt(maxNotesInput.value);
+      const searchLimit = parseInt(document.getElementById("searchLimit").value);
+      const minConsonance = parseFloat(document.getElementById("minConsonance").value);
+      const scalesDB = generateScales(maxNotes, searchLimit, minConsonance);
+      flattenScales(scalesDB);
+      // Строим меню выбора ладов (учитываются только лады с 3 и более нотами)
+      renderScaleMenu();
+    });
+    
+    // При загрузке сразу генерируем лады и отображаем результат
+    window.addEventListener("load", () => {
+      genScalesBtn.click();
+    });
+  </script>
+</body>
+</html>
