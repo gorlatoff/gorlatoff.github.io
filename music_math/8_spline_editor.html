@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Spline MIDI Editor</title>
+  <!-- Подключение Tone.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --canvas-bg: #252525;
+      --grid-color: #333;
+      --grid-main-color: #444;
+      --grid-bar-color: #555;
+      --text-color: #ccc;
+      --point-color: #2196F3;
+      --point-hover-color: #4CAF50;
+      --cursor-color: #ff934a;
+      --menu-bg: #333;
+      --menu-border: #555;
+      --menu-item-hover: #444;
+      --active-tool-bg: #4a4a4a;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg-color);
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Контейнер всего редактора */
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Холст для рисования (piano-roll) занимает всё пространство с отступами */
+    #piano-roll {
+      position: absolute;
+      left: 80px;   /* место для левой панели с нотами */
+      top: 40px;    /* место для верхней панели (такты + кнопки) */
+      right: 0;
+      bottom: 0;
+      border: 1px solid var(--grid-color);
+      background: var(--canvas-bg);
+    }
+
+    /* Левая панель – названия нот */
+    #left-panel {
+      position: absolute;
+      left: 0;
+      top: 40px;
+      bottom: 0;
+      width: 80px;
+      background: var(--canvas-bg);
+      border-right: 1px solid var(--grid-color);
+      overflow: hidden;
+      box-sizing: border-box;
+      padding-top: 2px;
+    }
+
+    #left-panel div {
+      height: calc(100% / 24);
+      line-height: calc(100% / 24);
+      text-align: center;
+      font-size: 14px;
+      border-bottom: 1px solid var(--grid-color);
+    }
+
+    /* Верхняя панель – тактовая нумерация и кнопки управления */
+    #top-panel {
+      position: absolute;
+      left: 80px;
+      top: 0;
+      right: 0;
+      height: 40px;
+      background: var(--canvas-bg);
+      border-bottom: 1px solid var(--grid-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-sizing: border-box;
+    }
+
+    #measure-labels {
+      display: flex;
+      flex: 1;
+    }
+
+    #measure-labels span {
+      flex: 1;
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-color);
+    }
+
+    /* Кнопки управления */
+    #top-controls {
+      display: flex;
+      gap: 5px;
+    }
+
+    button {
+      background: #3a3a3a;
+      color: #fff;
+      border: 1px solid var(--grid-bar-color);
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: var(--active-tool-bg);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    /* Кнопки для переключения инструментов */
+    .tool-btn.active {
+      background: var(--active-tool-bg);
+    }
+
+    /* Всплывающее меню (если понадобится) */
+    #popup-menu {
+      position: absolute;
+      background: var(--menu-bg);
+      border: 1px solid var(--menu-border);
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    #popup-menu div {
+      padding: 5px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #popup-menu div:hover {
+      background: var(--menu-item-hover);
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Левая панель с названиями нот -->
+    <div id="left-panel"></div>
+    <!-- Верхняя панель с тактами и кнопками -->
+    <div id="top-panel">
+      <div id="top-controls">
+        <button id="start">Start</button>
+        <button id="pause">Pause</button>
+        <button id="stop">Stop</button>
+        <!-- Кнопки инструментов -->
+        <button id="pencil" class="tool-btn active">Pencil</button>
+        <button id="eraser" class="tool-btn">Eraser</button>
+      </div>
+      <div id="measure-labels"></div>
+    </div>
+    <!-- Холст для рисования -->
+    <canvas id="piano-roll"></canvas>
+    <!-- Всплывающее меню (если понадобится) -->
+    <div id="popup-menu">
+      <div id="delete-note">Удалить ноту полностью</div>
+      <div id="delete-point">Удалить точку (обрезать до предыдущей)</div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => { 
+      // Элементы DOM
+      const canvas = document.getElementById('piano-roll');
+      const leftPanel = document.getElementById('left-panel');
+      const measureLabelsDiv = document.getElementById('measure-labels');
+      const popupMenu = document.getElementById('popup-menu');
+      
+      const startBtn = document.getElementById('start');
+      const pauseBtn = document.getElementById('pause');
+      const stopBtn = document.getElementById('stop');
+      const pencilBtn = document.getElementById('pencil');
+      const eraserBtn = document.getElementById('eraser');
+      
+      if (!canvas || !startBtn || !pauseBtn || !stopBtn || !leftPanel || !measureLabelsDiv || !popupMenu) {
+        console.error('Required elements not found');
+        return;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error('Could not get canvas context');
+        return;
+      }
+
+      // Настройки сетки и тактов
+      let GRID_X, noteHeight;
+      const BARS = 4;
+      const DIVISIONS_PER_BAR = 16;
+
+      // Ограничение диапазона – две октавы: от C4 (MIDI 60) до B5 (MIDI 83) – 24 ноты.
+      const noteCount = 24;
+      const baseMidi = 60;
+      const midiNotes = [];
+      const noteNames = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+      for (let i = 0; i < noteCount; i++) {
+        midiNotes.push(baseMidi + i);
+      }
+
+      // Состояние
+      let isDrawing = false;     // рисование новой ноты
+      let isDragging = false;    // перетаскивание (главной или промежуточной точки)
+      let isErasing = false;     // режим удаления (рисованием)
+      let dragStart = null;      // стартовая позиция для перетаскивания и проверки минимального перемещения
+      let selectedNote = null;   // выбранная нота (при клике по главной или промежуточной точке)
+      let selectedIntermediateIndex = null; // выбранный индекс промежуточной точки для точной настройки
+      let draggedPoint = null;   // информация о перетаскивании (если промежуточная точка)
+      let mainNoteDragOffsets = null; // смещения промежуточных точек относительно главной при перетаскивании
+      let activeTool = 'pencil'; // 'pencil' или 'eraser'
+      
+      // Все ноты храним в массиве. Каждая нота – объект:
+      // { main: {x, y}, intermediates: [ {x, y}, ... ] }
+      const notesArray = [];
+
+      // Для воспроизведения
+      let isPlaying = false;
+      let playbackStartTime = 0;
+      let animationFrame = null;
+      const activeVoices = new Set();
+      
+      // Минимальное расстояние для того, чтобы считать операцию рисованием (в пикселях)
+      const MIN_DRAG_DISTANCE = 5;
+
+      // Цвета из CSS-переменных
+      const style = getComputedStyle(document.documentElement);
+      const colors = {
+        grid: style.getPropertyValue('--grid-color').trim(),
+        gridMain: style.getPropertyValue('--grid-main-color').trim(),
+        gridBar: style.getPropertyValue('--grid-bar-color').trim(),
+        text: style.getPropertyValue('--text-color').trim(),
+        point: style.getPropertyValue('--point-color').trim(),
+        pointHover: style.getPropertyValue('--point-hover-color').trim(),
+        cursor: style.getPropertyValue('--cursor-color').trim()
+      };
+
+      // Для расчёта толщины кривой и размеров точек
+      function getCurveThickness() {
+        return Math.max(3, noteHeight * 0.15);
+      }
+      function getPointRadius(isMain, isHovered) {
+        const curveThickness = getCurveThickness();
+        let radius = isMain ? curveThickness * 1.2 : curveThickness;
+        if (isHovered) radius *= 1.5;
+        return radius;
+      }
+
+      // Ресайз холста с учётом панелей
+      function resizeCanvas() {
+        const container = canvas.parentElement;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        const leftPanelWidth = 80;
+        const topPanelHeight = 40;
+        canvas.width = containerRect.width - leftPanelWidth;
+        canvas.height = containerRect.height - topPanelHeight;
+        
+        if (canvas.width > 0 && canvas.height > 0) {
+          updateGridSettings();
+          render();
+          updateMeasureLabels();
+          updateLeftPanel();
+        }
+      }
+
+      function updateGridSettings() {
+        GRID_X = canvas.width / (BARS * DIVISIONS_PER_BAR);
+        noteHeight = canvas.height / noteCount;
+      }
+
+      function updateMeasureLabels() {
+        measureLabelsDiv.innerHTML = '';
+        for (let bar = 0; bar < BARS; bar++) {
+          const span = document.createElement('span');
+          span.textContent = `Такт ${bar + 1}`;
+          measureLabelsDiv.appendChild(span);
+        }
+      }
+
+      function updateLeftPanel() {
+        leftPanel.innerHTML = '';
+        for (let i = noteCount - 1; i >= 0; i--) {
+          const div = document.createElement('div');
+          const octave = Math.floor((baseMidi + i) / 12) - 1;
+          const name = noteNames[(baseMidi + i) % 12];
+          div.textContent = `${name}${octave}`;
+          leftPanel.appendChild(div);
+        }
+      }
+
+      // Преобразования координат
+      function toRelativeCoords(x, y) {
+        return { x: x / canvas.width, y: y / canvas.height };
+      }
+      function toAbsoluteCoords(relX, relY) {
+        return { x: relX * canvas.width, y: relY * canvas.height };
+      }
+
+      // Привязка по оси X – к ближайшей вертикальной линии
+      function snapX(x) {
+        return Math.round(x / GRID_X) * GRID_X;
+      }
+      // Привязка по оси Y – к центру соответствующей ноты
+      function snapYValue(y) {
+        const relY = y / canvas.height;
+        const noteIndex = Math.floor(relY * noteCount);
+        const snappedRelY = (noteIndex + 0.5) / noteCount;
+        return snappedRelY * canvas.height;
+      }
+      function snapToNoteDrawing(x, y) {
+        return {
+          x: snapX(x),
+          y: snapYValue(y)
+        };
+      }
+
+      // Рисуем сетку
+      function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let bar = 0; bar <= BARS; bar++) {
+          for (let div = 0; div < DIVISIONS_PER_BAR; div++) {
+            const x = (bar * DIVISIONS_PER_BAR + div) * GRID_X;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            if (div === 0) {
+              ctx.strokeStyle = colors.gridBar;
+              ctx.lineWidth = 2;
+            } else {
+              ctx.strokeStyle = colors.grid;
+              ctx.lineWidth = 1;
+            }
+            ctx.stroke();
+          }
+        }
+        for (let i = 0; i <= noteCount; i++) {
+          const y = i * noteHeight;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.strokeStyle = (i % 12 === 0) ? colors.gridMain : colors.grid;
+          ctx.stroke();
+        }
+      }
+
+      // Рисуем точку
+      function drawPoint(x, y, isMain = false, isHovered = false) {
+        const radius = getPointRadius(isMain, isHovered);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = isHovered ? colors.pointHover : colors.point;
+        ctx.fill();
+      }
+
+      // Рисуем ноту (главная точка всегда; выбранная промежуточная — если выбрана для настройки)
+      function drawNote(note) {
+        let pts = [ note.main, ...note.intermediates ];
+        if (pts.length < 2) return;
+        pts.sort((a, b) => a.x - b.x);
+        const absPoints = pts.map(pt => toAbsoluteCoords(pt.x, pt.y));
+        const curveThickness = getCurveThickness();
+        ctx.beginPath();
+        ctx.moveTo(absPoints[0].x, absPoints[0].y);
+        for (let i = 0; i < absPoints.length - 1; i++) {
+          const curr = absPoints[i], next = absPoints[i+1];
+          const xc = (curr.x + next.x) / 2, yc = (curr.y + next.y) / 2;
+          ctx.quadraticCurveTo(curr.x, curr.y, xc, yc);
+        }
+        ctx.strokeStyle = colors.point;
+        ctx.lineWidth = curveThickness;
+        ctx.stroke();
+
+        const mainAbs = toAbsoluteCoords(note.main.x, note.main.y);
+        drawPoint(mainAbs.x, mainAbs.y, true);
+
+        // Если для выбранной ноты выбрана промежуточная точка, рисуем её (для тонкой настройки)
+        if (selectedNote === note && selectedIntermediateIndex !== null) {
+          const interm = note.intermediates[selectedIntermediateIndex];
+          if (interm) {
+            const intermAbs = toAbsoluteCoords(interm.x, interm.y);
+            drawPoint(intermAbs.x, intermAbs.y, false, true);
+          }
+        }
+      }
+
+      function render() {
+        drawGrid();
+        notesArray.forEach(note => { drawNote(note); });
+        if (isDrawing && currentNote) { drawNote(currentNote); }
+        drawPlaybackCursor();
+        if (isPlaying) animationFrame = requestAnimationFrame(render);
+      }
+
+      function getMidiFromY(relY) {
+        const noteIndex = Math.floor(relY * noteCount);
+        return midiNotes[noteIndex];
+      }
+
+      function playNoteSpline(note, startTime) {
+        let pts = [ note.main, ...note.intermediates ];
+        if (pts.length < 2) return;
+        pts.sort((a, b) => a.x - b.x);
+        const startX = pts[0].x, endX = pts[pts.length - 1].x;
+        const duration = getTotalDuration();
+        const synth = new Tone.Synth().toDestination();
+        activeVoices.add(synth);
+        const noteStartTime = startTime + (startX * duration);
+        const noteDuration = ((endX - startX) * duration);
+        synth.triggerAttack(Tone.Frequency(getMidiFromY(pts[0].y), "midi"), noteStartTime);
+        pts.forEach((pt, i) => {
+          if (i === 0) return;
+          const time = startTime + (pt.x * duration);
+          const freq = Tone.Frequency(getMidiFromY(pt.y), "midi").toFrequency();
+          synth.frequency.linearRampToValueAtTime(freq, time);
+        });
+        synth.triggerRelease(noteStartTime + noteDuration);
+        Tone.Transport.schedule(() => {
+          synth.dispose();
+          activeVoices.delete(synth);
+        }, noteStartTime + noteDuration + 0.1);
+      }
+
+      function getTotalDuration() {
+        return BARS * 2;
+      }
+      function cleanupSynths() {
+        activeVoices.forEach(synth => { synth.dispose(); });
+        activeVoices.clear();
+      }
+
+      function drawPlaybackCursor() {
+        if (!isPlaying) return;
+        const currentTime = Tone.now() - playbackStartTime;
+        const totalDuration = getTotalDuration();
+        const relativePosition = currentTime / totalDuration;
+        const cursorX = relativePosition * canvas.width;
+        if (relativePosition >= 1) { stopPlayback(); return; }
+        ctx.beginPath();
+        ctx.moveTo(cursorX, 0);
+        ctx.lineTo(cursorX, canvas.height);
+        ctx.strokeStyle = colors.cursor;
+        ctx.lineWidth = Math.max(2, noteHeight * 0.1);
+        ctx.stroke();
+      }
+
+      function startPlayback() {
+        cleanupSynths();
+        isPlaying = true;
+        playbackStartTime = Tone.now();
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        stopBtn.disabled = false;
+        notesArray.forEach(note => { playNoteSpline(note, playbackStartTime); });
+        render();
+      }
+      function pausePlayback() {
+        isPlaying = false;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        cleanupSynths();
+        render();
+      }
+      function stopPlayback() {
+        isPlaying = false;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        cleanupSynths();
+        render();
+      }
+
+      // --- Обработка инструментов ---
+      function setActiveTool(tool) {
+        activeTool = tool;
+        if (tool === 'pencil') {
+          pencilBtn.classList.add('active');
+          eraserBtn.classList.remove('active');
+        } else {
+          eraserBtn.classList.add('active');
+          pencilBtn.classList.remove('active');
+        }
+      }
+      pencilBtn.addEventListener('click', () => { setActiveTool('pencil'); });
+      eraserBtn.addEventListener('click', () => { setActiveTool('eraser'); });
+
+      // --- Механика рисования, редактирования и удаления ---
+      let currentNote = null;
+
+      // Функция для поиска ноты по попаданию (при удалении проверяем главную и (для удаления) последнюю промежуточную)
+      function findNoteAt(absX, absY) {
+        for (let note of notesArray) {
+          const mainAbs = toAbsoluteCoords(note.main.x, note.main.y);
+          if (Math.hypot(absX - mainAbs.x, absY - mainAbs.y) < 10) return note;
+          if (note.intermediates.length > 0) {
+            const lastPt = note.intermediates[note.intermediates.length - 1];
+            const lastAbs = toAbsoluteCoords(lastPt.x, lastPt.y);
+            if (Math.hypot(absX - lastAbs.x, absY - lastAbs.y) < 10) return note;
+          }
+        }
+        return null;
+      }
+
+      // Функция удаления в режиме eraser:
+      // – Если курсор рядом с главной точкой – удаляется вся нота.
+      // – Если курсор рядом с последней промежуточной точкой – удаляется только она.
+      function eraseAt(absX, absY) {
+        const note = findNoteAt(absX, absY);
+        if (!note) return;
+        const mainAbs = toAbsoluteCoords(note.main.x, note.main.y);
+        if (Math.hypot(absX - mainAbs.x, absY - mainAbs.y) < 10) {
+          const idx = notesArray.indexOf(note);
+          if (idx !== -1) {
+            notesArray.splice(idx, 1);
+            if (selectedNote === note) selectedNote = null;
+          }
+        } else if (note.intermediates.length > 0) {
+          const lastPt = note.intermediates[note.intermediates.length - 1];
+          const lastAbs = toAbsoluteCoords(lastPt.x, lastPt.y);
+          if (Math.hypot(absX - lastAbs.x, absY - lastAbs.y) < 10) {
+            note.intermediates.pop();
+          }
+        }
+      }
+
+      canvas.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const absX = e.clientX - rect.left;
+        const absY = e.clientY - rect.top;
+
+        if (e.button === 2) { setActiveTool('eraser'); }
+
+        // Если eraser активен – начинаем режим удаления (без одиночного клика)
+        if (activeTool === 'eraser') {
+          isErasing = true;
+          eraseAt(absX, absY);
+          render();
+          return;
+        }
+
+        // Если pencil активен – сначала проверяем, попал ли клик по любой промежуточной точке
+        let foundIntermediate = false;
+        for (let note of notesArray) {
+          for (let i = 0; i < note.intermediates.length; i++) {
+            const ptAbs = toAbsoluteCoords(note.intermediates[i].x, note.intermediates[i].y);
+            if (Math.hypot(absX - ptAbs.x, absY - ptAbs.y) < 10) {
+              selectedNote = note;
+              selectedIntermediateIndex = i;
+              draggedPoint = { type: 'intermediate', index: i };
+              isDragging = true;
+              foundIntermediate = true;
+              render();
+              return;
+            }
+          }
+        }
+
+        // Если не попали по промежуточной точке – ищем попадание по главной точке
+        const note = findNoteAt(absX, absY);
+        if (note) {
+          const mainAbs = toAbsoluteCoords(note.main.x, note.main.y);
+          if (Math.hypot(absX - mainAbs.x, absY - mainAbs.y) < 10) {
+            selectedNote = note;
+            selectedIntermediateIndex = null;
+            isDragging = true;
+            dragStart = { x: mainAbs.x, y: mainAbs.y, mouseX: absX, mouseY: absY };
+            mainNoteDragOffsets = note.intermediates.map(pt => {
+              const ptAbs = toAbsoluteCoords(pt.x, pt.y);
+              return { dx: ptAbs.x - mainAbs.x, dy: ptAbs.y - mainAbs.y };
+            });
+            render();
+            return;
+          }
+        }
+
+        // Если попадания по существующим точкам нет – начинаем рисование новой ноты.
+        // При этом запоминаем начальные координаты для проверки минимального перемещения.
+        selectedNote = null;
+        selectedIntermediateIndex = null;
+        isDrawing = true;
+        dragStart = { x: absX, y: absY };
+        const snapped = snapToNoteDrawing(absX, absY);
+        currentNote = {
+          main: toRelativeCoords(snapped.x, snapped.y),
+          intermediates: []
+        };
+        render();
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const absX = e.clientX - rect.left;
+        const absY = e.clientY - rect.top;
+
+        if (activeTool === 'eraser' && isErasing) {
+          eraseAt(absX, absY);
+          render();
+        } else if (isDrawing && currentNote) {
+          // Добавляем промежуточные точки только если движение больше MIN_DRAG_DISTANCE
+          if (Math.hypot(absX - dragStart.x, absY - dragStart.y) < MIN_DRAG_DISTANCE) return;
+          const snapped = snapToNoteDrawing(absX, absY);
+          const rel = toRelativeCoords(snapped.x, snapped.y);
+          if (currentNote.intermediates.length > 0) {
+            const last = currentNote.intermediates[currentNote.intermediates.length - 1];
+            if (rel.x <= last.x) return;
+          }
+          currentNote.intermediates.push(rel);
+          render();
+        } else if (isDragging && selectedNote) {
+          if (draggedPoint && draggedPoint.type === 'intermediate') {
+            // При перетаскивании промежуточной точки обновляем только её y (без привязки)
+            selectedNote.intermediates[draggedPoint.index].y = absY / canvas.height;
+          } else {
+            // Перетаскивание главной точки – с привязкой по оси X и Y
+            let newAbsX = dragStart.x + (absX - dragStart.mouseX);
+            let newAbsY = dragStart.y + (absY - dragStart.mouseY);
+            const snapped = snapToNoteDrawing(newAbsX, newAbsY);
+            selectedNote.main = toRelativeCoords(snapped.x, snapped.y);
+            if (mainNoteDragOffsets) {
+              selectedNote.intermediates = mainNoteDragOffsets.map(offset => {
+                const newPtAbs = { x: snapped.x + offset.dx, y: snapped.y + offset.dy };
+                return toRelativeCoords(newPtAbs.x, newPtAbs.y);
+              });
+            }
+          }
+          render();
+        }
+      });
+
+      canvas.addEventListener('mouseup', (e) => {
+        if (activeTool === 'eraser') {
+          isErasing = false;
+          render();
+          return;
+        }
+        // Если рисование новой ноты завершилось – проверяем, что нота имеет ненулевую длину.
+        // Если промежуточных точек нет или последняя имеет такой же x, как и главная – ноту не добавляем.
+        if (isDrawing && currentNote) {
+          if (
+            currentNote.intermediates.length === 0 ||
+            currentNote.intermediates[currentNote.intermediates.length - 1].x === currentNote.main.x
+          ) {
+            currentNote = null;
+          } else {
+            notesArray.push(currentNote);
+            currentNote = null;
+          }
+        }
+        isDrawing = false;
+        isDragging = false;
+        draggedPoint = null;
+        mainNoteDragOffsets = null;
+        render();
+      });
+
+      canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+
+      startBtn.addEventListener('click', async () => {
+        await Tone.start();
+        startPlayback();
+      });
+      pauseBtn.addEventListener('click', pausePlayback);
+      stopBtn.addEventListener('click', stopPlayback);
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          isPlaying ? pausePlayback() : startPlayback();
+        }
+      });
+
+      setTimeout(resizeCanvas, 0);
+      window.addEventListener('resize', resizeCanvas);
+    });
+  </script>
+</body>
+</html>
