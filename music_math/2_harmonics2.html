@@ -348,7 +348,7 @@
     let selectedNote = null;
     let dragOffsetX = 0;
     // Увеличенный радиус точки ноты
-    const circleR = 10;
+    const circleR = 8;
     const rectHeight = 4;
     
     // Класс гармоники. Итоговый коэффициент громкости (от 0 до 1) используется для визуализации и звука.
@@ -552,8 +552,8 @@
           if (
             pos.x > hx &&
             pos.x < hx + harmonic.noteLength &&
-            pos.y > harmonic.y - rectHeight / 2 &&
-            pos.y < harmonic.y + rectHeight
+            pos.y > harmonic.y - rectHeight / 2 - 5 &&
+            pos.y < harmonic.y + rectHeight + 5
           ) {
             candidates.push({ note, harmonic });
           }
