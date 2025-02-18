@@ -7,13 +7,14 @@
   <style>
     /* Определяем CSS-константы (переменные) */
     :root {
-      --color-bg: hsl(100%, 100%, 100%);                      /* Фон страницы */
-      --color-canvas-bg: hsla(100, 100%, 100%, 0.33);           /* Фон канвы (эффект trail) */
-      --color-horizontal-line: #616161;                        /* Горизонтальная линия */
-      --color-waveform: #00BCD4;                               /* Волновая форма */
-      --color-button-bg: #303f9f;                              /* Кнопка по умолчанию (тёмный синий) */
-      --color-button-hover: rgba(33, 150, 243, 0.8);           /* При наведении (светлее) */
-      --color-button-text: #FFFFFF;                            /* Текст кнопки */
+      --color-bg: hsl(100, 100%, 100%);
+      --color-canvas-bg: hsla(100, 100%, 100%, 0.33);
+      --color-horizontal-line: #616161;
+      --color-waveform: #00BCD4;
+      --color-button-bg: #303f9f;
+      --color-button-hover: rgba(33, 150, 243, 0.8);
+      --color-button-text: #FFFFFF;
+      --text-primary: #FFFFFF;
     }
 
     /* Сброс стилей */
@@ -35,7 +36,6 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      /* Контейнер всегда виден, оверлей будет его перекрывать */
     }
     /* Canvas занимает весь контейнер */
     canvas {
@@ -52,7 +52,6 @@
       left: 0;
       z-index: 2;
     }
-
     button {
       background-color: rgb(25, 70, 81);
       color: rgb(255, 255, 255);
@@ -62,30 +61,30 @@
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
-
     button:hover {
       background-color: rgb(30, 85, 97);
     }
-
     button:active {
       background-color: rgb(20, 60, 71);
     }
-
-    /* Оверлей "Tap to start" с полупрозрачным фоном */
+    /* Оверлей "Tap to start" с изменённым стилем */
     #overlay {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.3); /* полупрозрачный фон, позволяющий видеть контент под ним */
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.9);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      font-size: 24px;
+      color: var(--text-primary);
+      font-size: 20px;
       z-index: 1000;
       cursor: pointer;
+    }
+    #overlay:hover {
+      background-color: rgba(0,0,0,0.95);
     }
   </style>
 </head>
@@ -95,7 +94,7 @@
     <div id="button-container"></div>
   </div>
 
-  <!-- Оверлей, который будет скрыт после первого взаимодействия -->
+  <!-- Оверлей, который скрывается после первого взаимодействия -->
   <div id="overlay">Tap to start</div>
 
   <script>
@@ -153,7 +152,6 @@
         this.oscillator.frequency.setValueAtTime(this.freq, now);
 
         this.gainNode = audioCtx.createGain();
-        // Начинаем с 0
         this.gainNode.gain.setValueAtTime(0, now);
 
         // Соединяем цепочку: осциллятор -> gain -> анализатор -> динамики
@@ -161,14 +159,14 @@
         this.gainNode.connect(analyser);
         analyser.connect(audioCtx.destination);
 
-        // Применяем ADSR-огибающую:
+        // ADSR-огибающая:
         // Attack: 0.6 сек (от 0 до 1)
         // Decay: 1.2 сек (от 1 до sustain 0.9)
-        // Sustain: удерживается на уровне 0.9
+        // Sustain: уровень 0.9
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(0, now);
-        this.gainNode.gain.linearRampToValueAtTime(1, now + 0.6);          // Attack
-        this.gainNode.gain.linearRampToValueAtTime(0.9, now + 0.6 + 1.2);    // Decay
+        this.gainNode.gain.linearRampToValueAtTime(1, now + 0.6);
+        this.gainNode.gain.linearRampToValueAtTime(0.9, now + 0.6 + 1.2);
 
         this.oscillator.start(now);
       }
@@ -178,12 +176,9 @@
         if (!this.isPlaying) return;
         this.isPlaying = false;
         const now = audioCtx.currentTime;
-        // Release: 0.6 сек, линейное снижение от текущего значения до 0
         this.gainNode.gain.cancelScheduledValues(now);
-        // Фиксируем текущее значение
         this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
         this.gainNode.gain.linearRampToValueAtTime(0, now + 0.6);
-        // Останавливаем осциллятор после фазы релиза
         this.oscillator.stop(now + 0.6);
       }
     }
@@ -194,13 +189,13 @@
       canvas.height = window.innerHeight;
     }
 
-    // Основная функция инициализации приложения
+    // Функция инициализации: создаются кнопки и запускается отрисовка
     function setup() {
       const oscillatorContainer = document.getElementById('oscillator-container');
       const canvas = oscillatorContainer.querySelector('canvas');
       const ctx = canvas.getContext('2d');
 
-      // Задаем начальные размеры канвы и обновляем их при изменении окна
+      // Задаем размеры канвы и обновляем их при изменении окна
       resizeCanvas(canvas);
       window.addEventListener('resize', () => resizeCanvas(canvas));
 
@@ -214,12 +209,12 @@
       drawWaveform(ctx, canvas);
     }
 
-    // Функция для линейного маппинга значений
+    // Функция линейного маппинга
     function map(value, inMin, inMax, outMin, outMax) {
       return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
     }
 
-    // Функция обрезки формы для синхронизации фазы
+    // Функция обрезки волновой формы для синхронизации фазы
     function cropWaveform(waveform) {
       let changeIndex = 0;
       let delta = 1;
@@ -229,38 +224,28 @@
           changeIndex = i;
         }
       }
-      if (changeIndex !== 0) {
-        return waveform.slice(changeIndex);
-      }
-      return waveform;
+      return changeIndex !== 0 ? waveform.slice(changeIndex) : waveform;
     }
 
-    // Функция отрисовки волновой формы с использованием буфера истории
+    // Функция отрисовки волновой формы с буфером истории
     function drawWaveform(ctx, canvas) {
-      // Получаем данные с анализатора
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       analyser.getByteTimeDomainData(dataArray);
 
-      // Преобразуем данные в диапазон [-1, 1]
-      let waveform = Array.from(dataArray).map((value) => (value - 128) / 128);
-      // Обрезаем форму для синхронизации фаз
+      let waveform = Array.from(dataArray).map(value => (value - 128) / 128);
       let croppedWaveform = cropWaveform(waveform);
-      // Усекаем до нужного числа точек
       let waveformToDraw = croppedWaveform.slice(0, waveEnd);
 
-      // Добавляем текущую форму в буфер истории
       waveformHistory.push(waveformToDraw);
       if (waveformHistory.length > historySize) {
         waveformHistory.shift();
       }
 
-      // Вычисляем итоговую (смешанную) форму с помощью взвешенного среднего
       const blendedWaveform = [];
       for (let i = 0; i < waveEnd; i++) {
         let sum = 0, weightSum = 0;
         for (let j = 0; j < waveformHistory.length; j++) {
-          // Линейное распределение весов: от 0.2 (старый) до 1 (новый)
           const weight = map(j, 0, waveformHistory.length - 1, 0.2, 1);
           sum += waveformHistory[j][i] * weight;
           weightSum += weight;
@@ -268,12 +253,12 @@
         blendedWaveform.push(sum / weightSum);
       }
 
-      // Очищаем холст – заливаем фон с небольшим затуханием (эффект trail)
+      // Очищаем канву (эффект trail)
       ctx.fillStyle = getComputedStyle(document.documentElement)
                         .getPropertyValue('--color-canvas-bg');
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Рисуем горизонтальную центральную линию
+      // Рисуем центральную горизонтальную линию
       ctx.strokeStyle = HORIZONTAL_LINE_COLOR;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -281,39 +266,36 @@
       ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
 
-      // Рисуем итоговую (смешанную) кривую волновой формы
+      // Рисуем волновую форму
       ctx.beginPath();
       ctx.strokeStyle = WAVEFORM_COLOR;
       ctx.lineWidth = lineWidth;
       const scale = canvas.height * 0.48;
       const offset = canvas.height / 2;
-
       for (let i = 0; i < blendedWaveform.length; i++) {
         let x = map(i, 0, blendedWaveform.length - 1, 0, canvas.width);
         let y = blendedWaveform[i] * scale + offset;
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.stroke();
 
       requestAnimationFrame(() => drawWaveform(ctx, canvas));
     }
 
-    // Ждем, когда DOM загрузится, и добавляем обработчик на оверлей
+    // Инициализация сразу после загрузки страницы,
+    // чтобы канвас и кнопки отрисовывались независимо от оверлея
     document.addEventListener('DOMContentLoaded', function() {
+      setup();
+
+      // Обработчик для оверлея: при нажатии аудиоконтекст активируется, оверлей скрывается
       const overlay = document.getElementById('overlay');
       overlay.addEventListener('pointerdown', function(e) {
         e.preventDefault();
-        // Возобновляем аудиоконтекст (если он был приостановлен)
         audioCtx.resume().then(() => {
-          // Скрываем оверлей
           overlay.style.display = 'none';
-          // Запускаем инициализацию приложения
-          setup();
         });
       });
     });
   </script>
+</body>
+</html>
