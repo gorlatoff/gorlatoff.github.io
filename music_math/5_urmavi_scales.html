@@ -1,311 +1,295 @@
-
-
-1 вариант кода:
-```
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Генерация и визуализация JI ладов</title>
   <style>
-    /* Переменные и базовые стили */
+    /* Основные переменные */
     :root {
       --bg-primary: #121212;
       --bg-surface: rgba(255, 255, 255, 0.05);
       --bg-elevated: rgba(255, 255, 255, 0.08);
+      --bg-hover: rgba(255, 255, 255, 0.12);
       --text-primary: rgba(255, 255, 255, 0.87);
       --text-secondary: rgba(255, 255, 255, 0.6);
       --primary: #bb86fc;
       --primary-variant: #3700b3;
       --secondary: #03dac6;
+      --border-color: rgba(60, 60, 60, 0.8);
+      --canvas-bg: #000; /* Фон канваса сделан гораздо темнее */
+      --scrollbar-track: #333;
+      --scrollbar-thumb: #555;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
     }
 
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      height: 100vh;
+      overflow: hidden;
       font-family: 'Roboto', sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
     }
 
-    /* Основная структура приложения */
+    /* Контейнер приложения */
+    /* <-- Изменено: используем flex с делением 2/3 на 1/3 */
     #app {
       display: flex;
       flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Панель визуализации (2/3 высоты) */
+    /* <-- Изменено: flex: 2; + небольшие внешние отступы */
+    #visualization-panel {
+      flex: 2;
+      position: relative;
+      overflow: hidden;
+      margin: 8px; /* небольшие внешние отступы */
+    }
+    #visualization-panel canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background-color: var(--canvas-bg);
+    }
+
+    /* Панель контролов (1/3 высоты) */
+    /* <-- Изменено: flex: 1; без фиксированных vh */
+    #control-panel {
+      flex: 1;
+      background-color: var(--bg-surface);
+      overflow: auto;
+      padding: 16px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+
+    /* Стилизация скроллбара (для панели и таблицы) */
+    #control-panel::-webkit-scrollbar,
+    .scales-table-container::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    #control-panel::-webkit-scrollbar-track,
+    .scales-table-container::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+    #control-panel::-webkit-scrollbar-thumb,
+    .scales-table-container::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      border-radius: 6px;
+      border: 3px solid var(--scrollbar-track);
+    }
+    #control-panel,
+    .scales-table-container {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    /* Внутренняя структура панели контролов */
+    .controls-container {
+      display: flex;
+      gap: 16px;
       height: 100%;
     }
 
-    /* Панель управления – ограничена по высоте до 1/3 экрана */
-    #control-panel {
-      display: flex;
-      gap: 24px;
-      padding: 24px;
-      background-color: var(--bg-surface);
-      border-bottom: 1px solid rgba(60,60,60,0.8);
-      max-height: 33vh;
-      overflow-y: auto;
-      justify-content: space-evenly;
-    }
-
-    /* Левая панель: меню выбора ладов занимает оставшееся пространство */
-    #left-panel {
-      background-color: var(--bg-elevated);
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      overflow-y: auto;
-      min-width: 200px; /* Добавлено: минимальная ширина для левой панели */
-    }
-
-    #left-panel h3 {
-      margin: 0 0 10px;
-      font-size: 1.2em;
-      border-bottom: 1px solid rgba(60,60,60,0.8);
-      padding-bottom: 5px;
-    }
-
-    /* Двухпанельное меню: категории слева, подменю справа */
-    .menu-container {
-      display: flex;
-      border: 1px solid var(--bg-elevated);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 10px;
-      /* Фиксированная высота – если категорий много, то появится прокрутка */
-      max-height: 300px;
-    }
-
-    /* Основное меню (категории) – фиксированная ширина */
-    .menu {
-      flex: 0 0 150px;
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      border-right: 1px solid var(--bg-elevated);
-      background-color: var(--bg-surface);
-      overflow-y: auto;
-      max-height: 300px;
-    }
-
-    .menu li {
-      cursor: pointer;
-      border-bottom: 1px solid var(--bg-elevated);
-      padding: 8px 12px;
-      color: var(--text-primary);
-      transition: background-color 0.2s;
-    }
-
-    .menu li.active,
-    .menu li:hover {
-      background-color: var(--bg-elevated);
-    }
-
-    /* Подменю – заполняет оставшееся пространство, если контента много – появляется прокрутка */
-    .submenu-container {
+    /* Таблица ладов */
+    .scales-table-container {
       flex: 1;
-      overflow-y: auto;
-      max-height: 300px;
-      background-color: var(--bg-surface);
+      overflow: auto;
+      /* Высота будет зависеть от flex, поэтому max-height убираем */
     }
-
-    .submenu {
-      display: flex;
-      flex-wrap: nowrap;
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: none;
+    .scales-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
     }
-
-    .submenu.active {
-      display: block;
-    }
-
-    .submenu li {
-      border-bottom: 1px solid var(--bg-elevated);
+    .scales-table th,
+    .scales-table td {
       padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .scales-table th {
+      background-color: var(--bg-elevated);
+      cursor: pointer;
+      position: sticky;
+      top: 0;
       color: var(--text-secondary);
+      z-index: 2;
+    }
+    .scales-table tr {
       cursor: pointer;
       transition: background-color 0.2s;
     }
-
-    .submenu li:hover {
-      background-color: var(--bg-elevated);
+    .scales-table tr:hover {
+      background-color: var(--bg-hover);
+    }
+    .scales-table tr.selected {
+      background-color: rgba(187, 134, 252, 0.2);
+    }
+    .scales-table td.consonance {
+      color: var(--secondary);
+    }
+    .scales-table td.scale {
+      font-family: monospace;
     }
 
-    .submenu li.selected {
-      background-color: rgba(187,134,252,0.2);
-      color: var(--primary);
-    }
-
-    /* Правая панель: параметры генерации – подстраивается по ширине контента */
-    #right-panel {
-      flex: 0 0 auto; /* Ensures the panel shrinks to fit content */
+    /* Блок параметров генерации */
+    /* компактный, как в предыдущем примере */
+    #generation-parameters {
       background-color: var(--bg-elevated);
-      padding: 20px;
+      padding: 12px;
+      font-size: 0.9em;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      overflow-y: auto;
-      /* max-width: 400px;  Удалено: чтобы панель не была ограничена в максимальной ширине и могла сжаться */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      min-width: 280px;
+      max-width: 35%;
+      flex-shrink: 0;
     }
-
-    #right-panel h3 {
-      margin: 0 0 16px;
-      font-size: 1.25em;
-      font-weight: 500;
+    #generation-parameters h3 {
+      margin: 0 0 12px;
+      font-size: 1.1em;
       color: var(--text-primary);
-      border-bottom: 1px solid rgba(60,60,60,0.8);
+      border-bottom: 1px solid var(--border-color);
       padding-bottom: 8px;
     }
-
-    /* Ряды параметров: лейблы выровнены по правому краю, инпуты уже и подстраиваются под контент */
-    #right-panel .param-row {
+    #generation-parameters .param-row {
       display: flex;
-      align-items: baseline; /* Изменено: align-items: center -> align-items: baseline; чтобы выровнять инпуты и лейблы по базовой линии текста */
-      justify-content: flex-end;
+      align-items: baseline;
+      justify-content: space-between;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
-
-    #right-panel label {
-      margin: 0;
-      text-align: right; /* Оставляем text-align: right; для выравнивания лейблов справа */
-      color: var(--text-secondary);
-      font-size: 0.9em;
-      align-self: baseline; /* Добавлено: выравнивание лейблов по базовой линии */
-    }
-
-    #right-panel input {
-      width: auto; /* Важно: ширина инпута по содержимому */
+    #generation-parameters input {
+      width: auto;
       min-width: 50px;
       padding: 4px 6px;
       text-align: right;
       background-color: var(--bg-surface);
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       color: var(--text-primary);
-      transition: border-color 0.2s, box-shadow 0.2s;
-      align-self: baseline; /* Добавлено: выравнивание инпутов по базовой линии */
     }
-
-    #right-panel button {
-      /* width: 100%;  Удалено: чтобы кнопка не занимала всю ширину панели */
-      padding: 12px 24px;
+    #generation-parameters button {
+      padding: 8px;
       background-color: var(--primary);
       color: #000;
       font-weight: 500;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
-      margin-top: 20px;
-      max-width: 250px; /* Добавлено: ограничение максимальной ширины кнопки */
-      width: auto; /* Добавлено: чтобы кнопка подстраивалась под размер текста, но не была шире max-width */
-      display: block; /* Добавлено: чтобы кнопка оставалась блочным элементом и margin-top работал */
-      margin-left: auto; /* Добавлено: центрирование кнопки в панели (опционально) */
-      margin-right: auto; /* Добавлено: центрирование кнопки в панели (опционально) */
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin-top: 12px;
     }
 
-    #right-panel button:hover {
-      background-color: var(--primary-variant);
-      color: #fff;
+    /* Адаптив для узких экранов (опционально) */
+    @media (max-width: 600px) {
+      #generation-parameters {
+        min-width: 100%;
+        max-width: 100%;
+      }
+      .param-row {
+        flex-wrap: wrap;
+      }
+      .controls-container {
+        flex-direction: column;
+      }
+      .scales-table-container {
+        max-width: 100%;
+      }
     }
 
-    #right-panel button:active {
-      transform: scale(0.98);
-    }
-
-    #right-panel p {
-      margin-top: 20px;
-      font-size: 0.9em;
-      color: var(--text-secondary);
-    }
-
-    /* Панель визуализации */
-    #visualization-panel {
-      flex: 1;
-      position: relative;
-      background-color: #121212;
-    }
-
-    #visualization-panel canvas {
+    /* Оверлей для отображения процесса генерации */
+    #generation-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      display: block;
-    }
-
-    /* Общие переходы для интерактивных элементов */
-    input, button, .menu li, .submenu li {
-      transition: all 0.2s ease;
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-      #control-panel {
-        flex-direction: column;
-      }
-      .menu-container {
-        flex-direction: column;
-      }
-      .menu {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--bg-elevated);
-      }
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #fff;
+      z-index: 1500;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
+  <!-- Оверлей генерации -->
+  <div id="generation-overlay"></div>
+
   <div id="app">
-    <!-- Панель управления -->
+    <!-- Панель контролов (1/3 высоты) -->
     <div id="control-panel">
-      <!-- Левая панель: меню выбора ладов (двухпанельное меню) -->
-      <div id="left-panel">
-        <h3>Выбор ладов</h3>
-        <div class="menu-container">
-          <ul class="menu" id="mainMenu">
-            <!-- Категории будут добавлены динамически -->
-          </ul>
-          <div class="submenu-container" id="submenuContainer">
-            <!-- Подменю для каждой категории -->
+      <div class="controls-container">
+        <!-- Таблица ладов -->
+        <div class="scales-table-container">
+          <table class="scales-table">
+            <thead>
+              <tr>
+                <th data-sort="N">N</th>
+                <th data-sort="consonance">Consonance</th>
+                <th data-sort="scalename">Scale Name</th>
+                <th data-sort="scale">Scale</th>
+              </tr>
+            </thead>
+            <tbody id="scales-table-body"></tbody>
+          </table>
+        </div>
+        <!-- Параметры генерации -->
+        <div id="generation-parameters">
+          <h3>Параметры генерации</h3>
+          <div class="param-row">
+            <label for="maxNotes">Макс. число нот:</label>
+            <input type="number" id="maxNotes" value="8" min="3" max="12">
           </div>
+          <div class="param-row">
+            <label for="searchLimit">Отсечка:</label>
+            <input type="number" id="searchLimit" value="32" min="1" max="100">
+          </div>
+          <div class="param-row">
+            <label for="minConsonance">Мин. конс.:</label>
+            <input type="number" id="minConsonance" step="0.01" value="0.2" min="0" max="1">
+          </div>
+          <button id="genScalesBtn">Сгенерировать лады</button>
         </div>
-      </div>
-      <!-- Правая панель: параметры генерации -->
-      <div id="right-panel">
-        <h3>Параметры генерации</h3>
-        <div class="param-row">
-          <label for="maxNotes">Макс. число нот:</label>
-          <input type="number" id="maxNotes" value="8" min="3" max="12">
-        </div>
-        <div class="param-row">
-          <label for="searchLimit">Отсечка:</label>
-          <input type="number" id="searchLimit" value="32" min="1" max="100">
-        </div>
-        <div class="param-row">
-          <label for="minConsonance">Мин. конс.:</label>
-          <input type="number" id="minConsonance" step="0.01" value="0.2" min="0" max="1">
-        </div>
-        <button id="genScalesBtn">Сгенерировать лады</button>
       </div>
     </div>
-    <!-- Панель визуализации -->
+
+    <!-- Панель визуализации (2/3 высоты) -->
     <div id="visualization-panel">
       <canvas id="myCanvas"></canvas>
     </div>
   </div>
-  
+
   <script>
     /******************************************************************
      * Глобальные переменные
      ******************************************************************/
-    let currentScale = null; // выбранный лад (массив объектов RationalInterval)
-    let generatedScalesArray = []; // "выпрямлённый" список всех ладов
-    
+    let currentScale = null;
+    let generatedScalesArray = [];
+    let currentSortColumn = 'default'; 
+    let currentSortOrder = 'desc';
+    let headersAttached = false;
+
+    const canvas = document.getElementById("myCanvas");
+    const context = canvas.getContext("2d");
+    const overlay = document.getElementById("generation-overlay");
+
     /******************************************************************
-     * Класс для работы с рациональными (JI) отношениями
+     * Класс для работы с рациональными интервалами
      ******************************************************************/
     class RationalInterval {
       constructor(numerator, denominator) {
@@ -317,30 +301,22 @@
         return b === 0 ? a : this.gcd(b, a % b);
       }
       simplify() {
-        let g = this.gcd(this.numerator, this.denominator);
+        const g = this.gcd(this.numerator, this.denominator);
         this.numerator /= g;
         this.denominator /= g;
       }
-      // Приведение отношения в диапазон [1, 2)
       normalize() {
         let num = this.numerator;
         let den = this.denominator;
-        while (num >= 2 * den) { num /= 2; }
-        while (num < den) { num *= 2; }
+        while (num >= 2 * den) num /= 2;
+        while (num < den) num *= 2;
         return new RationalInterval(num, den);
-      }
-      toCents() {
-        return 1200 * Math.log2(this.numerator / this.denominator);
       }
       toDecimal() {
         return this.numerator / this.denominator;
       }
-      // Строковое представление, например, "3:2"
       toString() {
         return `${this.numerator}/${this.denominator}`;
-      }
-      valueOf() {
-        return this.toDecimal();
       }
       multiply(other) {
         return new RationalInterval(this.numerator * other.numerator, this.denominator * other.denominator);
@@ -349,7 +325,7 @@
         return new RationalInterval(this.numerator * other.denominator, this.denominator * other.numerator);
       }
     }
-    
+
     /******************************************************************
      * Вспомогательные функции для генерации ладов
      ******************************************************************/
@@ -365,17 +341,16 @@
           n /= d;
         }
         d++;
-        if (d * d > n) {
-          if (n > 1) { factors.push(n); break; }
+        if (d * d > n && n > 1) {
+          factors.push(n);
+          break;
         }
       }
       return factors;
     }
-    // Функция консонантности для отношения: 1/denom + 1/num
     function consonance(r) {
       return 1 / r.denominator + 1 / r.numerator;
     }
-    // Средняя консонантность лада (для всех пар нот)
     function scaleConsonance(scale) {
       let pairs = [];
       let sorted = scale.slice().sort((a, b) => a.toDecimal() - b.toDecimal());
@@ -385,14 +360,11 @@
           pairs.push(consonance(ratio));
         }
       }
-      if (pairs.length === 0) return 1.0;
-      return pairs.reduce((a, b) => a + b, 0) / pairs.length;
+      return pairs.length > 0 ? pairs.reduce((a, b) => a + b) / pairs.length : 1.0;
     }
-    // Фильтрация: хотя бы числитель или знаменатель не больше limit
     function oddLimit(limit, r) {
       return r.numerator <= limit || r.denominator <= limit;
     }
-    // Фильтрация по простым множителям (знаменатель – степень 2, числитель не слишком "тяжёлый")
     function primeLimit(r) {
       if (!isPow2(r.denominator)) return false;
       let factors = factorize(r.numerator);
@@ -402,19 +374,16 @@
       return true;
     }
     const MAX_SCALES = 100;
-    // Вставка нового лада в массив (если такого ещё нет), сортировка по консонантности (по убыванию)
-    function insertScale(scales, newScale, cons, maxSize = MAX_SCALES) {
-      let key = newScale.map(r => r.toString()).sort().join("|");
+    function insertScale(scales, newScale, cons) {
+      const key = newScale.map(r => r.toString()).sort().join("|");
       if (scales.some(entry => entry.key === key)) return false;
-      let newEntry = { consonance: cons, scale: newScale, key: key };
-      let pos = 0;
-      while (pos < scales.length && scales[pos].consonance > cons) pos++;
-      scales.splice(pos, 0, newEntry);
-      if (scales.length > maxSize) scales.pop();
+      const newEntry = { consonance: cons, scale: newScale, key, n: newScale.length };
+      let pos = scales.findIndex(entry => entry.consonance < cons);
+      if (pos === -1) scales.push(newEntry);
+      else scales.splice(pos, 0, newEntry);
+      if (scales.length > MAX_SCALES) scales.pop();
       return true;
     }
-    // Генерация базовых интервалов из дробей вида y/x, где 1 ≤ x < y ≤ 45
-    // Используем параметр cutoff для фильтрации (oddLimit)
     function generateBaseIntervals(cutoff) {
       let baseRatios = [];
       for (let i = 3; i <= 45; i++) {
@@ -423,8 +392,8 @@
         }
       }
       let filtered = baseRatios.filter(r => primeLimit(r) && oddLimit(cutoff, r));
-      let intervals = [];
       let seen = new Set();
+      let intervals = [];
       for (let r of filtered) {
         let nr = r.normalize();
         let key = nr.toString();
@@ -435,14 +404,17 @@
       }
       return intervals;
     }
-    // Основная функция генерации ладов. Принимает параметры: maxNotes, searchLimit и minConsonance.
-    // Возвращает объект, где ключ – число нот, а значение – массив объектов {consonance, scale, key}
-    function generateScales(maxNotes = 8, searchLimit = 32, minConsonance = 0.2) {
+
+    // Асинхронная функция генерации ладов с оверлеем
+    async function generateScales(maxNotes = 8, searchLimit = 32, minConsonance = 0.2) {
       let scalesDB = {};
-      let unison = new RationalInterval(1, 1);
-      scalesDB[1] = [{ consonance: 1.0, scale: [unison], key: unison.toString() }];
+      const unison = new RationalInterval(1,1);
+      scalesDB[1] = [{ consonance: 1.0, scale: [unison], key: unison.toString(), n: 1 }];
       let intervals = generateBaseIntervals(searchLimit);
       for (let n = 2; n <= maxNotes; n++) {
+        overlay.textContent = `Генерация ладов с ${n} нотами`;
+        await new Promise(resolve => setTimeout(resolve, 0));
+
         let newScales = [];
         let prev = scalesDB[n - 1] || [];
         for (let entry of prev) {
@@ -470,875 +442,283 @@
       }
       return scalesDB;
     }
-    // Выпрямляем базу ладов: собираем все лады в один массив и сортируем по консонантности (по убыванию)
+
     function flattenScales(scalesDB) {
       generatedScalesArray = [];
       for (let n in scalesDB) {
+        if (parseInt(n) < 3) continue;
         for (let entry of scalesDB[n]) {
-          generatedScalesArray.push({ n: parseInt(n), consonance: entry.consonance, scale: entry.scale });
+          generatedScalesArray.push({ n: parseInt(n), consonance: entry.consonance, scale: entry.scale, key: entry.key });
         }
       }
-      generatedScalesArray.sort((a, b) => b.consonance - a.consonance);
+      generatedScalesArray.sort((a, b) => {
+        if (b.consonance !== a.consonance) return b.consonance - a.consonance;
+        return a.n - b.n;
+      });
     }
-    // Функция перевода рационального отношения в центы (округляем)
-    function cents(r) {
-      return Math.round(r.toCents());
-    }
-    
+
     /******************************************************************
-     * Визуализация выбранного лада на канве с автомасштабированием
+     * Функции для отрисовки
      ******************************************************************/
-    const canvas = document.getElementById("myCanvas");
-    const context = canvas.getContext("2d");
-    function resizeCanvas() {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-      if (currentScale) drawScale(currentScale);
+    class FractionLabel {
+      constructor(numerator, denominator) {
+        this.n = numerator;
+        this.d = denominator;
+      }
+      draw(ctx, x, y) {
+        ctx.save();
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+
+        const numOffsetX = -3;
+        const numOffsetY = -6;
+        const denOffsetX = 6;
+        const denOffsetY = 14;
+
+        ctx.fillText(this.n, x + numOffsetX, y + numOffsetY);
+        ctx.beginPath();
+        ctx.moveTo(x - 5, y + 2);
+        ctx.lineTo(x + 8, y - 4);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillText(this.d, x + denOffsetX, y + denOffsetY);
+
+        ctx.restore();
+      }
     }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-    
+
+    function getColorFromConsonance(cons) {
+      const normalized = cons / 2; 
+      const hue = normalized * 60; 
+      const saturation = 100;
+      const lightness = 50;
+      let alpha = 0.2 + 0.8 * (cons / 2);
+      if (alpha > 1) alpha = 1;
+      if (alpha < 0.1) alpha = 0.1;
+      return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+
+    function cubicBezierPoint(t, p0, p1, p2, p3) {
+      const mt = (1 - t);
+      return {
+        x: mt*mt*mt * p0.x + 3*mt*mt*t * p1.x + 3*mt*t*t * p2.x + t*t*t * p3.x,
+        y: mt*mt*mt * p0.y + 3*mt*mt*t * p1.y + 3*mt*t*t * p2.y + t*t*t * p3.y
+      };
+    }
+
+    /* <-- Изменено: теперь используем ~5% отступов по бокам и сверху/снизу,
+       чтобы интервал 1/1..2/1 занимал ~90% высоты */
     function drawScale(scale) {
       context.clearRect(0, 0, canvas.width, canvas.height);
-      const marginLeft = canvas.width * 0.05;
-      const usableWidth = canvas.width * 0.9;
-      const marginTop = 20;
-      const marginBottom = 20;
-      const bottom = canvas.height - marginBottom;
-      const allowedArc = bottom - marginTop;
-      
-      let sorted = scale.slice().sort((a, b) => a.toDecimal() - b.toDecimal());
-      
-      function getX(val) {
-        return marginLeft + ((val - 1) / 1) * usableWidth;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 5% отступы
+      const leftMargin = 0.05 * w;
+      const rightMargin = 0.95 * w;
+      const topMargin = -0.15 * h;
+      const baseLine = 0.85 * h;
+
+      const minRatio = 1;
+      const maxRatio = 2;
+
+      function xOf(r) {
+        return leftMargin + (r.toDecimal() - minRatio)/(maxRatio - minRatio) * (rightMargin - leftMargin);
       }
-      
-      // Базовая линия
-      context.strokeStyle = "#555";
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(marginLeft, bottom);
-      context.lineTo(marginLeft + usableWidth, bottom);
-      context.stroke();
-      
-      // Вычисляем максимальную разницу между нотами
-      let maxDiff = 0;
-      for (let i = 0; i < sorted.length; i++) {
-        for (let j = i + 1; j < sorted.length; j++) {
-          let diff = sorted[j].toDecimal() - sorted[i].toDecimal();
-          if (diff > maxDiff) maxDiff = diff;
+
+      function arcHeight(r) {
+        // для r=2 получим 100% "фракции" => 0.9*h
+        const fractionOfMax = Math.log2(r.toDecimal()) / Math.log2(maxRatio);
+        return (baseLine - topMargin) * fractionOfMax;
+      }
+
+      function getPairs(arr) {
+        const pairs = [];
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = i + 1; j < arr.length; j++) {
+            pairs.push([arr[i], arr[j]]);
+          }
         }
+        return pairs;
       }
-      if (maxDiff === 0) maxDiff = 1;
-      
-      // Отрисовка дуг с автомасштабированием:
-      // Для каждой пары нот вычисляем высоту дуги пропорционально разнице, так чтобы
-      // максимальная дуга равнялась allowedArc.
-      context.lineWidth = 10;
-      context.strokeStyle = "rgba(255,255,255,0.3)";
-      for (let i = 0; i < sorted.length - 1; i++) {
-        for (let j = i + 1; j < sorted.length; j++) {
-          const x1 = getX(sorted[i].toDecimal());
-          const x2 = getX(sorted[j].toDecimal());
-          const diff = sorted[j].toDecimal() - sorted[i].toDecimal();
-          const curveHeight = diff * allowedArc / maxDiff;
-          context.beginPath();
-          context.moveTo(x1, bottom);
-          context.bezierCurveTo(x1, bottom - curveHeight, x2, bottom - curveHeight, x2, bottom);
-          context.stroke();
-        }
-      }
-      
-      // Отрисовка нот с подписями
-      context.font = "12px sans-serif";
-      context.textAlign = "center";
-      const noteRadius = 10;
-      for (let note of sorted) {
-        const x = getX(note.toDecimal());
+
+      // Рисуем подписи нот на baseline
+      scale.forEach(note => {
+        const xx = xOf(note);
+        const label = new FractionLabel(note.numerator, note.denominator);
+        label.draw(context, xx, baseLine + 15);
+      });
+
+      // Рисуем дуги между парами нот
+      const pairs = getPairs(scale);
+      const bend = 0.1;
+
+      pairs.forEach(([A, B]) => {
+        const x0 = xOf(A);
+        const x1 = xOf(B);
+        if (x1 <= x0) return;
+
+        const relNum = B.numerator * A.denominator;
+        const relDen = B.denominator * A.numerator;
+        const r = new RationalInterval(relNum, relDen);
+
+        const hArc = arcHeight(r);
+
+        const p0 = { x: x0, y: baseLine };
+        const p1 = { x: x0 + (x1 - x0)*bend, y: baseLine - hArc };
+        const p2 = { x: x0 + (x1 - x0)*(1-bend), y: baseLine - hArc };
+        const p3 = { x: x1, y: baseLine };
+
         context.beginPath();
-        context.arc(x, bottom, noteRadius, 0, 2 * Math.PI);
-        context.fillStyle = "#212121";
-        context.fill();
-        context.strokeStyle = "#ffffff";
+        context.moveTo(p0.x, p0.y);
+        context.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        context.lineWidth = 10;
+
+        const cons = consonance(r);
+        context.strokeStyle = getColorFromConsonance(cons);
         context.stroke();
-        context.fillStyle = "#ffffff";
-        context.fillText(note.toString(), x, bottom - noteRadius - 10);
-        context.fillText(cents(note) + " ct", x, bottom + noteRadius + 14);
-      }
-    }
-    
-    /******************************************************************
-     * Построение двухпанельного меню выбора ладов
-     * (левая панель: категории слева, подменю справа)
-     ******************************************************************/
-    function renderScaleMenu() {
-      // Группируем сгенерированные лады по количеству нот, исключая 1- и 2-ступенные
-      let groups = {};
-      for (let entry of generatedScalesArray) {
-        if (entry.n < 3) continue;
-        if (!groups[entry.n]) groups[entry.n] = [];
-        groups[entry.n].push(entry);
-      }
-      // Сортируем ключи (число нот) по убыванию — сначала группы с большим числом нот
-      let keys = Object.keys(groups).map(Number).sort((a, b) => b - a);
-      
-      // Перестраиваем содержимое левой панели
-      const leftPanel = document.getElementById("left-panel");
-      leftPanel.innerHTML = '<h3>Выбор ладов</h3><div class="menu-container"><ul class="menu" id="mainMenu"></ul><div class="submenu-container" id="submenuContainer"></div></div>';
-      
-      const mainMenu = document.getElementById("mainMenu");
-      const submenuContainer = document.getElementById("submenuContainer");
-      
-      // Создаём пункты основного меню и соответствующие подменю
-      keys.forEach(key => {
-        // Элемент основного меню (например, "4-нотные")
-        const li = document.createElement("li");
-        li.textContent = key + "-нотные";
-        li.setAttribute("data-target", "submenu" + key);
-        mainMenu.appendChild(li);
-        
-        // Создаём подменю для данной категории с форматированием вида:
-        // Cons: 0.5; Notes: 1/1, 9/8, 5/4, 45/32, 3/2, 27/16, 15/8
-        const submenu = document.createElement("ul");
-        submenu.classList.add("submenu");
-        submenu.id = "submenu" + key;
-        
-        // Сортируем внутри группы по консонантности (от большего к меньшему)
-        groups[key].sort((a, b) => b.consonance - a.consonance);
-        groups[key].forEach(entry => {
-          const liSub = document.createElement("li");
-          liSub.textContent = entry.scale.map(r => r.toString()).join(", ") + " (Cons: " + entry.consonance.toFixed(1) + ")";
-          liSub.title = "Консонантность: " + entry.consonance.toFixed(3);
-          liSub.addEventListener("click", function(e) {
-            e.stopPropagation();
-            // Снимаем выделение со всех пунктов подменю в этой категории
-            submenu.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
-            liSub.classList.add("selected");
-            currentScale = entry.scale;
-            drawScale(currentScale);
-          });
-          submenu.appendChild(liSub);
-        });
-        submenuContainer.appendChild(submenu);
+
+        // Подпись в районе середины дуги
+        const top = cubicBezierPoint(0.5, p0, p1, p2, p3);
+        const relLabel = new FractionLabel(r.numerator, r.denominator);
+        relLabel.draw(context, top.x, top.y);
       });
-      
-      // Обработчики для переключения подменю по клику
-      document.querySelectorAll("#mainMenu li").forEach(item => {
-        item.addEventListener("click", function () {
-          document.querySelectorAll("#mainMenu li").forEach(li => li.classList.remove("active"));
-          document.querySelectorAll("#submenuContainer .submenu").forEach(ul => ul.classList.remove("active"));
-          item.classList.add("active");
-          const target = item.getAttribute("data-target");
-          const submenu = document.getElementById(target);
-          if (submenu) {
-            submenu.classList.add("active");
+    }
+
+    /******************************************************************
+     * Функция сортировки
+     ******************************************************************/
+    function sortScales(scales) {
+      let sorted = scales.slice();
+      if (currentSortColumn === 'default') {
+        sorted.sort((a, b) => {
+          if (b.consonance !== a.consonance) return b.consonance - a.consonance;
+          return a.n - b.n;
+        });
+      } else if (currentSortColumn === 'N') {
+        sorted.sort((a, b) => currentSortOrder === 'asc' ? a.n - b.n : b.n - a.n);
+      } else if (currentSortColumn === 'consonance') {
+        sorted.sort((a, b) => currentSortOrder === 'asc' ? a.consonance - b.consonance : b.consonance - a.consonance);
+      } else if (currentSortColumn === 'scalename') {
+        sorted.sort((a, b) => {
+          let nameA = "Лад " + a.n;
+          let nameB = "Лад " + b.n;
+          return currentSortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        });
+      } else if (currentSortColumn === 'scale') {
+        sorted.sort((a, b) => {
+          let scaleA = a.scale.map(r => r.toString()).join(", ");
+          let scaleB = b.scale.map(r => r.toString()).join(", ");
+          return currentSortOrder === 'asc' ? scaleA.localeCompare(scaleB) : scaleB.localeCompare(scaleA);
+        });
+      }
+      return sorted;
+    }
+
+    /******************************************************************
+     * Отрисовка таблицы
+     ******************************************************************/
+    function renderScalesTable() {
+      const tableBody = document.getElementById("scales-table-body");
+      tableBody.innerHTML = "";
+      let sortedScales = sortScales(generatedScalesArray);
+      sortedScales.forEach((entry, index) => {
+        const tr = document.createElement("tr");
+        tr.dataset.index = index;
+        const tdN = document.createElement("td");
+        tdN.textContent = entry.n;
+        const tdConsonance = document.createElement("td");
+        tdConsonance.textContent = entry.consonance.toFixed(3);
+        tdConsonance.classList.add("consonance");
+        const tdName = document.createElement("td");
+        tdName.textContent = "Лад " + (index + 1);
+        const tdScale = document.createElement("td");
+        tdScale.textContent = entry.scale.map(r => r.toString()).join(", ");
+        tdScale.classList.add("scale");
+        tr.appendChild(tdN);
+        tr.appendChild(tdConsonance);
+        tr.appendChild(tdName);
+        tr.appendChild(tdScale);
+
+        tr.addEventListener("click", () => {
+          document.querySelectorAll(".scales-table tr").forEach(row => row.classList.remove("selected"));
+          tr.classList.add("selected");
+          currentScale = entry.scale;
+          drawScale(currentScale);
+        });
+        tableBody.appendChild(tr);
+      });
+      const firstRow = tableBody.querySelector("tr");
+      if (firstRow) {
+        firstRow.classList.add("selected");
+        currentScale = sortedScales[0].scale;
+        drawScale(currentScale);
+      }
+      attachHeaderSortListeners();
+    }
+
+    /******************************************************************
+     * Привязка обработчиков к заголовкам
+     ******************************************************************/
+    function attachHeaderSortListeners() {
+      if (headersAttached) return;
+      const headers = document.querySelectorAll(".scales-table th");
+      headers.forEach(header => {
+        header.addEventListener("click", () => {
+          const sortKey = header.getAttribute("data-sort");
+          if (currentSortColumn === sortKey) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSortColumn = sortKey;
+            currentSortOrder = 'asc';
           }
+          renderScalesTable();
         });
       });
-      
-      // Для десктопов: переключение подменю по наведению (при ширине окна >= 600px)
-      if (window.innerWidth >= 600) {
-        document.querySelectorAll("#mainMenu li").forEach(item => {
-          item.addEventListener("mouseenter", function () {
-            document.querySelectorAll("#mainMenu li").forEach(li => li.classList.remove("active"));
-            document.querySelectorAll("#submenuContainer .submenu").forEach(ul => ul.classList.remove("active"));
-            item.classList.add("active");
-            const target = item.getAttribute("data-target");
-            const submenu = document.getElementById(target);
-            if (submenu) {
-              submenu.classList.add("active");
-            }
-          });
-        });
-      }
-      
-      // Активируем первую категорию и выбираем первый пункт подменю, если он есть
-      const firstMenuItem = document.querySelector("#mainMenu li");
-      if (firstMenuItem) {
-        firstMenuItem.classList.add("active");
-        const target = firstMenuItem.getAttribute("data-target");
-        const submenu = document.getElementById(target);
-        if (submenu) submenu.classList.add("active");
-        const firstSubItem = submenu.querySelector("li");
-        if (firstSubItem) {
-          firstSubItem.classList.add("selected");
-          const match = firstMenuItem.textContent.match(/(\d+)/);
-          if (match) {
-            const n = parseInt(match[1]);
-            const entry = groups[n][0];
-            currentScale = entry.scale;
-            drawScale(currentScale);
-          }
-        }
-      }
+      headersAttached = true;
     }
-    
+
     /******************************************************************
-     * Обработка панели генерации (правая панель)
+     * Обработчики и инициализация
      ******************************************************************/
-    const genScalesBtn = document.getElementById("genScalesBtn");
-    const maxNotesInput = document.getElementById("maxNotes");
-    
-    genScalesBtn.addEventListener("click", () => {
-      const maxNotes = parseInt(maxNotesInput.value);
+    document.getElementById("genScalesBtn").addEventListener("click", async () => {
+      const maxNotes = parseInt(document.getElementById("maxNotes").value);
       const searchLimit = parseInt(document.getElementById("searchLimit").value);
       const minConsonance = parseFloat(document.getElementById("minConsonance").value);
-      const scalesDB = generateScales(maxNotes, searchLimit, minConsonance);
+      overlay.style.display = "flex";
+      const scalesDB = await generateScales(maxNotes, searchLimit, minConsonance);
       flattenScales(scalesDB);
-      // Строим меню выбора ладов (учитываются только лады с 3 и более нотами)
-      renderScaleMenu();
+      currentSortColumn = 'default';
+      currentSortOrder = 'desc';
+      renderScalesTable();
+      overlay.style.display = "none";
     });
-    
-    // При загрузке сразу генерируем лады и отображаем результат
+
+    // При загрузке сразу генерируем
     window.addEventListener("load", () => {
-      genScalesBtn.click();
+      resizeCanvas();
+      document.getElementById("genScalesBtn").click();
     });
+
+    /* <-- Изменено: убрали translate/scale, используем канвас на всю панель */
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const visualizationPanel = document.getElementById('visualization-panel');
+      const rect = visualizationPanel.getBoundingClientRect();
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      // Учитываем devicePixelRatio, но не сжимаем рисунок дополнительно
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (currentScale) drawScale(currentScale);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
   </script>
 </body>
 </html>
-```
-
-
-
-
-2 вариант кода:
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Генерация и визуализация JI ладов</title>
-  <style>
-    :root {
-      --bg-primary: #121212;
-      --bg-surface: rgba(255, 255, 255, 0.05);
-      --bg-elevated: rgba(255, 255, 255, 0.08);
-      --bg-hover: rgba(255, 255, 255, 0.12);
-      --text-primary: rgba(255, 255, 255, 0.87);
-      --text-secondary: rgba(255, 255, 255, 0.6);
-      --primary: #bb86fc;
-      --primary-variant: #3700b3;
-      --secondary: #03dac6;
-      --border-color: rgba(60,60,60,0.8);
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Roboto', sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-    }
-
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    #control-panel {
-      background-color: var(--bg-surface);
-      border-bottom: 1px solid var(--border-color);
-      transition: transform 0.3s ease;
-    }
-
-    /* Таблица ладов */
-    .scales-table-container {
-      padding: 16px;
-      overflow-x: auto;
-      max-height: calc(100% - 48px);
-    }
-
-    .scales-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9em;
-    }
-
-    .scales-table th,
-    .scales-table td {
-      padding: 8px 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .scales-table th {
-      background-color: var(--bg-elevated);
-      position: sticky;
-      top: 0;
-      color: var(--text-secondary);
-    }
-
-    .scales-table tr {
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    .scales-table tr:hover {
-      background-color: var(--bg-hover);
-    }
-
-    .scales-table tr.selected {
-      background-color: rgba(187,134,252,0.2);
-    }
-
-    .scales-table td.consonance {
-      color: var(--secondary);
-    }
-
-    .scales-table td.scale {
-      font-family: monospace;
-    }
-
-    /* Панель параметров */
-    #right-panel {
-      flex: 0 0 auto;
-      background-color: var(--bg-elevated);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      max-width: 300px;
-    }
-
-    #right-panel .param-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    #right-panel label {
-      margin: 0;
-      text-align: right;
-      color: var(--text-secondary);
-      font-size: 0.9em;
-    }
-
-    #right-panel input {
-      width: auto;
-      min-width: 50px;
-      padding: 4px 6px;
-      text-align: right;
-      background-color: var(--bg-surface);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 4px;
-      color: var(--text-primary);
-    }
-
-    #right-panel button {
-      padding: 12px 24px;
-      background-color: var(--primary);
-      color: #000;
-      font-weight: 500;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      max-width: 250px;
-      width: auto;
-      display: block;
-      margin: 20px auto 0;
-    }
-
-    /* Кнопка показа/скрытия панели (для мобильной версии) */
-    #toggle-controls {
-      display: none;
-      position: fixed;
-      bottom: 16px;
-      right: 16px;
-      padding: 12px;
-      background-color: var(--primary);
-      color: #000;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 1000;
-    }
-
-    #visualization-panel {
-      flex: 1;
-      position: relative;
-      background-color: var(--bg-primary);
-    }
-
-    #visualization-panel canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* Адаптивность для горизонтальной ориентации */
-    @media (orientation: landscape) {
-      #control-panel {
-        display: flex;
-        flex-direction: row;
-        gap: 16px;
-        padding: 16px;
-        max-height: 50vh;
-      }
-      .scales-table-container {
-        flex: 1;
-      }
-    }
-
-    /* Адаптивность для вертикальной ориентации */
-    @media (orientation: portrait) {
-      #control-panel {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        transform: translateY(-100%);
-        z-index: 999;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      #control-panel.visible {
-        transform: translateY(0);
-      }
-
-      #toggle-controls {
-        display: block;
-      }
-
-      .scales-table-container {
-        flex: 1;
-        overflow-y: auto;
-      }
-
-      #right-panel {
-        flex: 0;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div id="app">
-    <div id="control-panel">
-      <div class="scales-table-container">
-        <table class="scales-table">
-          <thead>
-            <tr>
-              <th>N</th>
-              <th>Consonance</th>
-              <th>Name</th>
-              <th>Scale</th>
-            </tr>
-          </thead>
-          <tbody id="scales-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Панель параметров генерации -->
-    <div id="right-panel">
-      <h3>Параметры генерации</h3>
-      <div class="param-row">
-        <label for="maxNotes">Макс. число нот:</label>
-        <input type="number" id="maxNotes" value="8" min="3" max="12">
-      </div>
-      <div class="param-row">
-        <label for="searchLimit">Отсечка:</label>
-        <input type="number" id="searchLimit" value="32" min="1" max="100">
-      </div>
-      <div class="param-row">
-        <label for="minConsonance">Мин. конс.:</label>
-        <input type="number" id="minConsonance" step="0.01" value="0.2" min="0" max="1">
-      </div>
-      <button id="genScalesBtn">Сгенерировать лады</button>
-    </div>
-  </div>
-  
-  <!-- Кнопка для показа/скрытия панели (только для вертикальной ориентации) -->
-  <button id="toggle-controls">☰</button>
-  
-  <!-- Панель визуализации -->
-  <div id="visualization-panel">
-    <canvas id="myCanvas"></canvas>
-  </div>
-</div>
-
-<script>
-
-
-
-
-
-/******************************************************************
- * Глобальные переменные
- ******************************************************************/
-let currentScale = null;
-let generatedScalesArray = [];
-const canvas = document.getElementById("myCanvas");
-const context = canvas.getContext("2d");
-
-/******************************************************************
- * Класс для работы с рациональными интервалами
- ******************************************************************/
-class RationalInterval {
-    constructor(numerator, denominator) {
-        this.numerator = numerator;
-        this.denominator = denominator;
-        this.simplify();
-    }
-    
-    gcd(a, b) {
-        return b === 0 ? a : this.gcd(b, a % b);
-    }
-    
-    simplify() {
-        let g = this.gcd(this.numerator, this.denominator);
-        this.numerator /= g;
-        this.denominator /= g;
-    }
-    
-    normalize() {
-        let num = this.numerator;
-        let den = this.denominator;
-        while (num >= 2 * den) num /= 2;
-        while (num < den) num *= 2;
-        return new RationalInterval(num, den);
-    }
-    
-    toCents() {
-        return 1200 * Math.log2(this.numerator / this.denominator);
-    }
-    
-    toDecimal() {
-        return this.numerator / this.denominator;
-    }
-    
-    toString() {
-        return `${this.numerator}/${this.denominator}`;
-    }
-    
-    multiply(other) {
-        return new RationalInterval(this.numerator * other.numerator, this.denominator * other.denominator);
-    }
-    
-    divide(other) {
-        return new RationalInterval(this.numerator * other.denominator, this.denominator * other.numerator);
-    }
-}
-
-/******************************************************************
- * Вспомогательные функции
- ******************************************************************/
-function isPow2(x) {
-    return (x & (x - 1)) === 0;
-}
-
-function factorize(n) {
-    let factors = [];
-    let d = 2;
-    while (n > 1) {
-        while (n % d === 0) {
-            factors.push(d);
-            n /= d;
-        }
-        d++;
-        if (d * d > n && n > 1) {
-            factors.push(n);
-            break;
-        }
-    }
-    return factors;
-}
-
-function consonance(r) {
-    return 1 / r.denominator + 1 / r.numerator;
-}
-
-function scaleConsonance(scale) {
-    let pairs = [];
-    let sorted = scale.slice().sort((a, b) => a.toDecimal() - b.toDecimal());
-    for (let i = 0; i < sorted.length; i++) {
-        for (let j = i + 1; j < sorted.length; j++) {
-            let ratio = sorted[j].divide(sorted[i]).normalize();
-            pairs.push(consonance(ratio));
-        }
-    }
-    return pairs.length > 0 ? pairs.reduce((a, b) => a + b) / pairs.length : 1.0;
-}
-
-function oddLimit(limit, r) {
-    return r.numerator <= limit || r.denominator <= limit;
-}
-
-function primeLimit(r) {
-    if (!isPow2(r.denominator)) return false;
-    let factors = factorize(r.numerator);
-    return !(factors.filter(p => p === 3).length > 4 || 
-           factors.filter(p => p >= 5).length > 2 || 
-           factors.filter(p => p >= 7).length > 1);
-}
-
-const MAX_SCALES = 100;
-
-function insertScale(scales, newScale, cons) {
-    const key = newScale.map(r => r.toString()).sort().join("|");
-    if (scales.some(entry => entry.key === key)) return false;
-    
-    const newEntry = { consonance: cons, scale: newScale, key };
-    const pos = scales.findIndex(entry => entry.consonance < cons);
-    
-    if (pos === -1) scales.push(newEntry);
-    else scales.splice(pos, 0, newEntry);
-    
-    if (scales.length > MAX_SCALES) scales.pop();
-    return true;
-}
-
-/******************************************************************
- * Функции генерации ладов
- ******************************************************************/
-function generateBaseIntervals(cutoff) {
-    const baseRatios = [];
-    for (let i = 3; i <= 45; i++) {
-        for (let j = i + 1; j <= 45; j++) {
-            baseRatios.push(new RationalInterval(j, i));
-        }
-    }
-    
-    const filtered = baseRatios.filter(r => primeLimit(r) && oddLimit(cutoff, r));
-    const seen = new Set();
-    
-    return filtered.reduce((acc, r) => {
-        const nr = r.normalize();
-        const key = nr.toString();
-        if (!seen.has(key)) {
-            seen.add(key);
-            acc.push(nr);
-        }
-        return acc;
-    }, []);
-}
-
-function generateScales(maxNotes = 8, searchLimit = 32, minConsonance = 0.2) {
-    const scalesDB = {1: [{consonance: 1.0, scale: [new RationalInterval(1,1)], key: "1/1"}]};
-    const intervals = generateBaseIntervals(searchLimit);
-
-    for (let n = 2; n <= maxNotes; n++) {
-        const newScales = [];
-        const prev = scalesDB[n-1] || [];
-        
-        for (const entry of prev) {
-            for (const baseNote of entry.scale) {
-                for (const interval of intervals) {
-                    [baseNote.multiply(interval), baseNote.divide(interval)]
-                        .map(r => r.normalize())
-                        .forEach(newNote => {
-                            if (!entry.scale.some(r => r.toString() === newNote.toString())) {
-                                const candidate = [...entry.scale, newNote].sort((a,b) => a.toDecimal() - b.toDecimal());
-                                if (candidate.length === n) {
-                                    const cons = scaleConsonance(candidate);
-                                    if (cons >= minConsonance) insertScale(newScales, candidate, cons);
-                                }
-                            }
-                        });
-                }
-            }
-        }
-        
-        scalesDB[n] = newScales;
-    }
-    
-    return scalesDB;
-}
-
-function flattenScales(scalesDB) {
-    generatedScalesArray = Object.entries(scalesDB).flatMap(([n, entries]) => 
-        entries.map(entry => ({n: parseInt(n), ...entry}))
-    ).sort((a,b) => b.consonance - a.consonance);
-}
-
-/******************************************************************
- * Функции визуализации
- ******************************************************************/
-function resizeCanvas() {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-    currentScale && drawScale(currentScale);
-}
-
-function drawScale(scale) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    
-     // Конфигурация отрисовки
-     const marginLeft = canvas.width * 0.05;
-     const usableWidth = canvas.width * 0.9;
-     const bottomPos = canvas.height - 20;
-
-     // Отрисовка базовой линии
-     context.strokeStyle = "#555";
-     context.lineWidth = 2;
-     context.beginPath();
-     context.moveTo(marginLeft, bottomPos);
-     context.lineTo(marginLeft + usableWidth, bottomPos);
-     context.stroke();
-
-     // Отрисовка нот и интервалов
-     const sortedScale = [...scale].sort((a,b) => a.toDecimal() - b.toDecimal());
-     sortedScale.forEach((note, index) => {
-         const xPos = marginLeft + (note.toDecimal() - 1) * usableWidth;
-         
-         // Отрисовка интервальных связей
-         if(index > 0) {
-             const prevNote = sortedScale[index-1];
-             const intervalWidth = (note.toDecimal() - prevNote.toDecimal()) * usableWidth;
-             
-             context.strokeStyle = "rgba(255,255,255,0.3)";
-             context.lineWidth = Math.min(10, intervalWidth/2);
-             context.beginPath();
-             context.moveTo(xPos - intervalWidth/2 + marginLeft/2 + noteRadius*2*index/scale.length*Math.PI*Math.random(), bottomPos - intervalWidth/4); // Случайное смещение для визуального разнообразия
-             context.bezierCurveTo(
-                 xPos - intervalWidth/4 + noteRadius*Math.cos(index), 
-                 bottomPos - intervalWidth/3,
-                 xPos + intervalWidth/4 + noteRadius*Math.sin(index),
-                 bottomPos - intervalWidth/3,
-                 xPos,
-                 bottomPos
-             );
-             context.stroke();
-         }
-
-         // Отрисовка нотных маркеров
-         const noteRadius=10*(scale.length-index)/scale.length+5; // Динамический размер маркера
-         context.beginPath();
-         context.fillStyle=`hsl(${index*360/scale.length},70%,50%)`;
-         context.arc(xPos,bottomPos-Math.sin(index)*noteRadius*0.5,
-                     noteRadius*Math.max(0.8,(scale.length-index)/scale.length),
-                     0,
-                     Math.PI*2
-         );
-         context.fill();
-     });
- }
-
-/******************************************************************
- * Обработчики событий и инициализация
- ******************************************************************/
-document.getElementById("genScalesBtn").addEventListener("click", () => { 
-     const params={
-         maxNotes: parseInt(document.getElementById("maxNotes").value),
-         searchLimit: parseInt(document.getElementById("searchLimit").value),
-         minConsonance: parseFloat(document.getElementById("minConsonance").value)
-     };
-     
-     flattenScales(generateScales(params.maxNotes,
-                                  params.searchLimit,
-                                  params.minConsonance));
-     
-     renderScalesTable();
-});
-
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("load", () => document.getElementById("genScalesBtn").click());
-
-document.getElementById("toggle-controls").addEventListener("click", () =>
-     document.getElementById("control-panel").classList.toggle("visible")
-);
-
-  
-  /******************************************************************
-   * Новая функция отрисовки таблицы ладов
-   ******************************************************************/
-  function renderScalesTable() {
-    const tableBody = document.getElementById("scales-table-body");
-    tableBody.innerHTML = "";
-    // Сортировка: сначала по консонантности (убывание), затем по числу нот (возрастание)
-    let sortedScales = generatedScalesArray.slice().sort((a, b) => {
-      if (b.consonance !== a.consonance) return b.consonance - a.consonance;
-      return a.n - b.n;
-    });
-    sortedScales.forEach((entry, index) => {
-      const tr = document.createElement("tr");
-      tr.dataset.index = index;
-      
-      const tdN = document.createElement("td");
-      tdN.textContent = entry.n;
-      
-      const tdConsonance = document.createElement("td");
-      tdConsonance.textContent = entry.consonance.toFixed(3);
-      tdConsonance.classList.add("consonance");
-      
-      const tdName = document.createElement("td");
-      tdName.textContent = "Лад " + (index + 1);
-      
-      const tdScale = document.createElement("td");
-      tdScale.textContent = entry.scale.map(r => r.toString()).join(", ");
-      tdScale.classList.add("scale");
-      
-      tr.appendChild(tdN);
-      tr.appendChild(tdConsonance);
-      tr.appendChild(tdName);
-      tr.appendChild(tdScale);
-      
-      // Обработчик клика по строке таблицы
-      tr.addEventListener("click", () => {
-        document.querySelectorAll(".scales-table tr").forEach(row => row.classList.remove("selected"));
-        tr.classList.add("selected");
-        currentScale = entry.scale;
-        drawScale(currentScale);
-      });
-      tableBody.appendChild(tr);
-    });
-    // Автовыбор первой строки, если она существует
-    const firstRow = tableBody.querySelector("tr");
-    if (firstRow) {
-      firstRow.classList.add("selected");
-      currentScale = sortedScales[0].scale;
-      drawScale(currentScale);
-    }
-  }
-  
-  /******************************************************************
-   * Обработка кнопки генерации
-   ******************************************************************/
-  const genScalesBtn = document.getElementById("genScalesBtn");
-  genScalesBtn.addEventListener("click", () => {
-    const maxNotes = parseInt(document.getElementById("maxNotes").value);
-    const searchLimit = parseInt(document.getElementById("searchLimit").value);
-    const minConsonance = parseFloat(document.getElementById("minConsonance").value);
-    const scalesDB = generateScales(maxNotes, searchLimit, minConsonance);
-    flattenScales(scalesDB);
-    renderScalesTable();
-  });
-  
-  /******************************************************************
-   * Переключатель панели контролов для вертикальной ориентации
-   ******************************************************************/
-  const toggleButton = document.getElementById("toggle-controls");
-  toggleButton.addEventListener("click", () => {
-    document.getElementById("control-panel").classList.toggle("visible");
-  });
-  
-  /******************************************************************
-   * Автогенерация ладов при загрузке страницы
-   ******************************************************************/
-  window.addEventListener("load", () => {
-    genScalesBtn.click();
-  });
-</script>
-</body>
-</html>
-
-
-
-<instructions>
-Твоя задача объединить обе части воедино и написать ПОЛНЫЙ КОД, ЦЕЛИКОМ.
-
-
-Структура которая должна получиться:
-
-"Нужно переработать верстку. Список ладов изменяем на таблицу с колонками: N, consonance, scalename, scale. Таблица отфильтрована по консонансу а потом по N (количество нот). Клик по строке таблицы переключает на лад. Клик по колонке включает сортировку по колонке.
-
-При горизонтальной ориентации панель контролов занимает 50% по высоте. При вертикальной ориентации панель контролов скрыта и открывается по клику, а ориентация - column reverse. И таблица и блок генерации находятся в панели контролов
-
-Если не сможешь сделать в одном сообщении, ничего страшного, раздели на два.
-</instructions>
