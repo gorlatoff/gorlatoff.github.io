@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Just Intonation Piano</title>
+  <style>
+    :root {
+      --bg-color: #282c34;
+      --text-color: #abb2bf;
+      --accent-color: #61afef;
+      --secondary-color: #c678dd;
+      --success-color: #98c379;
+      --warning-color: #e5c07b;
+      --error-color: #e06c75;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    #keyboard-canvas {
+      display: block;
+      margin: 20px auto;
+      background: #21252b;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      border-radius: 4px;
+    }
+    
+    .controls {
+      max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+      padding: 10px;
+      background: #21252b;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .tonic-info {
+      background: #3a3f4b;
+      color: var(--accent-color);
+      padding: 8px 16px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    .slider-container {
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .slider-container label {
+      min-width: 120px;
+      text-align: right;
+    }
+    
+    input[type="range"] {
+      width: 200px;
+      margin: 0 10px;
+      background: #3a3f4b;
+      border-radius: 20px;
+      height: 8px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    pre {
+      background: #21252b;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      color: var(--text-color);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    #bestInterpretations {
+      background: #21252b;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      text-align: left;
+      line-height: 1.6;
+    }
+    
+    .interpretation {
+      margin-bottom: 20px;
+      padding: 10px;
+      border-left: 4px solid var(--accent-color);
+      background: #2c313a;
+    }
+    
+    .interpretation-header {
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-bottom: 8px;
+    }
+    
+    .note-mapping {
+      margin-left: 15px;
+    }
+    
+    .flex-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .panel {
+      flex: 1;
+      min-width: 300px;
+      background: #21252b;
+      padding: 15px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    h2 {
+      color: var(--accent-color);
+      border-bottom: 1px solid #3a3f4b;
+      padding-bottom: 8px;
+      margin-top: 0;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+  <div class="controls">
+    <div class="tonic-info">Текущая тоника: <span id="tonic-display">C4</span></div>
+    
+    <div class="slider-container">
+      <label for="forgetSlider">Время "забывания":</label>
+      <input type="range" id="forgetSlider" min="1" max="60" value="10">
+      <span id="forgetValue">10</span> секунд
+    </div>
+  </div>
+
+  <canvas id="keyboard-canvas"></canvas>
+  
+  <div class="flex-container">
+    <div class="panel">
+      <h2>Активные ноты</h2>
+      <pre id="playedNotes"></pre>
+    </div>
+    
+    <div class="panel">
+      <h2>Лучшие JI интерпретации</h2>
+      <div id="bestInterpretations"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Подключаем JZZ и Tiny-синтезатор -->
+<script src="https://cdn.jsdelivr.net/npm/jzz@0.8.8/javascript/JZZ.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+
+<script>
+// ============================================================
+// Класс для работы с рациональными интервалами
+// ============================================================
+class RationalInterval {
+  constructor(numerator, denominator) {
+    this.numerator = numerator;
+    this.denominator = denominator;
+    this.simplify();
+  }
+
+  // Рекурсивный алгоритм НОД
+  gcd(a, b) {
+    return b ? this.gcd(b, a % b) : a;
+  }
+
+  simplify() {
+    const common = this.gcd(this.numerator, this.denominator);
+    this.numerator /= common;
+    this.denominator /= common;
+  }
+
+  // Умножение рациональных интервалов с сокращением
+  multiply(other) {
+    const result = new RationalInterval(
+      this.numerator * other.numerator,
+      this.denominator * other.denominator
+    );
+    result.simplify();
+    return result;
+  }
+
+  // Деление рациональных интервалов с сокращением
+  divide(other) {
+    const result = new RationalInterval(
+      this.numerator * other.denominator,
+      this.denominator * other.numerator
+    );
+    result.simplify();
+    return result;
+  }
+
+  // Нормализация: интервал приводится к диапазону [1, 4)
+  normalize() {
+    let num = this.numerator;
+    let den = this.denominator;
+    let ratio = num / den;
+    while (ratio < 1) {
+      num *= 2;
+      ratio = num / den;
+    }
+    while (ratio >= 4) {
+      den *= 2;
+      ratio = num / den;
+    }
+    const common = this.gcd(num, den);
+    return new RationalInterval(num / common, den / common);
+  }
+
+  toCents() {
+    return 1200 * Math.log2(this.numerator / this.denominator);
+  }
+}
+
+// Простейшая функция НОД для чисел
+function gcd(a, b) {
+  return b ? gcd(b, a % b) : a;
+}
+
+// Простейшая факторизация натурального числа
+function factorize(n) {
+  let factors = [];
+  let d = 2;
+  while (n > 1 && d * d <= n) {
+    while (n % d === 0) {
+      factors.push(d);
+      n /= d;
+    }
+    d++;
+  }
+  if (n > 1) factors.push(n);
+  return factors;
+}
+
+// Проверка: знаменатель должен быть степенью двойки, а количество простых множителей не превышать заданные лимиты.
+function primeLimit(ratio, limits) {
+  if (!isPow2(ratio.denominator)) return false;
+  const factors = factorize(ratio.numerator);
+  const count3 = factors.filter(x => x === 3).length;
+  const count5 = factors.filter(x => x === 5).length;
+  const count7 = factors.filter(x => x === 7).length;
+  const countExtra = factors.filter(x => x > 7).length;
+  return (
+    count3 <= limits[3] &&
+    count5 <= limits[5] &&
+    count7 <= limits[7] &&
+    countExtra <= limits.extra
+  );
+}
+
+// Проверка, является ли число степенью двойки
+function isPow2(n) {
+  return (n & (n - 1)) === 0;
+}
+
+// Функция консонанса для оценки гармоничности интервала
+function consonance(num, den) {
+  return 1 / den + 1 / num;
+}
+
+// Функция для получения цвета на основе консонанса
+function getColorFromConsonance(cons) {
+  const normalized = cons / 2; 
+  const hue = 30 + normalized * 100; 
+  const saturation = 100;
+  const lightness = 42;
+  const alpha = 0.9;
+  return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+}
+
+// ============================================================
+// Константы (значения вместо инпутов)
+// ============================================================
+const MAX_DENOM = 46;
+const EDO = 12;
+const PRIME_LIMITS = { 3: 4, 5: 2, 7: 1, extra: 0 };
+// Тоника -- выбрана как 1/45 (согласно выбранному значению в оригинале)
+const TONIC = new RationalInterval(1, 45);
+
+// ============================================================
+// Константы для размеров клавиатуры
+// ============================================================
+const xScale = 50;   // 1 единица ширины = 50 пикселей
+const yScale = 100;  // 1 единица высоты = 100 пикселей
+// Полная высота белой клавиши в наших логических единицах
+const WHITE_KEY_HEIGHT = 2;
+// Относительная высота чёрной клавиши (в долях от белой)
+const BLACK_KEY_RELATIVE_HEIGHT = 0.8; 
+// Константы для позиций меток
+const LABEL_BLACK_POS_Y = 0.4; // Позиция метки на черной клавише (относительно высоты черной клавиши)
+const LABEL_WHITE_POS_Y = 0.6; // Позиция метки на белой клавише (относительно высоты белой клавиши)
+// Константы для размеров меток
+const LABEL_RADIUS_X = 20;
+const LABEL_RADIUS_Y = 30;
+
+// Размер клавиатуры - сколько октав показывать
+const NUM_OCTAVES = 2;
+const START_OCTAVE = 3;
+
+// ============================================================
+// Генерация интервалов и маппинг EDO-шага к возможным JI интерпретациям
+// ============================================================
+const edoStepToJI = new Map();
+
+// Генерация интервалов и вывод результата в виде простого текстового списка
+function generateIntervals() {
+  const intervals = new Map();
+
+  for (let den = 1; den <= MAX_DENOM; den++) {
+    for (let num = 1; num <= MAX_DENOM; num++) {
+      if (num === den || gcd(num, den) !== 1) continue;
+
+      // Генерируем базовый интервал и нормализуем его
+      let candidate = new RationalInterval(num, den).normalize();
+      // Приводим к пространству, где тоника равна 1/45
+      let candidateDiv = candidate.divide(TONIC);
+      // Пропускаем интервалы, не удовлетворяющие лимитам простых множителей
+      if (!primeLimit(candidateDiv, PRIME_LIMITS)) continue;
+      // Восстанавливаем исходное отношение
+      let finalInterval = candidateDiv.multiply(TONIC);
+      const cents = finalInterval.toCents();
+      const edoStep = Math.round(cents / (1200 / EDO));
+      if (edoStep < 0 || edoStep > 24) continue;
+
+      if (!intervals.has(edoStep)) {
+        intervals.set(edoStep, []);
+      }
+      intervals.get(edoStep).push({
+        ratio: `${finalInterval.numerator}/${finalInterval.denominator}`,
+        cents: cents.toFixed(1)
+      });
+    }
+  }
+
+  // Загружаем уникальные интервалы в edoStepToJI
+  for (const [step, intervalList] of intervals.entries()) {
+    const uniqueIntervals = intervalList
+      .filter((item, index, self) =>
+        self.findIndex(i => i.ratio === item.ratio) === index)
+      .map(item => {
+        const [num, den] = item.ratio.split('/').map(Number);
+        return { num, den };
+      });
+    
+    edoStepToJI.set(step, uniqueIntervals);
+  }
+}
+
+// ============================================================
+// Класс для рисования дробей
+// ============================================================
+class FractionLabel {
+  constructor(numerator, denominator) {
+    this.n = numerator;
+    this.d = denominator;
+  }
+  
+  draw(ctx, x, y) {
+    ctx.save();
+    ctx.font = "bold 16px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+
+    const numOffsetX = -3;
+    const numOffsetY = -6;
+    const denOffsetX = 6;
+    const denOffsetY = 14;
+
+    ctx.fillText(this.n, x + numOffsetX, y + numOffsetY);
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y + 2);
+    ctx.lineTo(x + 8, y - 4);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillText(this.d, x + denOffsetX, y + denOffsetY);
+
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// Функция для генерации клавиш для нескольких октав
+// ============================================================
+function generateKeys(octaves = 1, startOctave = 4) {
+  const baseKeys = [
+    { note: 'C',  isBlack: false, midiOffset: 0 },
+    { note: 'C#', isBlack: true,  midiOffset: 1 },
+    { note: 'D',  isBlack: false, midiOffset: 2 },
+    { note: 'D#', isBlack: true,  midiOffset: 3 },
+    { note: 'E',  isBlack: false, midiOffset: 4 },
+    { note: 'F',  isBlack: false, midiOffset: 5 },
+    { note: 'F#', isBlack: true,  midiOffset: 6 },
+    { note: 'G',  isBlack: false, midiOffset: 7 },
+    { note: 'G#', isBlack: true,  midiOffset: 8 },
+    { note: 'A',  isBlack: false, midiOffset: 9 },
+    { note: 'A#', isBlack: true,  midiOffset: 10 },
+    { note: 'B',  isBlack: false, midiOffset: 11 }
+  ];
+  
+  const keys = [];
+  for (let octave = 0; octave < octaves; octave++) {
+    baseKeys.forEach((baseKey, index) => {
+      const midiNote = 12 * (startOctave + octave) + baseKey.midiOffset;
+      
+      keys.push({
+        ...baseKey,
+        midiNote,
+        edoStep: baseKey.midiOffset,
+        octave: startOctave + octave,
+        isActive: false
+      });
+    });
+  }
+  
+  // Добавляем последнюю C для завершения клавиатуры
+  keys.push({
+    note: 'C',
+    isBlack: false,
+    midiOffset: 0,
+    midiNote: 12 * (startOctave + octaves),
+    edoStep: 0,
+    octave: startOctave + octaves,
+    isActive: false
+  });
+  
+  return keys;
+}
+
+// ============================================================
+// Воспроизведение звука и запись нот
+// ============================================================
+// Глобальные переменные
+const playedNotes = [];
+let bestInterpretations = [];
+const allKeys = generateKeys(NUM_OCTAVES, START_OCTAVE);
+let tonicKeyIndex = 0; // По умолчанию тоника - первая C
+
+// Инициализация аудио контекста
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+// Инициализация синтезатора
+const synth = JZZ.synth.Tiny();
+JZZ().openMidiOut().connect(synth);
+
+function playNote(frequency, duration) {
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playMidiNote(midiNote) {
+  const noteOn = JZZ.MIDI.noteOn(0, midiNote, 100);
+  synth.send(noteOn);
+  setTimeout(() => {
+    const noteOff = JZZ.MIDI.noteOff(0, midiNote, 100);
+    synth.send(noteOff);
+  }, 300); // длительность звука 300 мс
+}
+
+function playNoteByStep(step, midiNote) {
+  // Используем MIDI синтезатор для более качественного звука
+  playMidiNote(midiNote);
+  
+  playedNotes.push({
+    edoStep: step % 12,  // Нормализуем до одной октавы
+    midiNote: midiNote,
+    startTime: Date.now() / 1000,
+    duration: 1
+  });
+  
+  updatePlayedNotesDisplay();
+  calculateBestInterpretations();
+}
+
+// ============================================================
+// Отображение проигранных нот с учетом функции забывания
+// ============================================================
+function updatePlayedNotesDisplay() {
+  const currentTime = Date.now() / 1000;
+  const forgetTime = parseFloat(document.getElementById('forgetSlider').value);
+  
+  const activeNotes = playedNotes
+    .map((note, idx) => ({
+      ...note,
+      index: idx,
+      weight: note.duration * Math.max(0, 1 - (currentTime - note.startTime) / forgetTime)
+    }))
+    .filter(note => note.weight > 0);
+  
+  document.getElementById('playedNotes').textContent = activeNotes
+    .map(n => {
+      const noteName = getNoteName(n.midiNote);
+      return `Нота ${noteName}: Полутон ${n.edoStep} (Вес: ${n.weight.toFixed(2)})`;
+    })
+    .join('\n');
+}
+
+// Функция получения названия ноты из MIDI номера
+function getNoteName(midiNote) {
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const noteName = noteNames[midiNote % 12];
+  const octave = Math.floor(midiNote / 12) - 1;
+  return `${noteName}${octave}`;
+}
+
+// ============================================================
+// Расчет наилучших JI интерпретаций
+// ============================================================
+function calculateBestInterpretations() {
+  const currentTime = Date.now() / 1000;
+  const forgetTime = parseFloat(document.getElementById('forgetSlider').value);
+  const activeNotes = playedNotes
+    .map(note => ({
+      ...note,
+      weight: note.duration * Math.max(0, 1 - (currentTime - note.startTime) / forgetTime)
+    }))
+    .filter(note => note.weight > 0);
+
+  if (activeNotes.length < 2) {
+    document.getElementById('bestInterpretations').innerHTML = 
+      '<p>Сыграйте не менее двух нот для получения JI интерпретаций</p>';
+    return;
+  }
+
+  const interpretations = [];
+  const seen = new Set();
+
+  // Группируем ноты по шагам, сохраняя индексы
+  const stepGroups = new Map();
+  activeNotes.forEach((note, idx) => {
+    const normalizedStep = note.edoStep % 12;
+    if (!stepGroups.has(normalizedStep)) {
+      stepGroups.set(normalizedStep, []);
+    }
+    stepGroups.get(normalizedStep).push(idx);
+  });
+
+  // Перебираем уникальные шаги для root и ref
+  const uniqueSteps = Array.from(stepGroups.keys());
+  for (const rootStep of uniqueSteps) {
+    for (const refStep of uniqueSteps) {
+      if (rootStep === refStep) continue;
+
+      const interval = Math.abs(refStep - rootStep) % 12;
+      const jiOptions = edoStepToJI.get(interval) || [];
+      
+      for (const ji of jiOptions) {
+        // Берем первый индекс из каждой группы для root и ref
+        const rootIdx = stepGroups.get(rootStep)[0];
+        const refIdx = stepGroups.get(refStep)[0];
+        
+        const noteJIs = Array(activeNotes.length).fill(null);
+        noteJIs[rootIdx] = { num: 1, den: 1 };
+        
+        // Заполняем ref ноту
+        noteJIs[refIdx] = refStep > rootStep ? 
+          { num: ji.num, den: ji.den } : 
+          { num: ji.den, den: ji.num };
+
+        // Заполняем остальные ноты
+        for (let i = 0; i < activeNotes.length; i++) {
+          if (i === rootIdx || i === refIdx) continue;
+          
+          const step = activeNotes[i].edoStep % 12;
+          const intervalToRoot = Math.abs(step - rootStep) % 12;
+          const jiOptionsToRoot = edoStepToJI.get(intervalToRoot) || [];
+          
+          if (jiOptionsToRoot.length > 0) {
+            let bestConsonance = -1;
+            let bestJI = null;
+            
+            jiOptionsToRoot.forEach(option => {
+              const cons = consonance(option.num, option.den);
+              if (cons > bestConsonance) {
+                bestConsonance = cons;
+                bestJI = step > rootStep ? 
+                  { num: option.num, den: option.den } : 
+                  { num: option.den, den: option.num };
+              }
+            });
+            
+            noteJIs[i] = bestJI;
+          }
+        }
+
+        // Проверка на валидность и уникальность
+        if (noteJIs.some(ji => !ji)) continue;
+        const key = noteJIs.map(ji => `${ji.num}/${ji.den}`).join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        // Расчет консонанса
+        let totalConsonance = 0;
+        let totalWeight = 0;
+        
+        for (let i = 0; i < activeNotes.length; i++) {
+          for (let j = i + 1; j < activeNotes.length; j++) {
+            const num = noteJIs[j].num * noteJIs[i].den;
+            const den = noteJIs[j].den * noteJIs[i].num;
+            const c = consonance(num, den);
+            const weight = activeNotes[i].weight * activeNotes[j].weight;
+            totalConsonance += c * weight;
+            totalWeight += weight;
+          }
+        }
+        
+        interpretations.push({
+          consonance: totalWeight > 0 ? totalConsonance / totalWeight : 0,
+          noteJIs,
+          rootStep,
+          refStep,
+          activeNotes
+        });
+      }
+    }
+  }
+
+  bestInterpretations = interpretations
+    .sort((a, b) => b.consonance - a.consonance)
+    .slice(0, 3);
+
+  updateBestInterpretations();
+  updateKeyboardJILabels();
+}
+
+// Обновление отображения лучших интерпретаций
+function updateBestInterpretations() {
+  if (bestInterpretations.length === 0) {
+    document.getElementById('bestInterpretations').innerHTML = 
+      '<p>Нет доступных JI интерпретаций</p>';
+    return;
+  }
+  
+  document.getElementById('bestInterpretations').innerHTML = bestInterpretations
+    .map((interpretation, index) => {
+      const rootNoteName = getNoteName(interpretation.activeNotes[interpretation.activeNotes.findIndex(
+        (note, idx) => interpretation.noteJIs[idx].num === 1 && interpretation.noteJIs[idx].den === 1
+      )].midiNote);
+      
+      return `
+        <div class="interpretation">
+          <div class="interpretation-header">
+            #${index + 1} Консонанс: ${interpretation.consonance.toFixed(4)}
+          </div>
+          <div>Тоника: ${rootNoteName} (1/1)</div>
+          <div class="note-mapping">
+            ${interpretation.activeNotes.map((note, idx) => {
+              const noteName = getNoteName(note.midiNote);
+              return `${noteName} → ${interpretation.noteJIs[idx].num}/${interpretation.noteJIs[idx].den}`;
+            }).join('<br>')}
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+// ============================================================
+// Настройка canvas для клавиатуры
+// ============================================================
+const canvasHeightUnits = Math.max(WHITE_KEY_HEIGHT, BLACK_KEY_RELATIVE_HEIGHT * WHITE_KEY_HEIGHT);
+const canvas = document.getElementById('keyboard-canvas');
+canvas.width = (allKeys.length / 12) * 12 * xScale;
+canvas.height = canvasHeightUnits * yScale;
+const ctx = canvas.getContext('2d');
+
+// ============================================================
+// Построение полигонов для клавиш
+// ============================================================
+function buildPolygons() {
+  for (let i = 0; i < allKeys.length; i++) {
+    const key = allKeys[i];
+    if (key.isBlack) {
+      // Чёрная клавиша: прямоугольник от y = 0 до y = BLACK_KEY_RELATIVE_HEIGHT * WHITE_KEY_HEIGHT
+      key.polygon = [
+        { x: i,     y: 0 },
+        { x: i+1,   y: 0 },
+        { x: i+1,   y: BLACK_KEY_RELATIVE_HEIGHT * WHITE_KEY_HEIGHT },
+        { x: i,     y: BLACK_KEY_RELATIVE_HEIGHT * WHITE_KEY_HEIGHT }
+      ];
+    } else {
+      // Белая клавиша: многоугольник с расширением снизу, если рядом есть чёрная клавиша
+      let leftExpand  = 0;
+      let rightExpand = 0;
+      if (i > 0 && allKeys[i-1].isBlack) {
+        leftExpand = 0.5;
+      }
+      if (i < allKeys.length - 1 && allKeys[i+1].isBlack) {
+        rightExpand = 0.5;
+      }
+      key.polygon = [
+        { x: i,                y: 0 },
+        { x: i+1,              y: 0 },
+        { x: i+1,              y: 1 },
+        { x: i+1 + rightExpand,y: 1 },
+        { x: i+1 + rightExpand,y: WHITE_KEY_HEIGHT },
+        { x: i - leftExpand,   y: WHITE_KEY_HEIGHT },
+        { x: i - leftExpand,   y: 1 },
+        { x: i,                y: 1 }
+      ];
+    }
+  }
+}
+
+// ============================================================
+// Функция обновления JI-соотношений для клавиш на основе лучшей интерпретации
+// ============================================================
+function updateKeyboardJILabels() {
+  // Сначала сбрасываем все JI отношения
+  allKeys.forEach(key => {
+    key.jiRatio = null;
+  });
+  
+  if (bestInterpretations.length === 0) {
+    drawAll();
+    return;
+  }
+  
+  // Берем лучшую интерпретацию
+  const bestInterpretation = bestInterpretations[0];
+  
+  // Находим индекс корневой ноты (тоники) в активных нотах
+  const rootNoteIdx = bestInterpretation.activeNotes.findIndex(
+    (note, idx) => bestInterpretation.noteJIs[idx].num === 1 && bestInterpretation.noteJIs[idx].den === 1
+  );
+  
+  if (rootNoteIdx === -1) return;
+  
+  // Получаем MIDI номер тоники
+  const rootMidiNote = bestInterpretation.activeNotes[rootNoteIdx].midiNote;
+  
+  // Находим индекс клавиши, соответствующей тонике
+  const rootKeyIdx = allKeys.findIndex(key => key.midiNote === rootMidiNote);
+  tonicKeyIndex = rootKeyIdx;
+  
+  // Устанавливаем тонику в информационное поле
+  document.getElementById('tonic-display').textContent = getNoteName(rootMidiNote);
+  
+  // Для каждой активной ноты в интерпретации
+  bestInterpretation.activeNotes.forEach((note, noteIdx) => {
+    const jiRatio = bestInterpretation.noteJIs[noteIdx];
+    
+    // Находим все клавиши с соответствующим edoStep относительно тоники
+    const relativeEdoStep = (note.edoStep - bestInterpretation.activeNotes[rootNoteIdx].edoStep + 12) % 12;
+    
+    allKeys.forEach(key => {
+      const keyRelativeEdoStep = (key.edoStep - allKeys[rootKeyIdx].edoStep + 12) % 12;
+      if (keyRelativeEdoStep === relativeEdoStep) {
+        key.jiRatio = { numerator: jiRatio.num, denominator: jiRatio.den };
+      }
+    });
+  });
+  
+  // Перерисовываем клавиатуру с обновленными JI отношениями
+  drawAll();
+}
+
+// ============================================================
+// Отрисовка клавиш
+// ============================================================
+function drawAll() {
+  ctx.fillStyle = '#21252b';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Сначала белые клавиши (сзади)
+  for (let i = 0; i < allKeys.length; i++) {
+    if (!allKeys[i].isBlack) {
+      drawKey(allKeys[i], i === tonicKeyIndex);
+    }
+  }
+  // Затем черные (сверху)
+  for (let i = 0; i < allKeys.length; i++) {
+    if (allKeys[i].isBlack) {
+      drawKey(allKeys[i], i === tonicKeyIndex);
+    }
+  }
+}
+
+function drawKey(key, isTonic = false) {
+  let polygonPx = key.polygon.map(pt => ({
+    x: pt.x * xScale,
+    y: pt.y * yScale
+  }));
+
+  // Рисуем основную форму клавиши
+  ctx.beginPath();
+  ctx.moveTo(polygonPx[0].x, polygonPx[0].y);
+  for (let i = 1; i < polygonPx.length; i++) {
+    ctx.lineTo(polygonPx[i].x, polygonPx[i].y);
+  }
+  ctx.closePath();
+
+  // Заливаем клавишу градиентом
+  if (key.isBlack) {
+    let grad = ctx.createLinearGradient(0, polygonPx[0].y, 0, polygonPx[2].y);
+    grad.addColorStop(0, '#444');
+    grad.addColorStop(1, '#000');
+    ctx.fillStyle = grad;
+  } else {
+    let grad = ctx.createLinearGradient(0, 0, 0, WHITE_KEY_HEIGHT * yScale);
+    grad.addColorStop(0, '#fff');
+    grad.addColorStop(1, '#bbb');
+    ctx.fillStyle = grad;
+  }
+  ctx.fill();
+
+  // Показываем активное состояние (нажатие)
+  if (key.isActive) {
+    ctx.fillStyle = 'rgba(97, 175, 239, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(polygonPx[0].x, polygonPx[0].y);
+    for (let i = 1; i < polygonPx.length; i++) {
+      ctx.lineTo(polygonPx[i].x, polygonPx[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Показываем тонику
+  if (isTonic) {
+    ctx.fillStyle = 'rgba(152, 195, 121, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(polygonPx[0].x, polygonPx[0].y);
+    for (let i = 1; i < polygonPx.length; i++) {
+      ctx.lineTo(polygonPx[i].x, polygonPx[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Рисуем обводку клавиши
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(polygonPx[0].x, polygonPx[0].y);
+  for (let i = 1; i < polygonPx.length; i++) {
+    ctx.lineTo(polygonPx[i].x, polygonPx[i].y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  
+  // Рисуем JI соотношение, если оно есть
+  if (key.jiRatio) {
+    // Рассчитываем консонантность
+    const cons = consonance(key.jiRatio.numerator, key.jiRatio.denominator);
+    const color = getColorFromConsonance(cons);
+    
+    // Вычисляем центр клавиши для позиционирования метки
+    let centerX = 0;
+    for (let pt of polygonPx) {
+      centerX += pt.x;
+    }
+    centerX /= polygonPx.length;
+    
+    // Определяем позицию метки по Y в зависимости от типа клавиши
+    const labelY = key.isBlack
+      ? BLACK_KEY_RELATIVE_HEIGHT * WHITE_KEY_HEIGHT * yScale * LABEL_BLACK_POS_Y
+      : WHITE_KEY_HEIGHT * yScale * LABEL_WHITE_POS_Y;
+    
+    // Рисуем фоновый овал с цветом, зависящим от консонантности
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.ellipse(centerX, labelY, LABEL_RADIUS_X, LABEL_RADIUS_Y, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Рисуем дробь (соотношение)
+    const label = new FractionLabel(key.jiRatio.numerator, key.jiRatio.denominator);
+    label.draw(ctx, centerX, labelY);
+  }
+}
+
+// ============================================================
+// Обработка событий мыши
+// ============================================================
+function updateActiveKey(evt) {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = evt.clientX - rect.left;
+  const mouseY = evt.clientY - rect.top;
+  
+  // Сначала ищем черную клавишу (она сверху)
+  let newActiveKey = null;
+  for (let i = 0; i < allKeys.length; i++) {
+    if (allKeys[i].isBlack && pointInPolygon(mouseX, mouseY, allKeys[i].polygon)) {
+      newActiveKey = i;
+      break;
+    }
+  }
+  
+  // Если не нашли черную, ищем белую
+  if (newActiveKey === null) {
+    for (let i = 0; i < allKeys.length; i++) {
+      if (!allKeys[i].isBlack && pointInPolygon(mouseX, mouseY, allKeys[i].polygon)) {
+        newActiveKey = i;
+        break;
+      }
+    }
+  }
+  
+  let changed = false;
+  if (newActiveKey !== null) {
+    for (let i = 0; i < allKeys.length; i++) {
+      if (i === newActiveKey) {
+        if (!allKeys[i].isActive) {
+          allKeys[i].isActive = true;
+          playNoteByStep(allKeys[i].edoStep, allKeys[i].midiNote);
+          changed = true;
+        }
+      } else {
+        if (allKeys[i].isActive) {
+          allKeys[i].isActive = false;
+          changed = true;
+        }
+      }
+    }
+  }
+  
+  if (changed) {
+    drawAll();
+  }
+}
+
+canvas.addEventListener('mousedown', (evt) => {
+  if (evt.button === 0) { // Левая кнопка - играем ноту
+    updateActiveKey(evt);
+  } else if (evt.button === 2) { // Правая кнопка - устанавливаем тонику
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = evt.clientX - rect.left;
+    const mouseY = evt.clientY - rect.top;
+    
+    // Находим клавишу под курсором
+    for (let i = 0; i < allKeys.length; i++) {
+      if (allKeys[i].isBlack && pointInPolygon(mouseX, mouseY, allKeys[i].polygon)) {
+        tonicKeyIndex = i;
+        document.getElementById('tonic-display').textContent = 
+          `${allKeys[i].note}${allKeys[i].octave}`;
+        drawAll();
+        break;
+      }
+    }
+    
+    // Если не нашли черную, ищем белую
+    for (let i = 0; i < allKeys.length; i++) {
+      if (!allKeys[i].isBlack && pointInPolygon(mouseX, mouseY, allKeys[i].polygon)) {
+        tonicKeyIndex = i;
+        document.getElementById('tonic-display').textContent = 
+          `${allKeys[i].note}${allKeys[i].octave}`;
+        drawAll();
+        break;
+      }
+    }
+  }
+});
+
+// При движении мыши с зажатой кнопкой обновляем активную клавишу
+canvas.addEventListener('mousemove', (evt) => {
+  if (evt.buttons === 1) {
+    updateActiveKey(evt);
+  }
+});
+
+// При отпускании кнопки мыши – снимаем активность всех клавиш
+canvas.addEventListener('mouseup', () => {
+  allKeys.forEach(key => key.isActive = false);
+  drawAll();
+});
+
+// Если курсор уходит с canvas – сбрасываем активность
+canvas.addEventListener('mouseleave', () => {
+  allKeys.forEach(key => key.isActive = false);
+  drawAll();
+});
+
+// Предотвращаем появление контекстного меню при правом клике
+canvas.addEventListener('contextmenu', (evt) => {
+  evt.preventDefault();
+});
+
+// ============================================================
+// Функция проверки попадания точки в многоугольник (алгоритм "ray casting")
+// ============================================================
+function pointInPolygon(px, py, polygon) {
+  let polyPx = polygon.map(pt => ({ x: pt.x * xScale, y: pt.y * yScale }));
+  let inside = false;
+  for (let i = 0, j = polyPx.length - 1; i < polyPx.length; j = i++) {
+    const xi = polyPx[i].x, yi = polyPx[i].y;
+    const xj = polyPx[j].x, yj = polyPx[j].y;
+    const intersect = ((yi > py) !== (yj > py)) &&
+                      (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// ============================================================
+// Обработчик изменения слайдера функции забывания
+// ============================================================
+function setupSlider() {
+  document.getElementById('forgetSlider').oninput = function() {
+    document.getElementById('forgetValue').textContent = this.value;
+    updatePlayedNotesDisplay();
+    calculateBestInterpretations();
+  };
+}
+
+// ============================================================
+// Функция периодического обновления для учета "забывания"
+// ============================================================
+function periodicUpdate() {
+  updatePlayedNotesDisplay();
+  calculateBestInterpretations();
+  setTimeout(periodicUpdate, 1000); // Обновляем каждую секунду
+}
+
+// ============================================================
+// Инициализация
+// ============================================================
+function init() {
+  generateIntervals();
+  buildPolygons();
+  setupSlider();
+  drawAll();
+  
+  // Запускаем периодическое обновление
+  periodicUpdate();
+}
+
+// Запуск приложения при загрузке страницы
+window.onload = init;
+</script>
+
+</body>
+</html>

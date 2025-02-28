@@ -723,33 +723,6 @@
       return { oscillator, gainNode };
     }
 
-
-
-    // async function initAudio() {
-    //   if (!audioContext) {
-    //     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    //   }
-    // }
-    // function createNote(frequency, startTime, noteIndex) {
-    //   const oscillator = audioContext.createOscillator();
-    //   const gainNode = audioContext.createGain();
-    //   const filter = audioContext.createBiquadFilter();
-    //   const analyser = audioContext.createAnalyser();
-    //   analyser.fftSize = 256;
-    //   analysers[noteIndex] = analyser;
-    //   gainNodes[noteIndex] = gainNode;
-    //   oscillator.type = audioParams.oscillatorType;
-    //   oscillator.frequency.value = frequency;
-    //   filter.type = audioParams.filterType;
-    //   filter.frequency.value = audioParams.filterFrequency;
-    //   gainNode.gain.setValueAtTime(0, startTime);
-    //   gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
-    //   oscillator.connect(filter);
-    //   filter.connect(gainNode);
-    //   gainNode.connect(analyser);
-    //   analyser.connect(audioContext.destination);
-    //   return { oscillator, gainNode };
-    // }
     // Обновляем opacity вертикальных индикаторов по данным анализатора
     function updateNoteIndicatorsOpacity() {
       analysers.forEach((analyser, i) => {

@@ -338,52 +338,7 @@ input:focus {
         return a;
     }
 
-    function primeFactors(n) {
-        const factors = {3: 0, 5: 0, 7: 0};
-        let num = n;
-
-        for (const prime of [3, 5, 7]) {
-            while (num % prime === 0) {
-                factors[prime]++;
-                num /= prime;
-            }
-        }
-
-        return factors;
-    }
-
-    function consonance(num, den) {
-        return 1 / den + 1 / num;
-    }
-
-    function generateIntervals() {
-        const maxDenom = parseInt(document.getElementById('maxDenom').value);
-        const edo = parseInt(document.getElementById('edo').value);
-        const prime3Limit = parseInt(document.getElementById('prime3').value);
-        const prime5Limit = parseInt(document.getElementById('prime5').value);
-        const prime7Limit = parseInt(document.getElementById('prime7').value);
-        const consonanceThreshold = parseFloat(document.getElementById('consonanceSlider').value);
-        const sortBy = document.getElementById('sortBy').value;
-
-        let intervals = [];
-
-        for (let den = 1; den <= maxDenom; den++) {
-            for (let num = 1; num <= maxDenom; num++) {
-
-                if (gcd(num, den) !== 1) continue;
-
-                const interval = new RationalInterval(num, den);
-
-                const numFactors = primeFactors(num);
-                const denFactors = primeFactors(den);
-
-                if (numFactors[3] + denFactors[3] > prime3Limit) continue;
-                if (numFactors[5] + denFactors[5] > prime5Limit) continue;
-                if (numFactors[7] + denFactors[7] > prime7Limit) continue;
-
-                intervals.push(interval);
-            }
-        }
+2
 
         // Сначала нормализуем интервалы
         intervals = intervals.map(interval => interval.normalize());
