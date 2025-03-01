@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Just Intonation Piano</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+  <div class="controls">
+    <div class="tonic-info">Текущий "устой": <span id="tonic-display">C4</span></div>
+    <div class="acoustic-tonic-info">Акустическая тоника: <span id="acoustic-tonic-display">-</span></div>
+    
+    <div class="slider-container">
+      <label for="forgetSlider">Время "забывания":</label>
+      <input type="range" id="forgetSlider" min="1" max="60" value="20">
+      <span id="forgetValue">20</span> секунд
+    </div>
+  </div>
+
+  <canvas id="keyboard-canvas"></canvas>
+  
+  <div class="flex-container">
+    <div class="panel">
+      <h2>Активные ноты</h2>
+      <pre id="playedNotes"></pre>
+    </div>
+    
+    <div class="panel">
+      <h2>Лучшие JI интерпретации</h2>
+      <div id="bestInterpretations"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Подключаем JZZ и Tiny-синтезатор -->
+<script src="https://cdn.jsdelivr.net/npm/jzz@0.8.8/javascript/JZZ.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+
+<script src="script2.js"></script>
+</body>
+</html>
