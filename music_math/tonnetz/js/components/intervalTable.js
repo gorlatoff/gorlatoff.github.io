@@ -41,4 +41,4 @@ let intervalTable = {
 
 
 
-var Tonnetz_intervalTable = true
+var Tonnetz_intervalTable = false
