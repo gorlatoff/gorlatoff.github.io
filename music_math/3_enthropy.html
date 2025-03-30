@@ -822,84 +822,184 @@
     }
 
 
-    HEPlotDiv.addEventListener('mousemove', (event) => {
-      if (!isMouseDown || !chartRenderer) return;
-      const canvas = document.getElementById('heChart'); // Получаем элемент canvas
-      const rect = canvas.getBoundingClientRect(); // Получаем координаты canvas относительно окна
-      const clickX = event.clientX - rect.left; // Координата X клика относительно canvas
-      const canvasWidth = canvas.width / devicePixelRatio; // Ширина canvas с учетом pixel ratio
-      const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2; // Ширина графика с учетом padding
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth; // Нормализованная координата X внутри графика
-      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
-      activeNoteIndicators[0].x = xValue;
-      if (currentNote1) {
-        const freq1 = centsToFrequency(xValue);
-        currentNote1.oscillator.frequency.setValueAtTime(freq1, audioContext.currentTime);
-      }
-    });
+HEPlotDiv.addEventListener('mousemove', (event) => {
+  // Не обрабатываем, если кнопка не нажата или рендерер не готов
+  if (!isMouseDown || !chartRenderer || !chartRenderer.currentView) return;
 
-    // Обработка кликов в области графика (HEPlotDiv) – теперь координата x вычисляется всегда через chartRenderer.currentView
-    let tonicTimeout = null; // Добавлено для хранения идентификатора таймера тоники
-    HEPlotDiv.addEventListener('mousedown', async (event) => {
-      if (!audioContext) await initAudio();
-      if (!chartRenderer) return;
-      isMouseDown = true;
-      const canvas = document.getElementById('heChart');
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const canvasWidth = canvas.width / devicePixelRatio;
-      const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2;
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
-      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
-      activeNoteIndicators[0].x = xValue;
-      // Запускаем первую ноту:
-      const now = audioContext.currentTime;
-      const freq1 = centsToFrequency(xValue);
-      currentNote1 = createNote(freq1, now, 0);
-      currentNote1.oscillator.start(now);
-      // Запускаем вторую ноту (тонику) с задержкой
-      const noteDelay = parseFloat(document.getElementById('noteDelay').value);
-      activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
-      tonicTimeout = setTimeout(() => { // Сохраняем ID таймера
-        const freq2 = baseFrequency;
-        currentNote2 = createNote(freq2, audioContext.currentTime, 1);
-        currentNote2.oscillator.start(audioContext.currentTime);
-      }, noteDelay * 1000);
-    });
+  const canvas = document.getElementById('heChart');
+  const rect = canvas.getBoundingClientRect(); // Координаты canvas относительно viewport'а (iframe'а)
 
-    document.addEventListener('mouseup', () => {
-      if (isMouseDown) {
-        isMouseDown = false;
-        const now = audioContext.currentTime;
-        // Остановка первой ноты
-        if (currentNote1) {
-          currentNote1.gainNode.gain.cancelScheduledValues(now);
-          currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
-          currentNote1.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+  // Координата X клика/движения относительно ЛЕВОГО КРАЯ CANVAS (в CSS пикселях)
+  const clickX = event.clientX - rect.left;
+
+  // Получаем ТЕКУЩУЮ отображаемую ширину canvas (в CSS пикселях)
+  const canvasWidth = canvas.clientWidth;
+
+  // Получаем ТЕКУЩИЙ вид (диапазон данных и отступы) из рендерера
+  const view = chartRenderer.currentView;
+  const padding = chartRenderer.options.padding; // Внутренний отступ графика
+
+  // Рассчитываем ширину области, где непосредственно рисуется график
+  const graphAreaWidth = canvasWidth - padding * 2;
+
+  // Если расчетная ширина некорректна, выходим
+  if (graphAreaWidth <= 0) return;
+
+  // Координата X клика относительно НАЧАЛА ОБЛАСТИ ГРАФИКА (с учетом левого отступа)
+  const clickXRelativeToGraph = clickX - padding;
+
+  // Нормализуем координату X внутри области графика (от 0 до 1)
+  // Ограничиваем значение строго в диапазоне [0, 1] для избежания ошибок на краях
+  const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+
+  // Конвертируем нормализованную координату в значение данных (центы)
+  const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+
+  // Обновляем положение индикатора первой ноты
+  activeNoteIndicators[0].x = xValue;
+
+  // Обновляем частоту звучащей первой ноты
+  if (currentNote1 && audioContext) {
+    const freq1 = centsToFrequency(xValue);
+    // Используем прямое присваивание для мгновенной реакции
+    currentNote1.oscillator.frequency.value = freq1;
+    // Или, если нужно точное планирование:
+    // currentNote1.oscillator.frequency.setValueAtTime(freq1, audioContext.currentTime);
+  }
+
+  // Перерисовка графика не нужна при каждом mousemove,
+  // т.к. индикаторы обновляются через requestAnimationFrame в updateNoteIndicatorsOpacity
+  // chartRenderer.setNoteIndicators(activeNoteIndicators); // Это делается в updateNoteIndicatorsOpacity
+});
+
+
+// --- Обработчик MOUSEDOWN ---
+HEPlotDiv.addEventListener('mousedown', async (event) => {
+  // Инициализируем аудиоконтекст, если его нет
+  if (!audioContext) await initAudio();
+  // Проверяем готовность рендерера
+  if (!chartRenderer || !chartRenderer.currentView) return;
+
+  isMouseDown = true; // Устанавливаем флаг нажатия
+
+  const canvas = document.getElementById('heChart');
+  const rect = canvas.getBoundingClientRect(); // Координаты canvas
+
+  // --- Блок расчета xValue (ИДЕНТИЧЕН блоку в mousemove) ---
+  const clickX = event.clientX - rect.left;
+  const canvasWidth = canvas.clientWidth;
+  const view = chartRenderer.currentView;
+  const padding = chartRenderer.options.padding;
+  const graphAreaWidth = canvasWidth - padding * 2;
+
+  if (graphAreaWidth <= 0) {
+      isMouseDown = false; // Сбрасываем флаг, если не можем рассчитать
+      return;
+  }
+
+  const clickXRelativeToGraph = clickX - padding;
+  const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+  const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+  // --- Конец блока расчета xValue ---
+
+  // Устанавливаем X координату для индикатора первой ноты
+  activeNoteIndicators[0].x = xValue;
+  // Устанавливаем X координату для индикатора второй ноты (тоники)
+  activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
+
+  // Запускаем первую ноту немедленно
+  const now = audioContext.currentTime;
+  const freq1 = centsToFrequency(xValue);
+  // Останавливаем предыдущую ноту 1, если она еще звучит (на всякий случай)
+  if (currentNote1) {
+      currentNote1.gainNode.gain.cancelScheduledValues(now);
+      currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
+      currentNote1.gainNode.gain.linearRampToValueAtTime(0, now + 0.01); // Быстрое затухание
+      currentNote1.oscillator.stop(now + 0.01);
+  }
+  currentNote1 = createNote(freq1, now, 0);
+  currentNote1.oscillator.start(now);
+
+  // Очищаем предыдущий таймаут тоники, если он был
+  if (tonicTimeout) {
+    clearTimeout(tonicTimeout);
+  }
+  // Останавливаем предыдущую ноту 2 (тонику), если она еще звучит
+  if (currentNote2) {
+      currentNote2.gainNode.gain.cancelScheduledValues(now);
+      currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
+      currentNote2.gainNode.gain.linearRampToValueAtTime(0, now + 0.01); // Быстрое затухание
+      currentNote2.oscillator.stop(now + 0.01);
+      currentNote2 = null;
+  }
+
+  // Запускаем вторую ноту (тонику) с задержкой
+  const noteDelaySeconds = parseFloat(document.getElementById('noteDelay').value);
+  tonicTimeout = setTimeout(() => {
+    // Проверяем, нажата ли еще кнопка мыши к моменту запуска тоники
+    if (isMouseDown && audioContext) {
+        const freq2 = baseFrequency; // Частота тоники
+        const tonicStartTime = audioContext.currentTime;
+        currentNote2 = createNote(freq2, tonicStartTime, 1);
+        currentNote2.oscillator.start(tonicStartTime);
+    }
+    tonicTimeout = null; // Сбрасываем ID таймера
+  }, noteDelaySeconds * 1000); // Конвертируем значение слайдера (секунды) в миллисекунды
+
+  // Обновляем индикаторы сразу (хотя они обновляются и по анимации)
+  // chartRenderer.setNoteIndicators(activeNoteIndicators);
+});
+
+// --- Обработчик MOUSEUP (документа) ---
+document.addEventListener('mouseup', () => {
+  if (isMouseDown) {
+    isMouseDown = false; // Сбрасываем флаг нажатия
+    const now = audioContext ? audioContext.currentTime : 0;
+
+    // --- Остановка первой ноты ---
+    if (currentNote1) {
+      // Проверяем, что gainNode существует и имеет gain
+       if (currentNote1.gainNode && currentNote1.gainNode.gain) {
+           currentNote1.gainNode.gain.cancelScheduledValues(now);
+           // Устанавливаем текущее значение перед рампой, чтобы избежать кликов, если атака не завершилась
+           currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
+           currentNote1.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+       }
+       // Проверяем, что oscillator существует
+       if (currentNote1.oscillator) {
           currentNote1.oscillator.stop(now + audioParams.gainReleaseTime);
-          currentNote1 = null;
-        }
+       }
+       currentNote1 = null; // Обнуляем ссылку
+    }
 
-        // Остановка второй ноты (тоники) - ПРОВЕРКА И ОЧИСТКА ТАЙМЕРА
-        if (currentNote2) {
-          currentNote2.gainNode.gain.cancelScheduledValues(now);
-          currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
-          currentNote2.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+    // --- Остановка второй ноты (тоники) ---
+    // Сначала очищаем таймаут, если он еще не сработал
+    if (tonicTimeout) {
+      clearTimeout(tonicTimeout);
+      tonicTimeout = null;
+    }
+    // Затем останавливаем ноту, если она была создана и звучит
+    if (currentNote2) {
+       if (currentNote2.gainNode && currentNote2.gainNode.gain) {
+           currentNote2.gainNode.gain.cancelScheduledValues(now);
+           currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
+           currentNote2.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+       }
+       if (currentNote2.oscillator) {
           currentNote2.oscillator.stop(now + audioParams.gainReleaseTime);
-          currentNote2 = null;
-        } else {
-          clearTimeout(tonicTimeout); // Очищаем таймер, если тоника еще не была создана
-        }
+       }
+       currentNote2 = null; // Обнуляем ссылку
+    }
 
+    // Скрываем индикаторы (opacity обновится через updateNoteIndicatorsOpacity)
+    activeNoteIndicators[0].x = null;
+    // activeNoteIndicators[1].x = 0; // Можно оставить x=0 для тоники, но opacity уйдет в 0
 
-        activeNoteIndicators[0].x = null;
-        activeNoteIndicators[0].opacity = 0;
-        activeNoteIndicators[1].opacity = 0;
-        if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
-      }
-    });
+    // Не нужно вызывать setNoteIndicators здесь, updateNoteIndicatorsOpacity справится
+    // if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
+  }
+});
+
     /* ================================
          ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
        ================================ */
