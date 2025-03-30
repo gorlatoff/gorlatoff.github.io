@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Интерактивный график гармонической энтропии с аудио</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     :root {
       --bg-color: #121212;
       --surface-color: #1E1E1E;
@@ -23,81 +20,74 @@
       color: var(--text-primary);
       font-family: 'Roboto', sans-serif;
       margin: 0;
-      padding: 1rem;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     /* Общий контейнер графика и панели */
     #appContainer {
-      width: 100%;
+      width: 90%;
       max-width: 1000px;
-      margin: 0 auto;
     }
     /* Область для графика HE (и для взаимодействия с аудио) */
     #HEPlotDiv {
       position: relative;
+      height: 50vh;
       width: 100%;
-      aspect-ratio: 2 / 1;
-      max-height: 70vh;
-      margin: 0 auto 1rem auto;
+      margin: 0 auto;
       border-radius: 8px;
       overflow: hidden;
       background: var(--surface-color);
-      cursor: pointer;
-    }
-    #HEPlotDiv canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
+      padding: 16px;
+      box-sizing: border-box;
+      cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
     }
     /* Панель управления – общая для HE и аудио */
     #controls {
       background: var(--surface-color);
       border-radius: 12px;
-      padding: 1rem 1.5rem;
-      margin: 0 auto;
+      padding: 16px 24px;
+      margin: 20px auto;
       width: 100%;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+      gap: 24px;
     }
     .controls-column-left,
     .controls-column-right {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      min-width: 0;
+      gap: 12px;
     }
     .controlrow {
       display: grid;
       grid-template-columns: 0.8fr 2fr;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
     }
     .label {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 14px;
       text-align: right;
-      padding-right: 0.5rem;
+      padding-right: 8px;
     }
     .input-group {
       display: flex;
       align-items: center;
       flex: 1;
-      min-width: 0;
+      max-width: 180px;
     }
     .textinput {
       background: var(--surface-overlay);
       border: 1px solid var(--border-color);
       color: var(--text-primary);
-      padding: 0.6rem 0.75rem;
+      padding: 12px;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 14px;
       width: 100%;
-      height: auto;
-      min-height: 38px;
+      height: 44px;
       box-sizing: border-box;
       transition: all 0.3s ease;
     }
@@ -112,26 +102,24 @@
       border: 1px solid var(--border-color);
       border-radius: 6px;
       width: 32px;
-      height: 38px;
+      height: 44px;
       cursor: pointer;
-      font-size: 1rem;
-      line-height: 36px;
+      font-size: 14px;
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
     .stepper-button:hover {
       background-color: var(--surface-overlay);
       border-color: var(--primary-color);
     }
     .slider-container {
-      height: 38px;
+      height: 44px;
       display: flex;
       align-items: center;
+      min-width: 180px;
       width: 100%;
-      min-width: 100px;
     }
     .slider {
       -webkit-appearance: none;
@@ -159,40 +147,26 @@
       transform: scale(0.95);
     }
     @media (max-width: 600px) {
-      body {
-        padding: 0.5rem;
-      }
-      #HEPlotDiv {
-        margin-bottom: 0.75rem;
-      }
       #controls {
         grid-template-columns: 1fr;
-        padding: 0.75rem 1rem;
-        gap: 1rem;
+        padding: 12px 16px;
+        gap: 16px;
       }
       .controlrow {
-        grid-template-columns: auto 1fr;
-        gap: 0.5rem;
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
       }
       .label {
-        font-size: 0.8rem;
-        text-align: left;
-        padding-right: 0;
+        font-size: 13px;
+        padding-right: 4px;
+      }
+      .input-group,
+      .slider-container {
+        max-width: none;
       }
       .textinput,
-      .stepper-button,
-      .slider-container {
-        min-height: 40px;
-        height: 40px;
-      }
       .stepper-button {
-        line-height: 38px;
-      }
-      .textinput {
-        font-size: 0.85rem;
-      }
-      .slider-container {
-        min-width: 80px;
+        height: 48px;
       }
     }
   </style>
@@ -244,7 +218,7 @@
         </div>
         <!-- Контрол для задержки нот -->
         <div class="controlrow">
-          <span class="label" id="noteDelayValue">Note Delay: 0.15s</span>
+          <span class="label" id="delay">Note Delay: 0.15%</span>
           <div class="slider-container">
             <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
           </div>
@@ -451,7 +425,6 @@
         this.ctx = canvas.getContext('2d');
         this.data = [];
         this.annotations = [];
-        this.noteIndicators = [];
         this.options = {
           padding: 20,
           gridColor: 'rgba(255,255,255,0.05)',
@@ -461,6 +434,7 @@
           ...options
         };
         this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1, targetXMin: 0, targetXMax: 1, targetYMin: 0, targetYMax: 1 };
+        this.noteIndicators = []; // объекты вида { noteIndex, x (в центах), opacity }
         this.resizeObserver = new ResizeObserver(entries => { this.resize(); });
         this.resizeObserver.observe(canvas.parentElement);
         this.resize();
@@ -541,7 +515,7 @@
             ctx.fillText(ann.label, screenX, screenY - 8);
           });
         }
-        // Рисуем вертикальные индикаторы нот
+        // Рисуем вертикальные индикаторы нот – позиция x задается в центах, пересчитываем относительно текущего view
         this.noteIndicators.forEach(ind => {
           if (ind.x === null) return;
           const screenX = options.padding + (ind.x - xMin) / xRange * (width - options.padding * 2);
@@ -685,15 +659,16 @@
       gainSustainLevel: 0.5,
       gainReleaseTime: 0.2,
     };
-    // Вертикальные индикаторы звука
+    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
     let activeNoteIndicators = [
       { noteIndex: 0, x: null, opacity: 0 },
-      { noteIndex: 1, x: 0, opacity: 0 }
+      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
     ];
 
-    // Ревербератор
+    // Добавляем глобальную переменную для ревербератора:
     let reverbNode = null;
 
+    // Добавляем функцию для создания импульсного отклика ревербератора:
     function createImpulseResponse(context, duration, decay) {
       const sampleRate = context.sampleRate;
       const length = sampleRate * duration;
@@ -707,20 +682,23 @@
       return impulse;
     }
 
+    // Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
     async function initAudio() {
       if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (!reverbNode) {
           reverbNode = audioContext.createConvolver();
+          // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
           reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
           const reverbMix = audioContext.createGain();
-          reverbMix.gain.value = 0.3;
+          reverbMix.gain.value = 0.3; // уровень смешивания реверберации
           reverbNode.connect(reverbMix);
           reverbMix.connect(audioContext.destination);
         }
       }
     }
 
+    // Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
     function createNote(frequency, startTime, noteIndex) {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -737,12 +715,15 @@
       gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
       oscillator.connect(filter);
       filter.connect(gainNode);
+      // Подключаем как "сухой" сигнал к анализатору:
       gainNode.connect(analyser);
+      // Отправляем часть сигнала в ревербератор (эффект "wet"):
       gainNode.connect(reverbNode);
       analyser.connect(audioContext.destination);
       return { oscillator, gainNode };
     }
 
+    // Обновляем opacity вертикальных индикаторов по данным анализатора
     function updateNoteIndicatorsOpacity() {
       analysers.forEach((analyser, i) => {
         if (!analyser) return;
@@ -762,15 +743,16 @@
       return baseFrequency * Math.pow(2, centsOffset / 1200);
     }
 
+
     HEPlotDiv.addEventListener('mousemove', (event) => {
       if (!isMouseDown || !chartRenderer) return;
-      const canvas = document.getElementById('heChart');
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const canvasWidth = canvas.width / devicePixelRatio;
+      const canvas = document.getElementById('heChart'); // Получаем элемент canvas
+      const rect = canvas.getBoundingClientRect(); // Получаем координаты canvas относительно окна
+      const clickX = event.clientX - rect.left; // Координата X клика относительно canvas
+      const canvasWidth = canvas.width / devicePixelRatio; // Ширина canvas с учетом pixel ratio
       const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2;
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
+      const graphWidth = canvasWidth - chartRenderer.options.padding * 2; // Ширина графика с учетом padding
+      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth; // Нормализованная координата X внутри графика
       const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
       activeNoteIndicators[0].x = xValue;
       if (currentNote1) {
@@ -779,7 +761,8 @@
       }
     });
 
-    let tonicTimeout = null;
+    // Обработка кликов в области графика (HEPlotDiv) – теперь координата x вычисляется всегда через chartRenderer.currentView
+    let tonicTimeout = null; // Добавлено для хранения идентификатора таймера тоники
     HEPlotDiv.addEventListener('mousedown', async (event) => {
       if (!audioContext) await initAudio();
       if (!chartRenderer) return;
@@ -793,13 +776,15 @@
       const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
       const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
       activeNoteIndicators[0].x = xValue;
+      // Запускаем первую ноту:
       const now = audioContext.currentTime;
       const freq1 = centsToFrequency(xValue);
       currentNote1 = createNote(freq1, now, 0);
       currentNote1.oscillator.start(now);
+      // Запускаем вторую ноту (тонику) с задержкой
       const noteDelay = parseFloat(document.getElementById('noteDelay').value);
-      activeNoteIndicators[1].x = 0;
-      tonicTimeout = setTimeout(() => {
+      activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
+      tonicTimeout = setTimeout(() => { // Сохраняем ID таймера
         const freq2 = baseFrequency;
         currentNote2 = createNote(freq2, audioContext.currentTime, 1);
         currentNote2.oscillator.start(audioContext.currentTime);
@@ -810,6 +795,7 @@
       if (isMouseDown) {
         isMouseDown = false;
         const now = audioContext.currentTime;
+        // Остановка первой ноты
         if (currentNote1) {
           currentNote1.gainNode.gain.cancelScheduledValues(now);
           currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
@@ -817,6 +803,8 @@
           currentNote1.oscillator.stop(now + audioParams.gainReleaseTime);
           currentNote1 = null;
         }
+
+        // Остановка второй ноты (тоники) - ПРОВЕРКА И ОЧИСТКА ТАЙМЕРА
         if (currentNote2) {
           currentNote2.gainNode.gain.cancelScheduledValues(now);
           currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
@@ -824,15 +812,16 @@
           currentNote2.oscillator.stop(now + audioParams.gainReleaseTime);
           currentNote2 = null;
         } else {
-          clearTimeout(tonicTimeout);
+          clearTimeout(tonicTimeout); // Очищаем таймер, если тоника еще не была создана
         }
+
+
         activeNoteIndicators[0].x = null;
         activeNoteIndicators[0].opacity = 0;
         activeNoteIndicators[1].opacity = 0;
         if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
       }
     });
-
     /* ================================
          ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
        ================================ */
@@ -860,7 +849,8 @@
         updatePlot();
       });
       document.getElementById("noteDelay").addEventListener("input", (e) => {
-        document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+        document.getElementById("delay").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
       });
       document.getElementById('textN').addEventListener('input', updatePlot);
       document.getElementById('textmin').addEventListener('input', updatePlot);
@@ -876,10 +866,11 @@
           updatePlot();
         });
       });
-      // Инициализация текста для Note Delay
-      const initialDelay = document.getElementById('noteDelay').value;
-      document.getElementById('noteDelayValue').textContent = "Note Delay: " + parseFloat(initialDelay).toFixed(2) + "s";
-      // Запуск обновления вертикальных индикаторов
+      // Обновление значения noteDelay на спане
+      document.getElementById('noteDelay').addEventListener('input', function(e) {
+        document.getElementById('noteDelayValue').textContent = parseFloat(e.target.value).toFixed(1);
+      });
+      // После инициализации графика запускаем обновление вертикальных индикаторов
       updateNoteIndicatorsOpacity();
     });
   </script>

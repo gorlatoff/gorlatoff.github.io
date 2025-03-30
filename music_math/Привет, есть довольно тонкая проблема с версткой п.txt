@@ -1,3 +1,12 @@
+Привет, есть довольно тонкая проблема с версткой приложения (даже не знаю, дело в CSS или JS части). Оно предназначено для встраивания в статью через iframe, и размеры часто будут довольно маленькие, вплоть до открытия статьи на старом маленьком iphone, где приложение ещё и занимает не всю ширину.
+
+И нужно сделать все размеры пропорциональными в зависимости от длины и ширины.
+
+Сейчас вижу две проблемы: график часто отображается не полностью, а панель контролов не уменьшается достаточно и не всегда вмещается в границы. Поможешь?
+
+Код:
+
+```
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -5,9 +14,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Интерактивный график гармонической энтропии с аудио</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     :root {
       --bg-color: #121212;
       --surface-color: #1E1E1E;
@@ -23,81 +29,74 @@
       color: var(--text-primary);
       font-family: 'Roboto', sans-serif;
       margin: 0;
-      padding: 1rem;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     /* Общий контейнер графика и панели */
     #appContainer {
-      width: 100%;
+      width: 90%;
       max-width: 1000px;
-      margin: 0 auto;
     }
     /* Область для графика HE (и для взаимодействия с аудио) */
     #HEPlotDiv {
       position: relative;
+      height: 50vh;
       width: 100%;
-      aspect-ratio: 2 / 1;
-      max-height: 70vh;
-      margin: 0 auto 1rem auto;
+      margin: 0 auto;
       border-radius: 8px;
       overflow: hidden;
       background: var(--surface-color);
-      cursor: pointer;
-    }
-    #HEPlotDiv canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
+      padding: 16px;
+      box-sizing: border-box;
+      cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
     }
     /* Панель управления – общая для HE и аудио */
     #controls {
       background: var(--surface-color);
       border-radius: 12px;
-      padding: 1rem 1.5rem;
-      margin: 0 auto;
+      padding: 16px 24px;
+      margin: 20px auto;
       width: 100%;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+      gap: 24px;
     }
     .controls-column-left,
     .controls-column-right {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      min-width: 0;
+      gap: 12px;
     }
     .controlrow {
       display: grid;
       grid-template-columns: 0.8fr 2fr;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
     }
     .label {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 14px;
       text-align: right;
-      padding-right: 0.5rem;
+      padding-right: 8px;
     }
     .input-group {
       display: flex;
       align-items: center;
       flex: 1;
-      min-width: 0;
+      max-width: 180px;
     }
     .textinput {
       background: var(--surface-overlay);
       border: 1px solid var(--border-color);
       color: var(--text-primary);
-      padding: 0.6rem 0.75rem;
+      padding: 12px;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 14px;
       width: 100%;
-      height: auto;
-      min-height: 38px;
+      height: 44px;
       box-sizing: border-box;
       transition: all 0.3s ease;
     }
@@ -112,26 +111,24 @@
       border: 1px solid var(--border-color);
       border-radius: 6px;
       width: 32px;
-      height: 38px;
+      height: 44px;
       cursor: pointer;
-      font-size: 1rem;
-      line-height: 36px;
+      font-size: 14px;
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
     .stepper-button:hover {
       background-color: var(--surface-overlay);
       border-color: var(--primary-color);
     }
     .slider-container {
-      height: 38px;
+      height: 44px;
       display: flex;
       align-items: center;
+      min-width: 180px;
       width: 100%;
-      min-width: 100px;
     }
     .slider {
       -webkit-appearance: none;
@@ -159,40 +156,26 @@
       transform: scale(0.95);
     }
     @media (max-width: 600px) {
-      body {
-        padding: 0.5rem;
-      }
-      #HEPlotDiv {
-        margin-bottom: 0.75rem;
-      }
       #controls {
         grid-template-columns: 1fr;
-        padding: 0.75rem 1rem;
-        gap: 1rem;
+        padding: 12px 16px;
+        gap: 16px;
       }
       .controlrow {
-        grid-template-columns: auto 1fr;
-        gap: 0.5rem;
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
       }
       .label {
-        font-size: 0.8rem;
-        text-align: left;
-        padding-right: 0;
+        font-size: 13px;
+        padding-right: 4px;
+      }
+      .input-group,
+      .slider-container {
+        max-width: none;
       }
       .textinput,
-      .stepper-button,
-      .slider-container {
-        min-height: 40px;
-        height: 40px;
-      }
       .stepper-button {
-        line-height: 38px;
-      }
-      .textinput {
-        font-size: 0.85rem;
-      }
-      .slider-container {
-        min-width: 80px;
+        height: 48px;
       }
     }
   </style>
@@ -244,7 +227,7 @@
         </div>
         <!-- Контрол для задержки нот -->
         <div class="controlrow">
-          <span class="label" id="noteDelayValue">Note Delay: 0.15s</span>
+          <span class="label" id="delay">Note Delay: 0.15%</span>
           <div class="slider-container">
             <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
           </div>
@@ -451,7 +434,6 @@
         this.ctx = canvas.getContext('2d');
         this.data = [];
         this.annotations = [];
-        this.noteIndicators = [];
         this.options = {
           padding: 20,
           gridColor: 'rgba(255,255,255,0.05)',
@@ -461,6 +443,7 @@
           ...options
         };
         this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1, targetXMin: 0, targetXMax: 1, targetYMin: 0, targetYMax: 1 };
+        this.noteIndicators = []; // объекты вида { noteIndex, x (в центах), opacity }
         this.resizeObserver = new ResizeObserver(entries => { this.resize(); });
         this.resizeObserver.observe(canvas.parentElement);
         this.resize();
@@ -541,7 +524,7 @@
             ctx.fillText(ann.label, screenX, screenY - 8);
           });
         }
-        // Рисуем вертикальные индикаторы нот
+        // Рисуем вертикальные индикаторы нот – позиция x задается в центах, пересчитываем относительно текущего view
         this.noteIndicators.forEach(ind => {
           if (ind.x === null) return;
           const screenX = options.padding + (ind.x - xMin) / xRange * (width - options.padding * 2);
@@ -685,15 +668,16 @@
       gainSustainLevel: 0.5,
       gainReleaseTime: 0.2,
     };
-    // Вертикальные индикаторы звука
+    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
     let activeNoteIndicators = [
       { noteIndex: 0, x: null, opacity: 0 },
-      { noteIndex: 1, x: 0, opacity: 0 }
+      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
     ];
 
-    // Ревербератор
+    // Добавляем глобальную переменную для ревербератора:
     let reverbNode = null;
 
+    // Добавляем функцию для создания импульсного отклика ревербератора:
     function createImpulseResponse(context, duration, decay) {
       const sampleRate = context.sampleRate;
       const length = sampleRate * duration;
@@ -707,20 +691,23 @@
       return impulse;
     }
 
+    // Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
     async function initAudio() {
       if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (!reverbNode) {
           reverbNode = audioContext.createConvolver();
+          // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
           reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
           const reverbMix = audioContext.createGain();
-          reverbMix.gain.value = 0.3;
+          reverbMix.gain.value = 0.3; // уровень смешивания реверберации
           reverbNode.connect(reverbMix);
           reverbMix.connect(audioContext.destination);
         }
       }
     }
 
+    // Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
     function createNote(frequency, startTime, noteIndex) {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -737,12 +724,15 @@
       gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
       oscillator.connect(filter);
       filter.connect(gainNode);
+      // Подключаем как "сухой" сигнал к анализатору:
       gainNode.connect(analyser);
+      // Отправляем часть сигнала в ревербератор (эффект "wet"):
       gainNode.connect(reverbNode);
       analyser.connect(audioContext.destination);
       return { oscillator, gainNode };
     }
 
+    // Обновляем opacity вертикальных индикаторов по данным анализатора
     function updateNoteIndicatorsOpacity() {
       analysers.forEach((analyser, i) => {
         if (!analyser) return;
@@ -762,15 +752,16 @@
       return baseFrequency * Math.pow(2, centsOffset / 1200);
     }
 
+
     HEPlotDiv.addEventListener('mousemove', (event) => {
       if (!isMouseDown || !chartRenderer) return;
-      const canvas = document.getElementById('heChart');
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const canvasWidth = canvas.width / devicePixelRatio;
+      const canvas = document.getElementById('heChart'); // Получаем элемент canvas
+      const rect = canvas.getBoundingClientRect(); // Получаем координаты canvas относительно окна
+      const clickX = event.clientX - rect.left; // Координата X клика относительно canvas
+      const canvasWidth = canvas.width / devicePixelRatio; // Ширина canvas с учетом pixel ratio
       const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2;
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
+      const graphWidth = canvasWidth - chartRenderer.options.padding * 2; // Ширина графика с учетом padding
+      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth; // Нормализованная координата X внутри графика
       const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
       activeNoteIndicators[0].x = xValue;
       if (currentNote1) {
@@ -779,7 +770,8 @@
       }
     });
 
-    let tonicTimeout = null;
+    // Обработка кликов в области графика (HEPlotDiv) – теперь координата x вычисляется всегда через chartRenderer.currentView
+    let tonicTimeout = null; // Добавлено для хранения идентификатора таймера тоники
     HEPlotDiv.addEventListener('mousedown', async (event) => {
       if (!audioContext) await initAudio();
       if (!chartRenderer) return;
@@ -793,13 +785,15 @@
       const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
       const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
       activeNoteIndicators[0].x = xValue;
+      // Запускаем первую ноту:
       const now = audioContext.currentTime;
       const freq1 = centsToFrequency(xValue);
       currentNote1 = createNote(freq1, now, 0);
       currentNote1.oscillator.start(now);
+      // Запускаем вторую ноту (тонику) с задержкой
       const noteDelay = parseFloat(document.getElementById('noteDelay').value);
-      activeNoteIndicators[1].x = 0;
-      tonicTimeout = setTimeout(() => {
+      activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
+      tonicTimeout = setTimeout(() => { // Сохраняем ID таймера
         const freq2 = baseFrequency;
         currentNote2 = createNote(freq2, audioContext.currentTime, 1);
         currentNote2.oscillator.start(audioContext.currentTime);
@@ -810,6 +804,7 @@
       if (isMouseDown) {
         isMouseDown = false;
         const now = audioContext.currentTime;
+        // Остановка первой ноты
         if (currentNote1) {
           currentNote1.gainNode.gain.cancelScheduledValues(now);
           currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
@@ -817,6 +812,8 @@
           currentNote1.oscillator.stop(now + audioParams.gainReleaseTime);
           currentNote1 = null;
         }
+
+        // Остановка второй ноты (тоники) - ПРОВЕРКА И ОЧИСТКА ТАЙМЕРА
         if (currentNote2) {
           currentNote2.gainNode.gain.cancelScheduledValues(now);
           currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
@@ -824,15 +821,16 @@
           currentNote2.oscillator.stop(now + audioParams.gainReleaseTime);
           currentNote2 = null;
         } else {
-          clearTimeout(tonicTimeout);
+          clearTimeout(tonicTimeout); // Очищаем таймер, если тоника еще не была создана
         }
+
+
         activeNoteIndicators[0].x = null;
         activeNoteIndicators[0].opacity = 0;
         activeNoteIndicators[1].opacity = 0;
         if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
       }
     });
-
     /* ================================
          ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
        ================================ */
@@ -860,7 +858,8 @@
         updatePlot();
       });
       document.getElementById("noteDelay").addEventListener("input", (e) => {
-        document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+        document.getElementById("delay").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
       });
       document.getElementById('textN').addEventListener('input', updatePlot);
       document.getElementById('textmin').addEventListener('input', updatePlot);
@@ -876,12 +875,303 @@
           updatePlot();
         });
       });
-      // Инициализация текста для Note Delay
-      const initialDelay = document.getElementById('noteDelay').value;
-      document.getElementById('noteDelayValue').textContent = "Note Delay: " + parseFloat(initialDelay).toFixed(2) + "s";
-      // Запуск обновления вертикальных индикаторов
+      // Обновление значения noteDelay на спане
+      document.getElementById('noteDelay').addEventListener('input', function(e) {
+        document.getElementById('noteDelayValue').textContent = parseFloat(e.target.value).toFixed(1);
+      });
+      // После инициализации графика запускаем обновление вертикальных индикаторов
       updateNoteIndicatorsOpacity();
     });
   </script>
 </body>
 </html>
+```
+
+Предлагаемые правки:
+```
+Окей, проблема понятна. Основные сложности при создании адаптивных интерфейсов, особенно с графиками и сложными панелями управления, возникают из-за смешения относительных (%, vh, vw) и абсолютных (px) единиц, а также из-за фиксированных размеров, которые плохо масштабируются.
+
+Вот как можно улучшить отзывчивость вашего приложения:
+
+**1. Пропорциональный график (`#HEPlotDiv`)**
+
+Вместо фиксированной высоты в `vh` (которая зависит только от высоты окна просмотра, а не от ширины контейнера), лучше использовать технику для поддержания соотношения сторон (aspect ratio).
+
+*   **Современный подход (CSS `aspect-ratio`):** Это самый чистый способ.
+*   **Классический подход (Padding Hack):** Если нужна поддержка очень старых браузеров.
+
+Давайте используем `aspect-ratio`.
+
+```css
+/* Внутри <style> */
+
+#HEPlotDiv {
+  position: relative;
+  /* height: 50vh; */ /* Убираем это */
+  width: 100%;
+  aspect-ratio: 2 / 1; /* Задаем соотношение сторон (например, 2:1, подберите оптимальное) */
+  max-height: 70vh; /* Ограничение, чтобы не стал слишком высоким на узких экранах */
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-color);
+  padding: 16px; /* Оставляем padding для отступов внутри */
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+#HEPlotDiv canvas {
+  display: block; /* Убирает возможное пустое пространство под canvas */
+  width: 100%;
+  height: 100%;
+  position: absolute; /* Позиционируем canvas внутри HEPlotDiv */
+  top: 0;
+  left: 0;
+  /* Убираем padding из canvas, он теперь на #HEPlotDiv */
+}
+```
+
+**Почему это работает:** `aspect-ratio` заставляет высоту элемента автоматически подстраиваться под ширину, чтобы сохранить заданное соотношение. Canvas внутри теперь позиционируется абсолютно, чтобы заполнить `HEPlotDiv`, учитывая его внутренние `padding`. `ChartRenderer` в JS уже умеет рисовать на canvas любого размера, так что он адаптируется.
+
+**2. Адаптивная панель управления (`#controls`)**
+
+Здесь нужно сделать размеры более гибкими и уменьшить фиксированные значения, особенно для маленьких экранов.
+
+*   **Универсальный `box-sizing`:** Убедимся, что он применен ко всем элементам для предсказуемости размеров.
+*   **Гибкие отступы и промежутки:** Используем `rem` или `%` вместо `px`, где это возможно, чтобы они масштабировались с базовым размером шрифта или контейнером.
+*   **Уменьшение размеров элементов:** Сделаем инпуты, кнопки и шрифты немного меньше на малых экранах.
+*   **Снятие `max-width`:** Уберем `max-width: 180px` у `.input-group`, позволив сетке управлять шириной.
+
+```css
+/* Внутри <style> */
+
+* { /* Применяем box-sizing глобально */
+  box-sizing: border-box;
+}
+
+body {
+  /* ... остальное без изменений ... */
+  padding: 1rem; /* Используем rem для основного отступа */
+}
+
+#appContainer {
+  width: 100%; /* Займет всю доступную ширину родителя (body или iframe) */
+  max-width: 1000px; /* Ограничение максимальной ширины остается */
+  /* Убедимся, что контейнер центрируется, если он не 100% */
+  margin: 0 auto;
+}
+
+#HEPlotDiv {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1; /* Или другое соотношение */
+  max-height: 70vh;
+  margin: 0 auto 1rem auto; /* Добавим нижний отступ */
+  border-radius: 8px;
+  overflow: hidden; /* Важно, чтобы canvas не вылезал */
+  background: var(--surface-color);
+  /* padding: 16px; - Убираем padding отсюда, canvas будет рисовать от края до края */
+  cursor: pointer;
+}
+
+#HEPlotDiv canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Canvas теперь занимает всю область HEPlotDiv */
+}
+
+/* --- Изменения для #controls --- */
+#controls {
+  background: var(--surface-color);
+  border-radius: 12px;
+  padding: 1rem 1.5rem; /* Используем rem */
+  margin: 0 auto; /* Убираем верхний/нижний margin, т.к. добавили к HEPlotDiv */
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem; /* Используем rem */
+}
+
+.controls-column-left,
+.controls-column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Используем rem */
+  min-width: 0; /* Помогает предотвратить выталкивание контентом */
+}
+
+.controlrow {
+  display: grid;
+  /* Оставляем fr, они хорошо адаптируются */
+  grid-template-columns: 0.8fr 2fr;
+  align-items: center;
+  gap: 0.75rem; /* Используем rem */
+}
+
+.label {
+  color: var(--text-secondary);
+  font-size: 0.9rem; /* Используем rem */
+  text-align: right;
+  padding-right: 0.5rem; /* Используем rem */
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  /* max-width: 180px; */ /* Убираем жесткое ограничение */
+  min-width: 0; /* Помогает flex элементам сжиматься */
+}
+
+.textinput {
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.6rem 0.75rem; /* Используем rem для внутреннего отступа */
+  border-radius: 8px;
+  font-size: 0.9rem; /* Используем rem */
+  width: 100%; /* Занимает всю ширину .input-group */
+  height: auto; /* Высота определяется паддингом и контентом */
+  min-height: 38px; /* Минимальная высота для удобства */
+  transition: all 0.3s ease;
+}
+.textinput:focus { /* Стили фокуса без изменений */ }
+
+.stepper-button {
+  background: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 32px; /* Оставим пока фиксированную ширину для кнопок */
+  height: 38px; /* Соотносим с min-height инпута */
+  cursor: pointer;
+  font-size: 1rem; /* Немного увеличим для читаемости символов */
+  line-height: 36px; /* Центрируем текст вертикально */
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Запрещаем кнопкам сжиматься */
+}
+.stepper-button:hover { /* Стили ховера без изменений */ }
+
+.slider-container {
+  height: 38px; /* Соотносим с min-height инпута */
+  display: flex;
+  align-items: center;
+  /* min-width: 180px; */ /* Убираем */
+  width: 100%;
+  min-width: 100px; /* Добавим небольшой min-width для слайдера */
+}
+.slider { /* Стили слайдера без изменений */ }
+.slider::-webkit-slider-thumb { /* Стили ползунка без изменений */ }
+
+/* --- Медиа-запрос для маленьких экранов --- */
+@media (max-width: 600px) {
+  body {
+    padding: 0.5rem; /* Уменьшаем общий отступ */
+  }
+  #HEPlotDiv {
+     margin-bottom: 0.75rem; /* Уменьшаем отступ */
+     /* Можно изменить aspect-ratio для вертикальных экранов, если нужно */
+     /* aspect-ratio: 1 / 1; */
+  }
+  #controls {
+    grid-template-columns: 1fr; /* Уже есть, это хорошо */
+    padding: 0.75rem 1rem; /* Уменьшаем паддинги */
+    gap: 1rem; /* Уменьшаем основной гэп */
+  }
+  .controlrow {
+    /* grid-template-columns: 1fr 2fr; */ /* Можно оставить или изменить */
+     grid-template-columns: auto 1fr; /* Лейбл занимает сколько нужно, инпут - остальное */
+    gap: 0.5rem; /* Уменьшаем гэп */
+  }
+  .label {
+    font-size: 0.8rem; /* Уменьшаем шрифт лейбла */
+    text-align: left; /* На маленьких экранах лучше слева */
+    padding-right: 0;
+  }
+  .input-group {
+     /* max-width: none; */ /* Уже было убрано */
+  }
+  .textinput,
+  .stepper-button,
+  .slider-container {
+    min-height: 40px; /* Слегка увеличим высоту для тач-интерфейсов */
+    height: 40px; /* Применяем и к кнопкам/слайдеру */
+  }
+   .stepper-button {
+      line-height: 38px;
+   }
+  .textinput {
+    font-size: 0.85rem; /* Слегка уменьшаем шрифт в инпуте */
+  }
+  .slider-container {
+    min-width: 80px; /* Уменьшаем минимальную ширину слайдера */
+  }
+}
+
+```
+
+**3. Корректировка JavaScript (ChartRenderer и управление аудио)**
+
+*   **ChartRenderer Padding:** Раньше `padding` был задан в CSS для `#HEPlotDiv`. Теперь он убран оттуда, чтобы canvas занимал всю область. Нужно убедиться, что `ChartRenderer` сам учитывает отступы для осей и меток. В коде `ChartRenderer` уже есть `options.padding = 20`. Это хорошо, он будет рисовать график с внутренними отступами на canvas, который теперь занимает 100% родителя.
+*   **Координаты клика/перемещения:** Логика расчета `xValue` в обработчиках `mousedown` и `mousemove` использует `canvas.getBoundingClientRect()`, `chartRenderer.currentView` и `chartRenderer.options.padding`. Это должно работать корректно, так как `options.padding` определяет область *внутри* canvas, где рисуется сам график (без осей и меток).
+*   **Исправление отображения значения Note Delay:** В HTML у вас `<span class="label" id="delay">Note Delay: 0.15%</span>`, а в JS для обновления этого значения используется `document.getElementById('noteDelayValue')`. Нужно либо поменять ID у `span` на `noteDelayValue`, либо изменить JS, чтобы он обновлял `span` с ID `delay`. Давайте исправим HTML:
+
+```html
+<!-- Внутри .controls-column-right -> .controlrow для Note Delay -->
+<span class="label" id="noteDelayValue">Note Delay: 0.15s</span> <!-- Меняем ID и единицу измерения -->
+<div class="slider-container">
+  <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
+</div>
+```
+
+И обновим JS, чтобы правильно форматировать вывод (секунды, а не проценты):
+
+```javascript
+// Внутри обработчика 'input' для #noteDelay
+document.getElementById("noteDelay").addEventListener("input", (e) => {
+  // Обновляем текст в span с ID noteDelayValue
+  document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+  // updatePlot(); // Нужно ли перерисовывать график при смене задержки ноты? Если нет, убрать.
+                   // Скорее всего не нужно, т.к. это параметр аудио.
+});
+
+// Также инициализируем значение при загрузке
+window.addEventListener('DOMContentLoaded', () => {
+    // ... остальной код ...
+
+    // Инициализация текста для Note Delay
+    const initialDelay = document.getElementById('noteDelay').value;
+    document.getElementById('noteDelayValue').textContent = "Note Delay: " + parseFloat(initialDelay).toFixed(2) + "s";
+
+    // Удаляем вызов updatePlot() из обработчика noteDelay, если он не нужен
+     document.getElementById("noteDelay").addEventListener("input", (e) => {
+       document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+       // updatePlot(); // ЗАКОММЕНТИРОВАНО ИЛИ УДАЛЕНО
+     });
+
+    // ... остальной код инициализации ...
+});
+```
+
+**Резюме изменений:**
+
+1.  `#HEPlotDiv` теперь использует `aspect-ratio` для пропорционального масштабирования и не имеет `padding`.
+2.  `canvas` внутри `#HEPlotDiv` позиционирован абсолютно и занимает 100% родителя. `ChartRenderer` рисует с внутренними отступами (`options.padding`).
+3.  В `#controls` и его дочерних элементах используются более гибкие единицы (`rem`) для отступов, промежутков и шрифтов.
+4.  Убраны жесткие `max-width` у `.input-group`.
+5.  Высоты инпутов/кнопок сделаны более гибкими (`height: auto`, `min-height`).
+6.  Медиа-запрос `@media (max-width: 600px)` дополнительно уменьшает размеры и меняет выравнивание лейблов для лучшего вида на маленьких экранах.
+7.  Исправлен ID для отображения значения "Note Delay" и его обновление в JS.
+8.  Убран ненужный вызов `updatePlot()` при изменении слайдера задержки ноты.
+
+Теперь приложение должно гораздо лучше адаптироваться к разным размерам контейнера, включая маленькие экраны мобильных устройств в iframe. Протестируйте в разных размерах окна браузера и в эмуляторе мобильных устройств.
+```
+
+Твоё задание: 
+
+Напиши полный обновленный код приложения. Будь аккуратен и ничего не забудь.
