@@ -1,0 +1,1745 @@
+Привет, в этом коде есть проблема с масштабированием графика при встраивании в iframe. Прогрессивное расхождение, чем дольше идешь вправо по оси X, тем дольше расходятся вертикальные черты, а график не уменьшается достаточно и зависит от масштабирования страницы (а должен только от границ iframe). И другой момент - рисуемый график не привязян к границам блока, и при уменьшении страницы (50% например) он становится маленьким, а при увеличении - не влезает.
+
+
+Первая версия полнофункциональна, но есть проблемы. Вторая - частично исправлена, но потерян функционал (конкретно визуализация нот вертикальными чертами и раскрашивание точек).
+
+1:
+```
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивный график гармонической энтропии с аудио</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --surface-color: #1E1E1E;
+      --primary-color: #BB86FC;
+      --secondary-color: #03DAC6;
+      --text-primary: rgba(255,255,255,0.87);
+      --text-secondary: rgba(255,255,255,0.6);
+      --surface-overlay: rgba(255,255,255,0.05);
+      --border-color: rgba(255,255,255,0.1);
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text-primary);
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Общий контейнер графика и панели */
+    #appContainer {
+      width: 90%;
+      max-width: 1000px;
+    }
+    /* Область для графика HE (и для взаимодействия с аудио) */
+    #HEPlotDiv {
+      position: relative;
+      height: 50vh;
+      width: 100%;
+      margin: 0 auto;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface-color);
+      padding: 16px;
+      box-sizing: border-box;
+      cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
+    }
+    /* Панель управления – общая для HE и аудио */
+    #controls {
+      background: var(--surface-color);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin: 20px auto;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .controls-column-left,
+    .controls-column-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .controlrow {
+      display: grid;
+      grid-template-columns: 0.8fr 2fr;
+      align-items: center;
+      gap: 12px;
+    }
+    .label {
+      color: var(--text-secondary);
+      font-size: 14px;
+      text-align: right;
+      padding-right: 8px;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 180px;
+    }
+    .textinput {
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 100%;
+      height: 44px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+    .textinput:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(187,134,252,0.2);
+    }
+    .stepper-button {
+      background: var(--surface-color);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      width: 32px;
+      height: 44px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stepper-button:hover {
+      background-color: var(--surface-overlay);
+      border-color: var(--primary-color);
+    }
+    .slider-container {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      min-width: 180px;
+      width: 100%;
+    }
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 2px;
+      background: var(--border-color);
+      border-radius: 1px;
+      outline: none;
+      padding: 0;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+    .slider::-webkit-slider-thumb:active {
+      transform: scale(0.95);
+    }
+    @media (max-width: 600px) {
+      #controls {
+        grid-template-columns: 1fr;
+        padding: 12px 16px;
+        gap: 16px;
+      }
+      .controlrow {
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
+      }
+      .label {
+        font-size: 13px;
+        padding-right: 4px;
+      }
+      .input-group,
+      .slider-container {
+        max-width: none;
+      }
+      .textinput,
+      .stepper-button {
+        height: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="appContainer">
+    <!-- График HE + область для интерактивного управления аудио -->
+    <div id="HEPlotDiv">
+      <canvas id="heChart"></canvas>
+    </div>
+    <!-- Панель управления (общая для графика и аудио) -->
+    <div id="controls">
+      <div class="controls-column-left">
+        <div class="controlrow">
+          <span class="label">N:</span>
+          <div class="input-group">
+            <input id="textN" type="number" class="textinput" value="3000" placeholder="Maximum ratio (N)" />
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label">Min cents:</span>
+          <div class="input-group">
+            <button class="stepper-button minus" data-target="textmin">-</button>
+            <input id="textmin" type="number" class="textinput" value="0" placeholder="Min (octaves)" step="1" />
+            <button class="stepper-button plus" data-target="textmin">+</button>
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label">Max cents:</span>
+          <div class="input-group">
+            <button class="stepper-button minus" data-target="textmax">-</button>
+            <input id="textmax" type="number" class="textinput" value="1" placeholder="Max (octaves)" step="1" />
+            <button class="stepper-button plus" data-target="textmax">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="controls-column-right">
+        <div class="controlrow">
+          <span class="label" id="aval">Bandwidth (a): 2.4</span>
+          <div class="slider-container">
+            <input type="range" id="slidera" class="slider" min="1" max="4" step="0.001" value="2.4" />
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label" id="sval">Smoothing (s): 1.25%</span>
+          <div class="slider-container">
+            <input type="range" id="sliders" class="slider" min="0.5" max="2.1" step="0.001" value="1.25" />
+          </div>
+        </div>
+        <!-- Контрол для задержки нот -->
+        <div class="controlrow">
+          <span class="label" id="delay">Note Delay: 0.15%</span>
+          <div class="slider-container">
+            <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =================================
+         КЛАССЫ ДЛЯ ГРАФИКА HE
+       ================================= */
+    class HarmonicEntropyCalculator {
+      static instance = null;
+      constructor() {
+        if (HarmonicEntropyCalculator.instance) { return HarmonicEntropyCalculator.instance; }
+        this.ratios = [];
+        this.oldN = null;
+        HarmonicEntropyCalculator.instance = this;
+      }
+      filterRatios() {
+        const tolerance = 10;
+        let ratioObjs = this.ratios.map(ratio => {
+          const [p, q] = ratio;
+          const cent = 1200 * HarmonicEntropyCalculator.log2(p / q);
+          const consonance = (1 / p) + (1 / q);
+          return { p, q, cent, consonance };
+        });
+        ratioObjs.sort((a, b) => b.consonance - a.consonance);
+        const selected = [];
+        for (const r of ratioObjs) {
+          if (!selected.some(s => Math.abs(s.cent - r.cent) < tolerance)) {
+            selected.push(r);
+          }
+        }
+        selected.sort((a, b) => a.cent - b.cent);
+        this.ratios = selected.map(r => [r.p, r.q]);
+      }
+      findLocalMinima(HE, threshold = 0.005) {
+        const maxima = [];
+        for (let i = 6; i < HE.length - 6; i++) {
+          const dyPrev = HE[i].y - HE[i - 6].y;
+          const dyNext = HE[i + 6].y - HE[i].y;
+          if (dyPrev > threshold && dyNext < -threshold) {
+            maxima.push({ x: HE[i].x, y: HE[i].y, strength: Math.abs(dyPrev) + Math.abs(dyNext) });
+          }
+        }
+        return maxima.sort((a, b) => b.strength - a.strength);
+      }
+      findClosestHEPoint(HE, cent) {
+        let low = 0, high = HE.length - 1, mid;
+        while (low <= high) {
+          mid = Math.floor((low + high) / 2);
+          if (HE[mid].x < cent) { low = mid + 1; }
+          else if (HE[mid].x > cent) { high = mid - 1; }
+          else { return HE[mid]; }
+        }
+        if (high < 0) return HE[0];
+        if (low >= HE.length) return HE[HE.length - 1];
+        return (Math.abs(HE[low].x - cent) < Math.abs(HE[high].x - cent)) ? HE[low] : HE[high];
+      }
+      findRatiosAtMinima(HE, minima) {
+        const minimaXSet = new Set(minima.map(m => m.x));
+        const ratiosToDisplay = [];
+        for (const [p, q] of this.ratios) {
+          const cent = 1200 * HarmonicEntropyCalculator.log2(p / q);
+          const closestPoint = this.findClosestHEPoint(HE, cent);
+          if (minimaXSet.has(closestPoint.x)) {
+            ratiosToDisplay.push({ x: cent, y: closestPoint.y, label: `${p}/${q}` });
+          }
+        }
+        return ratiosToDisplay;
+      }
+      static log2(x) { return Math.log(x) / Math.log(2); }
+      static gcd(x, y) { while (y !== 0) { [x, y] = [y, x % y]; } return x; }
+      convolve(olda, oldb) {
+        const a = [...olda], b = [...oldb];
+        const len = a.length;
+        let minlen = 1;
+        while (minlen < len) minlen *= 2;
+        a.push(...new Array(minlen - len).fill(0));
+        b.push(...new Array(minlen - len).fill(0));
+        const f_a = new FFT(minlen), f_b = new FFT(minlen);
+        f_a.forward(a); f_b.forward(b);
+        const real = new Array(minlen), imag = new Array(minlen);
+        for (let i = 0; i < minlen; i++) {
+          real[i] = f_a.real[i] * f_b.real[i] - f_a.imag[i] * f_b.imag[i];
+          imag[i] = f_a.real[i] * f_b.imag[i] + f_a.imag[i] * f_b.real[i];
+        }
+        const f_out = new FFT(minlen);
+        f_out.real = real; f_out.imag = imag;
+        const result = f_out.inverse();
+        return result.slice(0, len);
+      }
+      calculateHarmonicEntropy(HEinfo) {
+        const { a, s, mincents, maxcents } = HEinfo;
+        const scents = 1200 * HarmonicEntropyCalculator.log2(s + 1);
+        const padding = Math.round(3 * scents);
+        const min = mincents - padding;
+        const max = maxcents + padding;
+        const res = 1;
+        const alpha = a === 1 ? 1.001 : a;
+        const arraySize = Math.floor((max - min) / res) + 1;
+        if (arraySize > 1000000) {
+          console.error("Array size too large, aborting calculation");
+          return [];
+        }
+        const k = new Array(arraySize).fill(0);
+        const ak = new Array(arraySize).fill(0);
+        for (const ratio of this.ratios) {
+          const rcent = 1200 * HarmonicEntropyCalculator.log2(ratio[0] / ratio[1]);
+          if (rcent < min || rcent > max) continue;
+          const rcompl = Math.sqrt(ratio[0] * ratio[1]);
+          if (rcent === Math.round(rcent)) {
+            const index = Math.floor((rcent - min) / res);
+            k[index] += 1 / rcompl;
+            ak[index] += 1 / Math.pow(rcompl, alpha);
+          } else {
+            const clow = Math.ceil(rcent) - rcent;
+            const chigh = rcent - Math.floor(rcent);
+            const index = Math.floor((rcent - min) / res);
+            k[index] += (1 / rcompl) * clow;
+            k[index + 1] += (1 / rcompl) * chigh;
+            ak[index] += (1 / Math.pow(rcompl, alpha)) * clow;
+            ak[index + 1] += (1 / Math.pow(rcompl, alpha)) * chigh;
+          }
+        }
+        let minlen = 1;
+        while (minlen < 2 * k.length) minlen *= 2;
+        k.push(...new Array(minlen - k.length).fill(0));
+        ak.push(...new Array(minlen - ak.length).fill(0));
+        const g = new Array(minlen), ag = new Array(minlen);
+        let g_sum = 0;
+        for (let i = 0; i < minlen; i++) {
+          const c = i * res + min;
+          const gval = (1 / (scents * 2 * Math.PI)) * (
+            Math.exp(-((c - min) ** 2) / (2 * scents * scents)) +
+            Math.exp(-((c - (minlen * res + min)) ** 2) / (2 * scents * scents))
+          );
+          g[i] = gval; g_sum += gval;
+        }
+        for (let i = 0; i < g.length; i++) {
+          g[i] /= g_sum;
+          ag[i] = Math.pow(g[i], alpha);
+        }
+        const ent = this.convolve(ak, ag);
+        const nrm = this.convolve(k, g);
+        const paddingPoints = padding / res;
+        const result = [];
+        const epsilon = 1e-10;
+        for (let i = arraySize - paddingPoints - 1; i >= paddingPoints; i--) {
+          const x = i * res + min;
+          const entVal = ent[i] + epsilon;
+          const nrmVal = nrm[i] + epsilon;
+          const y = (1 / (1 - alpha)) * Math.log(entVal / Math.pow(nrmVal, alpha));
+          result[i - paddingPoints] = { x: x, y: -y };
+        }
+        HEinfo.res = 1;
+        return result;
+      }
+      preCalcRatios(HEinfo) {
+        if (HEinfo.N !== this.oldN) {
+          this.ratios = [];
+          this.oldN = HEinfo.N;
+          let n = HEinfo.N;
+          const processRatios = () => {
+            if (n > 0) {
+              const start = performance.now();
+              do {
+                for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+                  if (n % i === 0 && HarmonicEntropyCalculator.gcd(i, n / i) === 1) {
+                    this.ratios.push([i, n / i]);
+                    if (n / i !== i) this.ratios.push([n / i, i]);
+                  }
+                }
+              } while (--n >= 0 && performance.now() - start < 50);
+              requestAnimationFrame(processRatios);
+            } else {
+              this.filterRatios();
+              setTimeout(() => this.plotHE(HEinfo), 1);
+            }
+          };
+          setTimeout(processRatios, 25);
+        } else {
+          this.plotHE(HEinfo);
+        }
+      }
+      plotHE(HEinfo) {
+        const HE = this.calculateHarmonicEntropy(HEinfo);
+        const minima = this.findLocalMinima(HE);
+        const annotations = this.findRatiosAtMinima(HE, minima);
+        const canvas = document.getElementById('heChart');
+        if (!chartRenderer) { chartRenderer = new ChartRenderer(canvas); }
+        chartRenderer.setData(HE);
+        chartRenderer.setAnnotations(annotations);
+        // Сброс вертикальных индикаторов при новом построении графика
+        chartRenderer.setNoteIndicators(activeNoteIndicators);
+      }
+    }
+
+    class ChartRenderer {
+        constructor(canvas, options = {}) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.data = [];
+            this.annotations = [];
+            this.options = {
+                padding: 20,
+                gridColor: 'rgba(255,255,255,0.05)',
+                textColor: 'rgba(255,255,255,0.6)',
+                lineColor: '#FFFFFF',
+                lineWidth: 3,
+                ...options
+            };
+            this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+            this.noteIndicators = [];
+            this.resizeObserver = new ResizeObserver(() => this.resize());
+            this.resizeObserver.observe(canvas.parentElement);
+            this.resize();
+        }
+
+        setAnnotations(annotations) { 
+            this.annotations = annotations; 
+            this.draw();
+        }
+
+        setNoteIndicators(indicators) { 
+            this.noteIndicators = indicators; 
+            this.draw();
+        }
+
+        resize() {
+            const parent = this.canvas.parentElement;
+            const rect = parent.getBoundingClientRect();
+            this.canvas.width = rect.width * devicePixelRatio;
+            this.canvas.height = rect.height * devicePixelRatio;
+            this.canvas.style.width = rect.width + 'px';
+            this.canvas.style.height = rect.height + 'px';
+            this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            this.draw();
+        }
+
+        setData(data) {
+            this.data = data;
+            this.autoScale();
+            this.draw();
+        }
+
+        autoScale() {
+            if (this.data.length === 0) return;
+            let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+            this.data.forEach(point => {
+                xMin = Math.min(xMin, point.x);
+                xMax = Math.max(xMax, point.x);
+                yMin = Math.min(yMin, point.y);
+                yMax = Math.max(yMax, point.y);
+            });
+            const xRange = xMax - xMin || 1;
+            const yRange = yMax - yMin || 1;
+            this.currentView = {
+                xMin: xMin - xRange * 0.02,
+                xMax: xMax + xRange * 0.02,
+                yMin: yMin - yRange * 0.05,
+                yMax: yMax + yRange * 0.05
+            };
+        }
+
+        draw() {
+            const { ctx, canvas, options } = this;
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+            
+            const { xMin, xMax, yMin, yMax } = this.currentView;
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+            const graphWidth = width - options.padding * 2;
+            const graphHeight = height - options.padding * 2;
+
+            // Draw grid
+            ctx.strokeStyle = options.gridColor;
+            ctx.lineWidth = 1;
+            ctx.fillStyle = options.textColor;
+            ctx.font = '12px Arial';
+
+            // Vertical grid lines
+            const xStep = 100;
+            const startX = Math.ceil(xMin / xStep) * xStep;
+            const endX = Math.floor(xMax / xStep) * xStep;
+            for (let x = startX; x <= endX; x += xStep) {
+                const screenX = options.padding + (x - xMin) / xRange * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(screenX, options.padding);
+                ctx.lineTo(screenX, height - options.padding);
+                ctx.stroke();
+                ctx.textAlign = 'center';
+                ctx.fillText(x.toString(), screenX, height - options.padding + 15);
+            }
+
+            // Horizontal grid lines
+            const yStep = this.calculateSteps(yRange, graphHeight);
+            const startY = Math.ceil(yMin / yStep) * yStep;
+            const endY = Math.floor(yMax / yStep) * yStep;
+            for (let y = startY; y <= endY; y += yStep) {
+                const screenY = height - options.padding - (y - yMin) / yRange * graphHeight;
+                ctx.beginPath();
+                ctx.moveTo(options.padding, screenY);
+                ctx.lineTo(width - options.padding, screenY);
+                ctx.stroke();
+                ctx.textAlign = 'right';
+                ctx.fillText(y.toFixed(1), options.padding - 10, screenY);
+            }
+
+            // Draw data line
+            if (this.data.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(
+                    options.padding, 
+                    height - options.padding - (this.data[0].y - yMin) / yRange * graphHeight
+                );
+                for (let i = 1; i < this.data.length; i++) {
+                    const x = options.padding + (this.data[i].x - xMin) / xRange * graphWidth;
+                    const y = height - options.padding - (this.data[i].y - yMin) / yRange * graphHeight;
+                    ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = options.lineColor;
+                ctx.lineWidth = options.lineWidth;
+                ctx.stroke();
+            }
+
+            // Draw annotations
+            this.annotations.forEach(ann => {
+                const x = options.padding + (ann.x - xMin) / xRange * graphWidth;
+                const y = height - options.padding - (ann.y - yMin) / yRange * graphHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#BB86FC';
+                ctx.fill();
+                ctx.fillStyle = options.textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(ann.label, x, y - 8);
+            });
+
+            // Draw note indicators
+            this.noteIndicators.forEach(ind => {
+                if (ind.x === null) return;
+                const x = options.padding + (ind.x - xMin) / xRange * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, options.padding);
+                ctx.lineTo(x, height - options.padding);
+                ctx.strokeStyle = ind.noteIndex === 0 
+                    ? `rgba(0,0,255,${ind.opacity})` 
+                    : `rgba(255,0,0,${ind.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            });
+        }
+
+        calculateSteps(range, screenSize) {
+            const targetSteps = screenSize / 80;
+            let step = Math.pow(10, Math.floor(Math.log10(range / targetSteps)));
+            if (range / (step * 2) < targetSteps) step /= 2;
+            if (range / (step * 5) < targetSteps) step /= 5;
+            return Math.max(1, Math.round(step));
+        }
+    }
+
+    class FFT {
+      constructor(size) {
+        this.size = size;
+        this.real = new Float32Array(size);
+        this.imag = new Float32Array(size);
+      }
+      forward(input) {
+        const n = this.size;
+        this.real.set(input);
+        this.imag.fill(0);
+        this._transform(this.real, this.imag, n, 1);
+      }
+      inverse() {
+        const n = this.size;
+        this._transform(this.real, this.imag, n, -1);
+        for (let i = 0; i < n; i++) {
+          this.real[i] /= n;
+          this.imag[i] /= n;
+        }
+        return Array.from(this.real);
+      }
+      _transform(real, imag, n, direction) {
+        const nn = n === 1 ? 0 : Math.log2(n);
+        if (Math.pow(2, nn) !== n) throw "Размер должен быть степенью двойки";
+        for (let i = 0; i < n; i++) {
+          const j = this._reverseBits(i, nn);
+          if (j > i) {
+            [real[i], real[j]] = [real[j], real[i]];
+            [imag[i], imag[j]] = [imag[j], imag[i]];
+          }
+        }
+        for (let s = 1; s <= nn; s++) {
+          const m = 1 << s;
+          const mh = m >> 1;
+          for (let k = 0; k < n; k += m) {
+            for (let j = 0; j < mh; j++) {
+              const kr = k + j;
+              const ki = kr + mh;
+              const theta = direction * (-2 * Math.PI * j / m);
+              const wr = Math.cos(theta);
+              const wi = Math.sin(theta);
+              const tr = real[ki] * wr - imag[ki] * wi;
+              const ti = real[ki] * wi + imag[ki] * wr;
+              real[ki] = real[kr] - tr;
+              imag[ki] = imag[kr] - ti;
+              real[kr] += tr;
+              imag[kr] += ti;
+            }
+          }
+        }
+      }
+      _reverseBits(x, bits) {
+        let y = 0;
+        for (let i = 0; i < bits; i++) {
+          y = (y << 1) | (x & 1);
+          x >>= 1;
+        }
+        return y;
+      }
+    }
+
+    /* ================================
+         АУДИО – интегрировано в область HEPlotDiv
+       ================================ */
+    let audioContext = null;
+    let analysers = [null, null];
+    let gainNodes = [null, null];
+    let currentNote1 = null;
+    let currentNote2 = null;
+    const baseFrequency = 440;
+    const semitonesPerOctave = 12;
+    const octaveRange = 2;
+    const totalSemitones = semitonesPerOctave * octaveRange;
+    const centsPerSemitone = 100;
+    const totalCentsRange = totalSemitones * centsPerSemitone;
+    let isMouseDown = false;
+
+    const audioParams = {
+      oscillatorType: 'sawtooth',
+      filterFrequency: 1000,
+      filterType: 'lowpass',
+      gainAttackTime: 0.1,
+      gainSustainLevel: 0.5,
+      gainReleaseTime: 0.2,
+    };
+    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
+    let activeNoteIndicators = [
+      { noteIndex: 0, x: null, opacity: 0 },
+      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
+    ];
+
+    // Добавляем глобальную переменную для ревербератора:
+    let reverbNode = null;
+
+    // Добавляем функцию для создания импульсного отклика ревербератора:
+    function createImpulseResponse(context, duration, decay) {
+      const sampleRate = context.sampleRate;
+      const length = sampleRate * duration;
+      const impulse = context.createBuffer(2, length, sampleRate);
+      for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+      }
+      return impulse;
+    }
+
+    // Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
+    async function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!reverbNode) {
+          reverbNode = audioContext.createConvolver();
+          // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
+          reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
+          const reverbMix = audioContext.createGain();
+          reverbMix.gain.value = 0.3; // уровень смешивания реверберации
+          reverbNode.connect(reverbMix);
+          reverbMix.connect(audioContext.destination);
+        }
+      }
+    }
+
+    // Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
+    function createNote(frequency, startTime, noteIndex) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analysers[noteIndex] = analyser;
+      gainNodes[noteIndex] = gainNode;
+      oscillator.type = audioParams.oscillatorType;
+      oscillator.frequency.value = frequency;
+      filter.type = audioParams.filterType;
+      filter.frequency.value = audioParams.filterFrequency;
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      // Подключаем как "сухой" сигнал к анализатору:
+      gainNode.connect(analyser);
+      // Отправляем часть сигнала в ревербератор (эффект "wet"):
+      gainNode.connect(reverbNode);
+      analyser.connect(audioContext.destination);
+      return { oscillator, gainNode };
+    }
+
+    // Обновляем opacity вертикальных индикаторов по данным анализатора
+    function updateNoteIndicatorsOpacity() {
+      analysers.forEach((analyser, i) => {
+        if (!analyser) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(dataArray);
+        let level = 0;
+        for (let j = 0; j < dataArray.length; j++) {
+          level += Math.abs(dataArray[j] - 128);
+        }
+        level /= dataArray.length;
+        activeNoteIndicators[i].opacity = Math.min(1, Math.max(0, level / 50));
+      });
+      if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
+      requestAnimationFrame(updateNoteIndicatorsOpacity);
+    }
+    function centsToFrequency(centsOffset) {
+      return baseFrequency * Math.pow(2, centsOffset / 1200);
+    }
+
+
+    HEPlotDiv.addEventListener('mousemove', (event) => {
+      if (!isMouseDown || !chartRenderer) return;
+      const canvas = document.getElementById('heChart'); // Получаем элемент canvas
+      const rect = canvas.getBoundingClientRect(); // Получаем координаты canvas относительно окна
+      const clickX = event.clientX - rect.left; // Координата X клика относительно canvas
+      const canvasWidth = canvas.width / devicePixelRatio; // Ширина canvas с учетом pixel ratio
+      const view = chartRenderer.currentView;
+      const graphWidth = canvasWidth - chartRenderer.options.padding * 2; // Ширина графика с учетом padding
+      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth; // Нормализованная координата X внутри графика
+      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+      activeNoteIndicators[0].x = xValue;
+      if (currentNote1) {
+        const freq1 = centsToFrequency(xValue);
+        currentNote1.oscillator.frequency.setValueAtTime(freq1, audioContext.currentTime);
+      }
+    });
+
+    // Обработка кликов в области графика (HEPlotDiv) – теперь координата x вычисляется всегда через chartRenderer.currentView
+    let tonicTimeout = null; // Добавлено для хранения идентификатора таймера тоники
+    HEPlotDiv.addEventListener('mousedown', async (event) => {
+      if (!audioContext) await initAudio();
+      if (!chartRenderer) return;
+      isMouseDown = true;
+      const canvas = document.getElementById('heChart');
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const canvasWidth = canvas.width / devicePixelRatio;
+      const view = chartRenderer.currentView;
+      const graphWidth = canvasWidth - chartRenderer.options.padding * 2;
+      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
+      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+      activeNoteIndicators[0].x = xValue;
+      // Запускаем первую ноту:
+      const now = audioContext.currentTime;
+      const freq1 = centsToFrequency(xValue);
+      currentNote1 = createNote(freq1, now, 0);
+      currentNote1.oscillator.start(now);
+      // Запускаем вторую ноту (тонику) с задержкой
+      const noteDelay = parseFloat(document.getElementById('noteDelay').value);
+      activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
+      tonicTimeout = setTimeout(() => { // Сохраняем ID таймера
+        const freq2 = baseFrequency;
+        currentNote2 = createNote(freq2, audioContext.currentTime, 1);
+        currentNote2.oscillator.start(audioContext.currentTime);
+      }, noteDelay * 1000);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isMouseDown) {
+        isMouseDown = false;
+        const now = audioContext.currentTime;
+        // Остановка первой ноты
+        if (currentNote1) {
+          currentNote1.gainNode.gain.cancelScheduledValues(now);
+          currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
+          currentNote1.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+          currentNote1.oscillator.stop(now + audioParams.gainReleaseTime);
+          currentNote1 = null;
+        }
+
+        // Остановка второй ноты (тоники) - ПРОВЕРКА И ОЧИСТКА ТАЙМЕРА
+        if (currentNote2) {
+          currentNote2.gainNode.gain.cancelScheduledValues(now);
+          currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
+          currentNote2.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
+          currentNote2.oscillator.stop(now + audioParams.gainReleaseTime);
+          currentNote2 = null;
+        } else {
+          clearTimeout(tonicTimeout); // Очищаем таймер, если тоника еще не была создана
+        }
+
+
+        activeNoteIndicators[0].x = null;
+        activeNoteIndicators[0].opacity = 0;
+        activeNoteIndicators[1].opacity = 0;
+        if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
+      }
+    });
+    /* ================================
+         ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+       ================================ */
+    let chartRenderer = null;
+    window.addEventListener('DOMContentLoaded', () => {
+      const calculator = new HarmonicEntropyCalculator();
+      function updatePlot() {
+        const HEinfo = {
+          N: parseInt(document.getElementById("textN").value),
+          mincents: parseFloat(document.getElementById("textmin").value) * 1200,
+          maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
+          s: parseFloat(document.getElementById("sliders").value / 100),
+          a: parseFloat(document.getElementById("slidera").value),
+          res: 1.0
+        };
+        calculator.preCalcRatios(HEinfo);
+      }
+      updatePlot();
+      document.getElementById("slidera").addEventListener("input", (e) => {
+        document.getElementById("aval").textContent = "Bandwidth (a): " + e.target.value;
+        updatePlot();
+      });
+      document.getElementById("sliders").addEventListener("input", (e) => {
+        document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
+      });
+      document.getElementById("noteDelay").addEventListener("input", (e) => {
+        document.getElementById("delay").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
+      });
+      document.getElementById('textN').addEventListener('input', updatePlot);
+      document.getElementById('textmin').addEventListener('input', updatePlot);
+      document.getElementById('textmax').addEventListener('input', updatePlot);
+      document.querySelectorAll('.stepper-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const targetInputId = this.dataset.target;
+          const inputElement = document.getElementById(targetInputId);
+          let currentValue = parseInt(inputElement.value, 10);
+          const step = parseInt(inputElement.step, 10) || 1;
+          currentValue += this.classList.contains('minus') ? -step : step;
+          inputElement.value = currentValue;
+          updatePlot();
+        });
+      });
+      // Обновление значения noteDelay на спане
+      document.getElementById('noteDelay').addEventListener('input', function(e) {
+        document.getElementById('noteDelayValue').textContent = parseFloat(e.target.value).toFixed(1);
+      });
+      // После инициализации графика запускаем обновление вертикальных индикаторов
+      updateNoteIndicatorsOpacity();
+    });
+  </script>
+</body>
+</html>
+```
+
+
+
+2:
+```
+<!DOCTYPE html>
+<html lang="ru">
+........
+
+  <script>
+    /* =================================
+         КЛАССЫ ДЛЯ ГРАФИКА HE
+       ================================= */
+    class HarmonicEntropyCalculator {
+      static instance = null;
+      constructor() {
+        if (HarmonicEntropyCalculator.instance) { return HarmonicEntropyCalculator.instance; }
+        this.ratios = [];
+        this.oldN = null;
+        HarmonicEntropyCalculator.instance = this;
+      }
+      filterRatios() {
+        const tolerance = 10;
+        let ratioObjs = this.ratios.map(ratio => {
+          const [p, q] = ratio;
+          const cent = 1200 * HarmonicEntropyCalculator.log2(p / q);
+          const consonance = (1 / p) + (1 / q);
+          return { p, q, cent, consonance };
+        });
+        ratioObjs.sort((a, b) => b.consonance - a.consonance);
+        const selected = [];
+        for (const r of ratioObjs) {
+          if (!selected.some(s => Math.abs(s.cent - r.cent) < tolerance)) {
+            selected.push(r);
+          }
+        }
+        selected.sort((a, b) => a.cent - b.cent);
+        this.ratios = selected.map(r => [r.p, r.q]);
+      }
+      findLocalMinima(HE, threshold = 0.005) {
+        const maxima = [];
+        for (let i = 6; i < HE.length - 6; i++) {
+          const dyPrev = HE[i].y - HE[i - 6].y;
+          const dyNext = HE[i + 6].y - HE[i].y;
+          if (dyPrev > threshold && dyNext < -threshold) {
+            maxima.push({ x: HE[i].x, y: HE[i].y, strength: Math.abs(dyPrev) + Math.abs(dyNext) });
+          }
+        }
+        return maxima.sort((a, b) => b.strength - a.strength);
+      }
+      findClosestHEPoint(HE, cent) {
+        let low = 0, high = HE.length - 1, mid;
+        while (low <= high) {
+          mid = Math.floor((low + high) / 2);
+          if (HE[mid].x < cent) { low = mid + 1; }
+          else if (HE[mid].x > cent) { high = mid - 1; }
+          else { return HE[mid]; }
+        }
+        if (high < 0) return HE[0];
+        if (low >= HE.length) return HE[HE.length - 1];
+        return (Math.abs(HE[low].x - cent) < Math.abs(HE[high].x - cent)) ? HE[low] : HE[high];
+      }
+      findRatiosAtMinima(HE, minima) {
+        const minimaXSet = new Set(minima.map(m => m.x));
+        const ratiosToDisplay = [];
+        for (const [p, q] of this.ratios) {
+          const cent = 1200 * HarmonicEntropyCalculator.log2(p / q);
+          const closestPoint = this.findClosestHEPoint(HE, cent);
+          if (minimaXSet.has(closestPoint.x)) {
+            ratiosToDisplay.push({ x: cent, y: closestPoint.y, label: `${p}/${q}` });
+          }
+        }
+        return ratiosToDisplay;
+      }
+      static log2(x) { return Math.log(x) / Math.log(2); }
+      static gcd(x, y) { while (y !== 0) { [x, y] = [y, x % y]; } return x; }
+      convolve(olda, oldb) {
+        const a = [...olda], b = [...oldb];
+        const len = a.length;
+        let minlen = 1;
+        while (minlen < len) minlen *= 2;
+        a.push(...new Array(minlen - len).fill(0));
+        b.push(...new Array(minlen - len).fill(0));
+        const f_a = new FFT(minlen), f_b = new FFT(minlen);
+        f_a.forward(a); f_b.forward(b);
+        const real = new Array(minlen), imag = new Array(minlen);
+        for (let i = 0; i < minlen; i++) {
+          real[i] = f_a.real[i] * f_b.real[i] - f_a.imag[i] * f_b.imag[i];
+          imag[i] = f_a.real[i] * f_b.imag[i] + f_a.imag[i] * f_b.real[i];
+        }
+        const f_out = new FFT(minlen);
+        f_out.real = real; f_out.imag = imag;
+        const result = f_out.inverse();
+        return result.slice(0, len);
+      }
+      calculateHarmonicEntropy(HEinfo) {
+        const { a, s, mincents, maxcents } = HEinfo;
+        const scents = 1200 * HarmonicEntropyCalculator.log2(s + 1);
+        const padding = Math.round(3 * scents);
+        const min = mincents - padding;
+        const max = maxcents + padding;
+        const res = 1;
+        const alpha = a === 1 ? 1.001 : a;
+        const arraySize = Math.floor((max - min) / res) + 1;
+        if (arraySize > 1000000) {
+          console.error("Array size too large, aborting calculation");
+          return [];
+        }
+        const k = new Array(arraySize).fill(0);
+        const ak = new Array(arraySize).fill(0);
+        for (const ratio of this.ratios) {
+          const rcent = 1200 * HarmonicEntropyCalculator.log2(ratio[0] / ratio[1]);
+          if (rcent < min || rcent > max) continue;
+          const rcompl = Math.sqrt(ratio[0] * ratio[1]);
+          if (rcent === Math.round(rcent)) {
+            const index = Math.floor((rcent - min) / res);
+            k[index] += 1 / rcompl;
+            ak[index] += 1 / Math.pow(rcompl, alpha);
+          } else {
+            const clow = Math.ceil(rcent) - rcent;
+            const chigh = rcent - Math.floor(rcent);
+            const index = Math.floor((rcent - min) / res);
+            k[index] += (1 / rcompl) * clow;
+            k[index + 1] += (1 / rcompl) * chigh;
+            ak[index] += (1 / Math.pow(rcompl, alpha)) * clow;
+            ak[index + 1] += (1 / Math.pow(rcompl, alpha)) * chigh;
+          }
+        }
+        let minlen = 1;
+        while (minlen < 2 * k.length) minlen *= 2;
+        k.push(...new Array(minlen - k.length).fill(0));
+        ak.push(...new Array(minlen - ak.length).fill(0));
+        const g = new Array(minlen), ag = new Array(minlen);
+        let g_sum = 0;
+        for (let i = 0; i < minlen; i++) {
+          const c = i * res + min;
+          const gval = (1 / (scents * 2 * Math.PI)) * (
+            Math.exp(-((c - min) ** 2) / (2 * scents * scents)) +
+            Math.exp(-((c - (minlen * res + min)) ** 2) / (2 * scents * scents))
+          );
+          g[i] = gval; g_sum += gval;
+        }
+        for (let i = 0; i < g.length; i++) {
+          g[i] /= g_sum;
+          ag[i] = Math.pow(g[i], alpha);
+        }
+        const ent = this.convolve(ak, ag);
+        const nrm = this.convolve(k, g);
+        const paddingPoints = padding / res;
+        const result = [];
+        const epsilon = 1e-10;
+        for (let i = arraySize - paddingPoints - 1; i >= paddingPoints; i--) {
+          const x = i * res + min;
+          const entVal = ent[i] + epsilon;
+          const nrmVal = nrm[i] + epsilon;
+          const y = (1 / (1 - alpha)) * Math.log(entVal / Math.pow(nrmVal, alpha));
+          result[i - paddingPoints] = { x: x, y: -y };
+        }
+        HEinfo.res = 1;
+        return result;
+      }
+      preCalcRatios(HEinfo) {
+        if (HEinfo.N !== this.oldN) {
+          this.ratios = [];
+          this.oldN = HEinfo.N;
+          let n = HEinfo.N;
+          const processRatios = () => {
+            if (n > 0) {
+              const start = performance.now();
+              do {
+                for (let i = 1; i <= Math.floor(Math.sqrt(n)); i++) {
+                  if (n % i === 0 && HarmonicEntropyCalculator.gcd(i, n / i) === 1) {
+                    this.ratios.push([i, n / i]);
+                    if (n / i !== i) this.ratios.push([n / i, i]);
+                  }
+                }
+              } while (--n >= 0 && performance.now() - start < 50);
+              requestAnimationFrame(processRatios);
+            } else {
+              this.filterRatios();
+              setTimeout(() => this.plotHE(HEinfo), 1);
+            }
+          };
+          setTimeout(processRatios, 25);
+        } else {
+          this.plotHE(HEinfo);
+        }
+      }
+      plotHE(HEinfo) {
+          const HE = this.calculateHarmonicEntropy(HEinfo);
+          if (!HE || HE.length === 0) {
+              console.warn("No HE data to plot.");
+              return;
+          }
+          const minima = this.findLocalMinima(HE);
+          const annotations = this.findRatiosAtMinima(HE, minima);
+          const canvas = document.getElementById('heChart');
+
+          if (!chartRenderer) {
+              chartRenderer = new ChartRenderer(canvas);
+          }
+
+          chartRenderer.setData(HE);
+          chartRenderer.setAnnotations(annotations);
+      }
+  }
+
+class ChartRenderer {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.data = [];
+        this.annotations = [];
+        this.options = {
+            padding: 20,
+            gridColor: 'rgba(255,255,255,0.05)',
+            textColor: 'rgba(255,255,255,0.6)',
+            lineColor: '#FFFFFF',
+            lineWidth: 2,
+            ...options
+        };
+        this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+        this.noteIndicators = [];
+        this.isDrawing = false;
+        this.drawRequestScheduled = false;
+
+        this.resizeObserver = new ResizeObserver(entries => this.requestDraw());
+        this.resizeObserver.observe(canvas.parentElement);
+        this.resizeAndDraw();
+    }
+
+    setAnnotations(annotations) {
+        this.annotations = annotations;
+        this.requestDraw();
+    }
+
+    setNoteIndicators(indicators) {
+        this.noteIndicators = indicators;
+    }
+
+    resizeAndDraw() {
+        const parent = this.canvas.parentElement;
+        if (!parent) return;
+        const cssWidth = parent.clientWidth;
+        const cssHeight = parent.clientHeight;
+
+        const currentCssWidth = parseFloat(this.canvas.style.width) || 0;
+        const currentCssHeight = parseFloat(this.canvas.style.height) || 0;
+
+        if (cssWidth === 0 || cssHeight === 0) return;
+
+        if (cssWidth !== currentCssWidth || cssHeight !== currentCssHeight) {
+            this.canvas.style.width = cssWidth + 'px';
+            this.canvas.style.height = cssHeight + 'px';
+            this.canvas.width = cssWidth * devicePixelRatio;
+            this.canvas.height = cssHeight * devicePixelRatio;
+            this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        }
+        this.draw();
+    }
+
+    setData(data) {
+        this.data = data;
+        this.autoScale();
+        this.requestDraw();
+    }
+
+    autoScale() {
+        if (this.data.length === 0) return;
+        let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+        this.data.forEach(point => {
+            xMin = Math.min(xMin, point.x);
+            xMax = Math.max(xMax, point.x);
+            yMin = Math.min(yMin, point.y);
+            yMax = Math.max(yMax, point.y);
+        });
+
+        const xRange = xMax - xMin || 1;
+        const yRange = yMax - yMin || 1;
+        const xPadding = xRange * 0.01;
+        const yPadding = yRange * 0.05;
+
+        this.currentView.xMin = xMin - xPadding;
+        this.currentView.xMax = xMax + xPadding;
+        this.currentView.yMin = Math.floor((yMin - yPadding) * 10) / 10;
+        this.currentView.yMax = Math.ceil((yMax + yPadding) * 10) / 10;
+    }
+
+    requestDraw() {
+        if (!this.drawRequestScheduled) {
+            this.drawRequestScheduled = true;
+            requestAnimationFrame(() => {
+                this.draw();
+                this.drawRequestScheduled = false;
+            });
+        }
+    }
+
+    draw() {
+        if (this.isDrawing) return;
+        this.isDrawing = true;
+
+        if (this.canvas.offsetParent === null || this.canvas.clientWidth === 0 || this.canvas.clientHeight === 0) {
+            this.isDrawing = false;
+            return;
+        }
+
+        this.resizeAndDraw();
+
+        const { ctx, options, canvas } = this;
+        const cssWidth = canvas.clientWidth;
+        const cssHeight = canvas.clientHeight;
+
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        const { xMin, xMax, yMin, yMax } = this.currentView;
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        if (!xRange || !yRange || !Number.isFinite(xMin) || !Number.isFinite(xMax) || !Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+            console.error("Invalid view range for drawing:", this.currentView);
+            this.isDrawing = false;
+            return;
+        }
+
+        const padding = options.padding;
+        const graphAreaWidth = cssWidth - padding * 2;
+        const graphAreaHeight = cssHeight - padding * 2;
+
+        if (graphAreaWidth <= 0 || graphAreaHeight <= 0) {
+            this.isDrawing = false;
+            return;
+        }
+
+        this.drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight);
+
+        if (this.data.length > 0) {
+            ctx.beginPath();
+            let firstPoint = true;
+            for (const p of this.data) {
+                if (p.x >= xMin && p.x <= xMax) {
+                    const screenX = padding + (p.x - xMin) / xRange * graphAreaWidth;
+                    const screenY = padding + graphAreaHeight - (p.y - yMin) / yRange * graphAreaHeight;
+
+                    if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) continue;
+
+                    if (firstPoint) {
+                        ctx.moveTo(screenX, screenY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(screenX, screenY);
+                    }
+                } else if (!firstPoint && p.x > xMax) {
+                    break;
+                } else if (firstPoint && p.x < xMin) {
+                    continue;
+                }
+            }
+            if (!firstPoint) {
+                ctx.strokeStyle = options.lineColor;
+                ctx.lineWidth = options.lineWidth;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        if (this.annotations.length > 0) {
+            ctx.fillStyle = '#BB86FC';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            this.annotations.forEach(ann => {
+                if (ann.x >= xMin && ann.x <= xMax && ann.y >= yMin && ann.y <= yMax) {
+                    const screenX = padding + (ann.x - xMin) / xRange * graphAreaWidth;
+                    const screenY = padding + graphAreaHeight - (ann.y - yMin) / yRange * graphAreaHeight;
+                    if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    ctx.fillStyle = options.textColor;
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(ann.label, screenX, screenY + 6);
+                }
+            });
+        }
+
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        this.noteIndicators.forEach(ind => {
+            if (ind.x === null || ind.opacity <= 0) return;
+
+            if (ind.x >= xMin && ind.x <= xMax) {
+                const screenX = padding + (ind.x - xMin) / xRange * graphAreaWidth;
+                if (!Number.isFinite(screenX)) return;
+
+                ctx.beginPath();
+                ctx.moveTo(screenX, padding);
+                ctx.lineTo(screenX, cssHeight - padding);
+                const color = ind.noteIndex === 0 ? `rgba(30, 144, 255, ${ind.opacity})` : `rgba(255, 100, 0, ${ind.opacity})`;
+                ctx.strokeStyle = color;
+                ctx.stroke();
+            }
+        });
+        ctx.setLineDash([]);
+
+        this.isDrawing = false;
+    }
+
+    drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight) {
+        const { ctx, options } = this;
+        const padding = options.padding;
+        const graphAreaWidth = cssWidth - padding * 2;
+        const graphAreaHeight = cssHeight - padding * 2;
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        if (graphAreaWidth <= 0 || graphAreaHeight <= 0 || !xRange || !yRange) return;
+
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = options.gridColor;
+        ctx.fillStyle = options.textColor;
+        ctx.font = '10px Arial';
+
+        const xStep = 100;
+        const startX = Math.ceil(xMin / xStep) * xStep;
+        const endX = Math.floor(xMax / xStep) * xStep;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let x = startX; x <= endX; x += xStep) {
+            if (x < xMin || x > xMax) continue;
+            const screenX = padding + (x - xMin) / xRange * graphAreaWidth;
+            if (!Number.isFinite(screenX)) continue;
+            const sharpX = Math.round(screenX);
+            if (sharpX >= padding && sharpX <= cssWidth - padding) {
+                ctx.beginPath();
+                ctx.moveTo(sharpX, padding);
+                ctx.lineTo(sharpX, cssHeight - padding);
+                ctx.stroke();
+                if (sharpX > padding + 10 && sharpX < cssWidth - padding - 10) {
+                    ctx.fillText(x.toFixed(0), sharpX, cssHeight - padding + 4);
+                }
+            }
+        }
+        ctx.fillText(xMin.toFixed(0), padding, cssHeight - padding + 4);
+        ctx.textAlign = 'right';
+        ctx.fillText(xMax.toFixed(0), cssWidth - padding, cssHeight - padding + 4);
+
+        const yTargetSteps = Math.max(3, Math.floor(graphAreaHeight / 40));
+        const roughStep = yRange / yTargetSteps;
+        let yStep = roughStep > 0 ? Math.pow(10, Math.floor(Math.log10(roughStep))) : 1;
+        if (yRange / (yStep * 1) >= yTargetSteps) yStep *= 1;
+        else if (yRange / (yStep * 2) >= yTargetSteps) yStep *= 2;
+        else if (yRange / (yStep * 5) >= yTargetSteps) yStep *= 5;
+        else yStep *= 10;
+
+        const startY = Math.ceil(yMin / yStep) * yStep;
+        const endY = Math.floor(yMax / yStep) * yStep;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let y = startY; y <= endY; y += yStep) {
+            if (y < yMin || y > yMax) continue;
+            const screenY = padding + graphAreaHeight - (y - yMin) / yRange * graphAreaHeight;
+            if (!Number.isFinite(screenY)) continue;
+            const sharpY = Math.round(screenY);
+            if (sharpY >= padding && sharpY <= cssHeight - padding) {
+                ctx.beginPath();
+                ctx.moveTo(padding, sharpY);
+                ctx.lineTo(cssWidth - padding, sharpY);
+                ctx.stroke();
+                if (sharpY > padding + 8 && sharpY < cssHeight - padding - 8) {
+                    ctx.fillText(y.toFixed(yStep < 1 ? 1 : 0), padding - 5, sharpY);
+                }
+            }
+        }
+        ctx.fillText(yMin.toFixed(1), padding - 5, cssHeight - padding);
+        ctx.textBaseline = 'top';
+        ctx.fillText(yMax.toFixed(1), padding - 5, padding);
+    }
+}
+
+    class FFT {
+      constructor(size) {
+        this.size = size;
+        this.real = new Float32Array(size);
+        this.imag = new Float32Array(size);
+      }
+      forward(input) {
+        const n = this.size;
+        this.real.set(input);
+        this.imag.fill(0);
+        this._transform(this.real, this.imag, n, 1);
+      }
+      inverse() {
+        const n = this.size;
+        this._transform(this.real, this.imag, n, -1);
+        for (let i = 0; i < n; i++) {
+          this.real[i] /= n;
+          this.imag[i] /= n;
+        }
+        return Array.from(this.real);
+      }
+      _transform(real, imag, n, direction) {
+        const nn = n === 1 ? 0 : Math.log2(n);
+        if (Math.pow(2, nn) !== n) throw "Размер должен быть степенью двойки";
+        for (let i = 0; i < n; i++) {
+          const j = this._reverseBits(i, nn);
+          if (j > i) {
+            [real[i], real[j]] = [real[j], real[i]];
+            [imag[i], imag[j]] = [imag[j], imag[i]];
+          }
+        }
+        for (let s = 1; s <= nn; s++) {
+          const m = 1 << s;
+          const mh = m >> 1;
+          for (let k = 0; k < n; k += m) {
+            for (let j = 0; j < mh; j++) {
+              const kr = k + j;
+              const ki = kr + mh;
+              const theta = direction * (-2 * Math.PI * j / m);
+              const wr = Math.cos(theta);
+              const wi = Math.sin(theta);
+              const tr = real[ki] * wr - imag[ki] * wi;
+              const ti = real[ki] * wi + imag[ki] * wr;
+              real[ki] = real[kr] - tr;
+              imag[ki] = imag[kr] - ti;
+              real[kr] += tr;
+              imag[kr] += ti;
+            }
+          }
+        }
+      }
+      _reverseBits(x, bits) {
+        let y = 0;
+        for (let i = 0; i < bits; i++) {
+          y = (y << 1) | (x & 1);
+          x >>= 1;
+        }
+        return y;
+      }
+    }
+
+    /* ================================
+         АУДИО – интегрировано в область HEPlotDiv
+       ================================ */
+    let audioContext = null;
+    let analysers = [null, null];
+    let gainNodes = [null, null];
+    let currentNote1 = null;
+    let currentNote2 = null;
+    const baseFrequency = 440;
+    const semitonesPerOctave = 12;
+    const octaveRange = 2;
+    const totalSemitones = semitonesPerOctave * octaveRange;
+    const centsPerSemitone = 100;
+    const totalCentsRange = totalSemitones * centsPerSemitone;
+    let isMouseDown = false;
+
+    const audioParams = {
+      oscillatorType: 'sawtooth',
+      filterFrequency: 1000,
+      filterType: 'lowpass',
+      gainAttackTime: 0.1,
+      gainSustainLevel: 0.5,
+      gainReleaseTime: 0.2,
+    };
+    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
+    let activeNoteIndicators = [
+      { noteIndex: 0, x: null, opacity: 0 },
+      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
+    ];
+
+
+    // Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
+    async function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!reverbNode) {
+          reverbNode = audioContext.createConvolver();
+          // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
+          reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
+          const reverbMix = audioContext.createGain();
+          reverbMix.gain.value = 0.3; // уровень смешивания реверберации
+          reverbNode.connect(reverbMix);
+          reverbMix.connect(audioContext.destination);
+        }
+      }
+    }
+
+    // Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
+    function createNote(frequency, startTime, noteIndex) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analysers[noteIndex] = analyser;
+      gainNodes[noteIndex] = gainNode;
+      oscillator.type = audioParams.oscillatorType;
+      oscillator.frequency.value = frequency;
+      filter.type = audioParams.filterType;
+      filter.frequency.value = audioParams.filterFrequency;
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      // Подключаем как "сухой" сигнал к анализатору:
+      gainNode.connect(analyser);
+      // Отправляем часть сигнала в ревербератор (эффект "wet"):
+      gainNode.connect(reverbNode);
+      analyser.connect(audioContext.destination);
+      return { oscillator, gainNode };
+    }
+    function centsToFrequency(centsOffset) {
+      return baseFrequency * Math.pow(2, centsOffset / 1200);
+    }
+    // Добавляем глобальную переменную для ревербератора:
+    let reverbNode = null;
+
+    // Добавляем функцию для создания импульсного отклика ревербератора:
+    function createImpulseResponse(context, duration, decay) {
+      const sampleRate = context.sampleRate;
+      const length = sampleRate * duration;
+      const impulse = context.createBuffer(2, length, sampleRate);
+      for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+      }
+      return impulse;
+    }
+
+
+let tonicTimeout = null;
+
+
+function getXValueFromEvent(event) {
+    if (!chartRenderer || !chartRenderer.currentView) return null;
+
+    const canvas = document.getElementById('heChart');
+    if (event.target !== canvas) {
+        console.warn("Event target is not canvas, offsetX might be incorrect.");
+        return null;
+    }
+    const clickX = event.offsetX;
+
+    const canvasWidth = canvas.clientWidth;
+    const view = chartRenderer.currentView;
+    const padding = chartRenderer.options.padding;
+    const graphAreaWidth = canvasWidth - padding * 2;
+
+    if (graphAreaWidth <= 0) return null;
+
+    const clickXRelativeToGraph = clickX - padding;
+    const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+    const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+
+    return xValue;
+}
+
+const HEPlotDiv = document.getElementById('HEPlotDiv') || document.getElementById('heChart').parentElement;
+
+HEPlotDiv.addEventListener('mousemove', (event) => {
+    if (!isMouseDown) return;
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) return;
+
+    activeNoteIndicators[0].x = xValue;
+    if (currentNote1 && audioContext) {
+        const freq1 = centsToFrequency(xValue);
+        currentNote1.oscillator.frequency.setTargetAtTime(freq1, audioContext.currentTime, 0.01);
+    }
+    if (chartRenderer) chartRenderer.requestDraw();
+});
+
+HEPlotDiv.addEventListener('mousedown', async (event) => {
+    if (!audioContext) await initAudio();
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) return;
+
+    isMouseDown = true;
+    document.body.classList.add('dragging');
+
+    activeNoteIndicators[0].x = xValue;
+    activeNoteIndicators[1].x = 0;
+
+    const now = audioContext.currentTime;
+    const freq1 = centsToFrequency(xValue);
+
+    stopNote(currentNote1, now);
+    stopNote(currentNote2, now);
+    if (tonicTimeout) clearTimeout(tonicTimeout);
+
+    currentNote1 = createNote(freq1, now, 0);
+    currentNote1.oscillator.start(now);
+
+    const noteDelaySeconds = parseFloat(document.getElementById('noteDelay').value);
+    tonicTimeout = setTimeout(() => {
+        if (isMouseDown && audioContext) {
+            const freq2 = baseFrequency;
+            const tonicStartTime = audioContext.currentTime;
+            currentNote2 = createNote(freq2, tonicStartTime, 1);
+            currentNote2.oscillator.start(tonicStartTime);
+        }
+        tonicTimeout = null;
+    }, noteDelaySeconds * 1000);
+
+    if (chartRenderer) chartRenderer.requestDraw();
+});
+
+document.addEventListener('mouseup', (event) => {
+    if (isMouseDown) {
+        isMouseDown = false;
+        document.body.classList.remove('dragging');
+        const now = audioContext ? audioContext.currentTime : 0;
+
+        stopNote(currentNote1, now);
+        stopNote(currentNote2, now);
+        currentNote1 = null;
+        currentNote2 = null;
+
+        if (tonicTimeout) {
+            clearTimeout(tonicTimeout);
+            tonicTimeout = null;
+        }
+
+        activeNoteIndicators[0].x = null;
+
+        if (chartRenderer) chartRenderer.requestDraw();
+    }
+});
+
+function stopNote(note, stopTime) {
+    if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
+        note.gainNode.gain.cancelScheduledValues(stopTime);
+        note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime);
+        note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
+        note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
+    }
+}
+
+function updateNoteIndicatorsOpacity() {
+    let needsRedraw = false;
+    analysers.forEach((analyser, i) => {
+        if (!analyser || !activeNoteIndicators[i]) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(dataArray);
+        let level = 0;
+        for (let j = 0; j < dataArray.length; j++) {
+            level += Math.abs(dataArray[j] - 128);
+        }
+        level = dataArray.length > 0 ? level / dataArray.length : 0;
+        const newOpacity = Math.min(1, Math.max(0, level / 40));
+
+        if (Math.abs(activeNoteIndicators[i].opacity - newOpacity) > 0.01) {
+            activeNoteIndicators[i].opacity = newOpacity;
+            needsRedraw = true;
+        }
+    });
+
+    if ((needsRedraw || isMouseDown) && chartRenderer) {
+        chartRenderer.requestDraw();
+    }
+
+    requestAnimationFrame(updateNoteIndicatorsOpacity);
+}
+
+/* ================================
+     ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+   ================================ */
+    let chartRenderer = null;
+window.addEventListener('DOMContentLoaded', () => {
+    const calculator = new HarmonicEntropyCalculator();
+
+    function updatePlot() {
+        const HEinfo = {
+            N: parseInt(document.getElementById("textN").value) || 3000,
+            mincents: parseFloat(document.getElementById("textmin").value) * 1200,
+            maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
+            s: parseFloat(document.getElementById("sliders").value / 100) || 0.0125,
+            a: parseFloat(document.getElementById("slidera").value) || 2.4,
+            res: 1.0
+        };
+
+        if (isNaN(HEinfo.mincents) || isNaN(HEinfo.maxcents) || HEinfo.mincents >= HEinfo.maxcents || HEinfo.N <= 0 || HEinfo.s <= 0 || HEinfo.a <= 0) {
+            console.error("Invalid HE parameters:", HEinfo);
+            return;
+        }
+        calculator.preCalcRatios(HEinfo);
+    }
+
+    document.getElementById("slidera").addEventListener("input", (e) => {
+        document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(e.target.value).toFixed(2);
+        updatePlot();
+    });
+    document.getElementById("sliders").addEventListener("input", (e) => {
+        document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
+    });
+    document.getElementById("noteDelay").addEventListener("input", (e) => {
+        document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+    });
+    document.getElementById('textN').addEventListener('change', updatePlot);
+    document.getElementById('textmin').addEventListener('change', updatePlot);
+    document.getElementById('textmax').addEventListener('change', updatePlot);
+
+    document.querySelectorAll('.stepper-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetInputId = this.dataset.target;
+            const inputElement = document.getElementById(targetInputId);
+            let currentValue = parseFloat(inputElement.value) || 0;
+            const step = parseFloat(inputElement.step) || 1;
+            currentValue += this.classList.contains('minus') ? -step : step;
+
+            if (targetInputId === 'textmin' || targetInputId === 'textmax') {
+                currentValue = Math.max(-2, Math.min(5, currentValue));
+            }
+            inputElement.value = currentValue.toFixed(targetInputId.includes('text') ? 0 : 2);
+            updatePlot();
+        });
+    });
+
+    document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(document.getElementById("slidera").value).toFixed(2);
+    document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(document.getElementById("sliders").value).toFixed(2) + "%";
+    document.getElementById("noteDelay").textContent = "Note Delay: " + parseFloat(document.getElementById('noteDelay').value).toFixed(2) + "s";
+
+    updatePlot();
+
+    setTimeout(updateNoteIndicatorsOpacity, 200);
+
+    const style = document.createElement('style');
+    style.textContent = `body.dragging, body.dragging * { cursor: grabbing !important; }`;
+    document.head.append(style);
+});
+  </script>
+</body>
+</html>
+```
+
+
+Что нужно изменить в первой части, чтобы сделать правильное масштабирование и сохранить/вернуть функционал? В ответе **не давай закомментированного кода**, пожалуйста, это очень неудобно. Измененные функции или классы давай целиком, неизмененные можешь писать в виде functionname(...) {...}

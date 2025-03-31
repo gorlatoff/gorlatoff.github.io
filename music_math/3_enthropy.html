@@ -29,31 +29,42 @@
     #appContainer {
       width: 90%;
       max-width: 1000px;
+      display: flex; /* Use flexbox for better layout control */
+      flex-direction: column;
+      height: 80vh; /* Example height, adjust as needed */
     }
     /* Область для графика HE (и для взаимодействия с аудио) */
     #HEPlotDiv {
-      position: relative;
-      height: 50vh;
+      position: relative; /* Needed for absolute positioning of canvas? Maybe not needed */
+      flex-grow: 1; /* Allow the plot div to grow and fill available space */
       width: 100%;
-      margin: 0 auto;
+      /* height: 50vh; Remove fixed height, let flexbox handle it */
       border-radius: 8px;
-      overflow: hidden;
+      overflow: hidden; /* Important: canvas should not overflow */
       background: var(--surface-color);
-      padding: 16px;
+      padding: 0; /* Remove padding here, handle padding inside ChartRenderer */
       box-sizing: border-box;
       cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
+      display: flex; /* Ensure canvas can fill this container */
+    }
+    #heChart {
+      display: block; /* Remove extra space below canvas */
+      width: 100%; /* Make canvas fill the container width */
+      height: 100%; /* Make canvas fill the container height */
     }
     /* Панель управления – общая для HE и аудио */
     #controls {
       background: var(--surface-color);
       border-radius: 12px;
       padding: 16px 24px;
-      margin: 20px auto;
+      margin: 20px 0 0 0; /* Adjust margin */
       width: 100%;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
+      flex-shrink: 0; /* Prevent controls from shrinking */
+      box-sizing: border-box; /* Include padding in width */
     }
     .controls-column-left,
     .controls-column-right {
@@ -147,6 +158,9 @@
       transform: scale(0.95);
     }
     @media (max-width: 600px) {
+      #appContainer {
+          height: 70vh; /* Adjust height for smaller screens */
+      }
       #controls {
         grid-template-columns: 1fr;
         padding: 12px 16px;
@@ -169,6 +183,8 @@
         height: 48px;
       }
     }
+      /* Add cursor style for dragging */
+      body.dragging, body.dragging * { cursor: grabbing !important; }
   </style>
 </head>
 <body>
@@ -218,7 +234,7 @@
         </div>
         <!-- Контрол для задержки нот -->
         <div class="controlrow">
-          <span class="label" id="delay">Note Delay: 0.15%</span>
+           <span class="label" id="noteDelayLabel">Note Delay: 0.15s</span>
           <div class="slider-container">
             <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
           </div>
@@ -406,188 +422,389 @@
           this.plotHE(HEinfo);
         }
       }
+
       plotHE(HEinfo) {
         const HE = this.calculateHarmonicEntropy(HEinfo);
+         if (!HE || HE.length === 0) {
+             console.warn("No HE data to plot.");
+             // Optionally clear the chart or show a message
+             if (chartRenderer) {
+                 chartRenderer.setData([]);
+                 chartRenderer.setAnnotations([]);
+             }
+             return;
+         }
         const minima = this.findLocalMinima(HE);
         const annotations = this.findRatiosAtMinima(HE, minima);
         const canvas = document.getElementById('heChart');
-        if (!chartRenderer) { chartRenderer = new ChartRenderer(canvas); }
+        if (!chartRenderer) {
+            chartRenderer = new ChartRenderer(canvas);
+        }
         chartRenderer.setData(HE);
         chartRenderer.setAnnotations(annotations);
-        // Сброс вертикальных индикаторов при новом построении графика
+        // Ensure note indicators are redrawn with the new data scale if needed
         chartRenderer.setNoteIndicators(activeNoteIndicators);
       }
     }
 
-class ChartRenderer {
-    constructor(canvas, options = {}) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.data = [];
-        this.annotations = [];
-        this.options = {
-            padding: 20,
-            gridColor: 'rgba(255,255,255,0.05)',
-            textColor: 'rgba(255,255,255,0.6)',
-            lineColor: '#FFFFFF',
-            lineWidth: 3,
-            ...options
-        };
-        this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
-        this.noteIndicators = [];
-        this.resizeObserver = new ResizeObserver(() => this.resize());
-        this.resizeObserver.observe(canvas.parentElement);
-        this.resize();
-    }
+    class ChartRenderer {
+        constructor(canvas, options = {}) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.data = [];
+            this.annotations = [];
+            this.options = {
+                paddingTop: 20,
+                paddingBottom: 30, // Increased for X labels
+                paddingLeft: 40,   // Increased for Y labels
+                paddingRight: 20,
+                gridColor: 'rgba(255,255,255,0.05)',
+                textColor: 'rgba(255,255,255,0.6)',
+                annotationColor: '#BB86FC',
+                lineColor: '#FFFFFF',
+                lineWidth: 1.5,
+                noteIndicatorColor1: 'rgba(30, 144, 255, 1)',
+                noteIndicatorColor2: 'rgba(255, 100, 0, 1)',
+                ...options
+            };
+            this.currentView = { xMin: 0, xMax: 1200, yMin: 0, yMax: 1 };
+            this.noteIndicators = [];
+            this.isDrawing = false;
+            this.drawRequestScheduled = false;
 
-    setAnnotations(annotations) { 
-        this.annotations = annotations; 
-        this.draw();
-    }
+            this.resizeObserver = new ResizeObserver(entries => {
+                 const entry = entries[0];
+                 if (entry && entry.contentRect) {
+                      this.requestDraw(); // Schedule a draw on resize
+                 }
+            });
 
-    setNoteIndicators(indicators) { 
-        this.noteIndicators = indicators; 
-        this.draw();
-    }
+             if (this.canvas.parentElement) {
+                this.resizeObserver.observe(this.canvas.parentElement);
+             } else {
+                 console.error("Canvas parent element not found for ResizeObserver.");
+             }
 
-    resize() {
-        const parent = this.canvas.parentElement;
-        const rect = parent.getBoundingClientRect();
-        this.canvas.width = rect.width * devicePixelRatio;
-        this.canvas.height = rect.height * devicePixelRatio;
-        this.canvas.style.width = rect.width + 'px';
-        this.canvas.style.height = rect.height + 'px';
-        this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-        this.draw();
-    }
-
-    setData(data) {
-        this.data = data;
-        this.autoScale();
-        this.draw();
-    }
-
-    autoScale() {
-        if (this.data.length === 0) return;
-        let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-        this.data.forEach(point => {
-            xMin = Math.min(xMin, point.x);
-            xMax = Math.max(xMax, point.x);
-            yMin = Math.min(yMin, point.y);
-            yMax = Math.max(yMax, point.y);
-        });
-        const xRange = xMax - xMin || 1;
-        const yRange = yMax - yMin || 1;
-        this.currentView = {
-            xMin: xMin - xRange * 0.02,
-            xMax: xMax + xRange * 0.02,
-            yMin: yMin - yRange * 0.05,
-            yMax: yMax + yRange * 0.05
-        };
-    }
-
-    draw() {
-        const { ctx, canvas, options } = this;
-        const { width, height } = canvas;
-        ctx.clearRect(0, 0, width, height);
-        
-        const { xMin, xMax, yMin, yMax } = this.currentView;
-        const xRange = xMax - xMin;
-        const yRange = yMax - yMin;
-        const graphWidth = width - options.padding * 2;
-        const graphHeight = height - options.padding * 2;
-
-        // Draw grid
-        ctx.strokeStyle = options.gridColor;
-        ctx.lineWidth = 1;
-        ctx.fillStyle = options.textColor;
-        ctx.font = '12px Arial';
-
-        // Vertical grid lines
-        const xStep = 100;
-        const startX = Math.ceil(xMin / xStep) * xStep;
-        const endX = Math.floor(xMax / xStep) * xStep;
-        for (let x = startX; x <= endX; x += xStep) {
-            const screenX = options.padding + (x - xMin) / xRange * graphWidth;
-            ctx.beginPath();
-            ctx.moveTo(screenX, options.padding);
-            ctx.lineTo(screenX, height - options.padding);
-            ctx.stroke();
-            ctx.textAlign = 'center';
-            ctx.fillText(x.toString(), screenX, height - options.padding + 15);
+            // Initial resize and draw call
+            this.resizeAndDraw(); // <<< This line requires the method below
         }
 
-        // Horizontal grid lines
-        const yStep = this.calculateSteps(yRange, graphHeight);
-        const startY = Math.ceil(yMin / yStep) * yStep;
-        const endY = Math.floor(yMax / yStep) * yStep;
-        for (let y = startY; y <= endY; y += yStep) {
-            const screenY = height - options.padding - (y - yMin) / yRange * graphHeight;
-            ctx.beginPath();
-            ctx.moveTo(options.padding, screenY);
-            ctx.lineTo(width - options.padding, screenY);
-            ctx.stroke();
-            ctx.textAlign = 'right';
-            ctx.fillText(y.toFixed(1), options.padding - 10, screenY);
+        // **** ADD THIS METHOD ****
+        resizeAndDraw() {
+            // Ensures the canvas bitmap is sized correctly based on its container
+            this.resizeCanvas();
+            // Performs the actual drawing operation onto the correctly sized canvas
+            this.draw();
+        }
+        // **** END OF ADDED METHOD ****
+
+
+        setAnnotations(annotations) {
+            this.annotations = annotations;
+            this.requestDraw();
         }
 
-        // Draw data line
-        if (this.data.length > 0) {
-            ctx.beginPath();
-            ctx.moveTo(
-                options.padding, 
-                height - options.padding - (this.data[0].y - yMin) / yRange * graphHeight
-            );
-            for (let i = 1; i < this.data.length; i++) {
-                const x = options.padding + (this.data[i].x - xMin) / xRange * graphWidth;
-                const y = height - options.padding - (this.data[i].y - yMin) / yRange * graphHeight;
-                ctx.lineTo(x, y);
+        setNoteIndicators(indicators) {
+            this.noteIndicators = indicators;
+            // No direct draw needed here, draw() will use the latest state.
+            // If indicators need immediate redraw without other triggers, call requestDraw().
+        }
+
+        resizeCanvas() {
+            const parent = this.canvas.parentElement;
+            if (!parent) return false;
+
+            const cssWidth = parent.clientWidth;
+            const cssHeight = parent.clientHeight;
+
+            if (cssWidth === 0 || cssHeight === 0) {
+                // Canvas is likely hidden or container has no size yet
+                if (this.canvas.width !== 0 || this.canvas.height !== 0) {
+                     // If it previously had size, clear it
+                     this.canvas.width = 0;
+                     this.canvas.height = 0;
+                     return true; // Indicate change happened (to zero size)
+                }
+                return false; // Already zero size
             }
-            ctx.strokeStyle = options.lineColor;
-            ctx.lineWidth = options.lineWidth;
-            ctx.stroke();
+
+            // Check if canvas bitmap size needs update (match CSS size exactly)
+            if (this.canvas.width !== cssWidth || this.canvas.height !== cssHeight) {
+                this.canvas.width = cssWidth;
+                this.canvas.height = cssHeight;
+                // No need to set style width/height if using CSS w:100%/h:100%
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform (important!)
+                return true; // Indicate resize happened
+            }
+            return false; // No resize needed
         }
 
-        // Draw annotations
-        this.annotations.forEach(ann => {
-            const x = options.padding + (ann.x - xMin) / xRange * graphWidth;
-            const y = height - options.padding - (ann.y - yMin) / yRange * graphHeight;
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#BB86FC';
-            ctx.fill();
+        setData(data) {
+            this.data = data;
+            this.autoScale();
+            this.requestDraw();
+        }
+
+        autoScale() {
+            if (this.data.length === 0) {
+                this.currentView = { xMin: 0, xMax: 1200, yMin: 0, yMax: 1 };
+                return;
+            }
+            let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+            this.data.forEach(point => {
+                if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+                xMin = Math.min(xMin, point.x);
+                xMax = Math.max(xMax, point.x);
+                yMin = Math.min(yMin, point.y);
+                yMax = Math.max(yMax, point.y);
+            });
+
+             if (xMin === Infinity) {
+                  this.currentView = { xMin: 0, xMax: 1200, yMin: 0, yMax: 1 };
+                  return;
+             }
+             if (xMin === xMax) {
+                 xMin -= 100;
+                 xMax += 100;
+             }
+             if (yMin === yMax) {
+                 yMin -= 0.5;
+                 yMax += 0.5;
+             }
+
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+            const xPadding = xRange * 0.01;
+            const yPadding = yRange * 0.05;
+
+            this.currentView.xMin = xMin - xPadding;
+            this.currentView.xMax = xMax + xPadding;
+            this.currentView.yMin = Math.floor((yMin - yPadding) * 10) / 10;
+            this.currentView.yMax = Math.ceil((yMax + yPadding) * 10) / 10;
+        }
+
+        requestDraw() {
+            if (!this.drawRequestScheduled) {
+                this.drawRequestScheduled = true;
+                requestAnimationFrame(() => {
+                    this.draw();
+                    this.drawRequestScheduled = false;
+                });
+            }
+        }
+
+        draw() {
+            if (this.isDrawing) return;
+            this.isDrawing = true;
+
+            // Resize canvas bitmap if needed BEFORE drawing
+            const resized = this.resizeCanvas();
+
+            // If canvas has no size (e.g., hidden), stop drawing
+             if (this.canvas.width === 0 || this.canvas.height === 0) {
+                  this.isDrawing = false;
+                  return;
+             }
+
+            const { ctx, options, canvas } = this;
+            const { width: canvasWidth, height: canvasHeight } = canvas;
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            const graphAreaX = options.paddingLeft;
+            const graphAreaY = options.paddingTop;
+            const graphAreaWidth = canvasWidth - options.paddingLeft - options.paddingRight;
+            const graphAreaHeight = canvasHeight - options.paddingTop - options.paddingBottom;
+
+            if (graphAreaWidth <= 0 || graphAreaHeight <= 0) {
+                this.isDrawing = false;
+                return;
+            }
+
+            const { xMin, xMax, yMin, yMax } = this.currentView;
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+
+            if (!xRange || !yRange || !Number.isFinite(xMin) || !Number.isFinite(xMax) || !Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+                console.error("Invalid view range for drawing:", this.currentView);
+                this.isDrawing = false;
+                return;
+            }
+
+            this.drawGrid(ctx, options, graphAreaX, graphAreaY, graphAreaWidth, graphAreaHeight, xMin, xMax, yMin, yMax);
+            this.drawDataLine(ctx, options, graphAreaX, graphAreaY, graphAreaWidth, graphAreaHeight, xMin, xMax, yMin, yMax);
+            this.drawAnnotations(ctx, options, graphAreaX, graphAreaY, graphAreaWidth, graphAreaHeight, xMin, xMax, yMin, yMax);
+            this.drawNoteIndicators(ctx, options, graphAreaX, graphAreaY, graphAreaWidth, graphAreaHeight, xMin, xMax);
+
+            this.isDrawing = false;
+        }
+
+        drawGrid(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = options.gridColor;
             ctx.fillStyle = options.textColor;
+            ctx.font = '10px Arial';
+
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+
+            // Vertical grid lines
+            const xStep = 100;
+            const startX = Math.ceil(xMin / xStep) * xStep;
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(ann.label, x, y - 8);
-        });
+            ctx.textBaseline = 'top';
+            for (let x = startX; x <= xMax; x += xStep) {
+                 if (x < xMin) continue;
+                 const screenX = gx + (x - xMin) / xRange * gw;
+                 if (!Number.isFinite(screenX)) continue;
+                 const sharpX = Math.round(screenX);
+                 if (sharpX >= gx && sharpX <= gx + gw) {
+                    ctx.beginPath();
+                    ctx.moveTo(sharpX, gy);
+                    ctx.lineTo(sharpX, gy + gh);
+                    ctx.stroke();
+                    if (sharpX > gx + 10 && sharpX < gx + gw - 10) {
+                        ctx.fillText(x.toFixed(0), sharpX, gy + gh + 4);
+                    }
+                 }
+            }
+             ctx.textAlign = 'left';
+             ctx.fillText(xMin.toFixed(0), gx, gy + gh + 4);
+             ctx.textAlign = 'right';
+             ctx.fillText(xMax.toFixed(0), gx + gw, gy + gh + 4);
 
-        // Draw note indicators
-        this.noteIndicators.forEach(ind => {
-            if (ind.x === null) return;
-            const x = options.padding + (ind.x - xMin) / xRange * graphWidth;
+            // Horizontal grid lines
+            const yTargetSteps = Math.max(3, Math.floor(gh / 40));
+            const roughYStep = yRange / yTargetSteps;
+            let yStep = roughYStep > 0 ? Math.pow(10, Math.floor(Math.log10(roughYStep))) : 0.1;
+             const mult = yRange / (yStep * yTargetSteps);
+             if (mult > 5) yStep *= 5;
+             else if (mult > 2) yStep *= 2;
+
+            const startY = Math.ceil(yMin / yStep) * yStep;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let y = startY; y <= yMax; y += yStep) {
+                 if (y < yMin) continue;
+                 const screenY = gy + gh - (y - yMin) / yRange * gh;
+                 if (!Number.isFinite(screenY)) continue;
+                 const sharpY = Math.round(screenY);
+                 if (sharpY >= gy && sharpY <= gy + gh) {
+                    ctx.beginPath();
+                    ctx.moveTo(gx, sharpY);
+                    ctx.lineTo(gx + gw, sharpY);
+                    ctx.stroke();
+                     if (sharpY > gy + 8 && sharpY < gy + gh - 8) {
+                        ctx.fillText(y.toFixed(yStep < 0.1 ? 2 : (yStep < 1 ? 1 : 0)), gx - 5, sharpY);
+                     }
+                 }
+            }
+             ctx.textBaseline = 'bottom';
+             ctx.fillText(yMin.toFixed(1), gx - 5, gy + gh);
+             ctx.textBaseline = 'top';
+             ctx.fillText(yMax.toFixed(1), gx - 5, gy);
+        }
+
+        drawDataLine(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+            if (this.data.length < 2) return;
+
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+
             ctx.beginPath();
-            ctx.moveTo(x, options.padding);
-            ctx.lineTo(x, height - options.padding);
-            ctx.strokeStyle = ind.noteIndex === 0 
-                ? `rgba(0,0,255,${ind.opacity})` 
-                : `rgba(255,0,0,${ind.opacity})`;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        });
-    }
+            let firstPointDrawn = false;
+            for (const p of this.data) {
+                if (p.x >= xMin && p.x <= xMax) {
+                    const screenX = gx + (p.x - xMin) / xRange * gw;
+                    const screenY = gy + gh - (p.y - yMin) / yRange * gh;
 
-    calculateSteps(range, screenSize) {
-        const targetSteps = screenSize / 80;
-        let step = Math.pow(10, Math.floor(Math.log10(range / targetSteps)));
-        if (range / (step * 2) < targetSteps) step /= 2;
-        if (range / (step * 5) < targetSteps) step /= 5;
-        return Math.max(1, Math.round(step));
-    }
-}
+                    if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) continue;
+                    const clampedY = Math.max(gy, Math.min(gy + gh, screenY));
 
+                    if (!firstPointDrawn) {
+                        ctx.moveTo(screenX, clampedY);
+                        firstPointDrawn = true;
+                    } else {
+                        ctx.lineTo(screenX, clampedY);
+                    }
+                } else if (firstPointDrawn && p.x > xMax) {
+                    break;
+                }
+            }
+
+            if (firstPointDrawn) {
+                ctx.strokeStyle = options.lineColor;
+                ctx.lineWidth = options.lineWidth;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        drawAnnotations(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+             if (this.annotations.length === 0) return;
+
+             const xRange = xMax - xMin;
+             const yRange = yMax - yMin;
+
+             ctx.fillStyle = options.annotationColor;
+             ctx.font = '11px Arial';
+             ctx.textAlign = 'center';
+
+             this.annotations.forEach(ann => {
+                 if (ann.x >= xMin && ann.x <= xMax && ann.y >= yMin && ann.y <= yMax) {
+                     const screenX = gx + (ann.x - xMin) / xRange * gw;
+                     const screenY = gy + gh - (ann.y - yMin) / yRange * gh;
+
+                     if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+
+                     ctx.beginPath();
+                     ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
+                     ctx.fill();
+
+                     ctx.fillStyle = options.textColor;
+                     ctx.textBaseline = 'top';
+                     ctx.fillText(ann.label, screenX, screenY + 6);
+                 }
+             });
+        }
+
+        drawNoteIndicators(ctx, options, gx, gy, gw, gh, xMin, xMax) {
+             if (this.noteIndicators.length === 0) return;
+
+             const xRange = xMax - xMin;
+
+             ctx.lineWidth = 2;
+             ctx.setLineDash([4, 4]);
+
+             this.noteIndicators.forEach(ind => {
+                 if (ind.x === null || ind.x < xMin || ind.x > xMax || ind.opacity <= 0) return;
+
+                 const screenX = gx + (ind.x - xMin) / xRange * gw;
+                 if (!Number.isFinite(screenX)) return;
+
+                 const baseColor = ind.noteIndex === 0 ? options.noteIndicatorColor1 : options.noteIndicatorColor2;
+                 // Ensure baseColor is rgba format before replacing alpha
+                 let colorWithAlpha = baseColor;
+                 if (baseColor.startsWith('rgba')) {
+                    colorWithAlpha = baseColor.replace(/[\d.]+\)$/, `${ind.opacity.toFixed(2)})`);
+                 } else if (baseColor.startsWith('rgb')) {
+                    colorWithAlpha = baseColor.replace('rgb', 'rgba').replace(')', `, ${ind.opacity.toFixed(2)})`);
+                 }
+                 // Add fallback if color format is unexpected (e.g., hex)
+                 // else { colorWithAlpha = `rgba(some_default_rgb, ${ind.opacity.toFixed(2)})`; }
+
+
+                 ctx.strokeStyle = colorWithAlpha;
+                 ctx.beginPath();
+                 ctx.moveTo(Math.round(screenX), gy);
+                 ctx.lineTo(Math.round(screenX), gy + gh);
+                 ctx.stroke();
+             });
+
+             ctx.setLineDash([]);
+         }
+    } // End of ChartRenderer class
     class FFT {
       constructor(size) {
         this.size = size;
@@ -658,29 +875,30 @@ class ChartRenderer {
     let currentNote1 = null;
     let currentNote2 = null;
     const baseFrequency = 440;
-    const semitonesPerOctave = 12;
-    const octaveRange = 2;
-    const totalSemitones = semitonesPerOctave * octaveRange;
-    const centsPerSemitone = 100;
-    const totalCentsRange = totalSemitones * centsPerSemitone;
+    // const semitonesPerOctave = 12; // Not directly used here
+    // const octaveRange = 2; // Not directly used here
+    // const totalSemitones = semitonesPerOctave * octaveRange; // Not directly used here
+    // const centsPerSemitone = 100; // Not directly used here
+    // const totalCentsRange = totalSemitones * centsPerSemitone; // Not directly used here
     let isMouseDown = false;
 
     const audioParams = {
       oscillatorType: 'sawtooth',
       filterFrequency: 1000,
       filterType: 'lowpass',
-      gainAttackTime: 0.1,
+      gainAttackTime: 0.05, // Slightly faster attack
       gainSustainLevel: 0.5,
       gainReleaseTime: 0.2,
     };
-    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
+
+    // Вертикальные индикаторы звука
     let activeNoteIndicators = [
-      { noteIndex: 0, x: null, opacity: 0 },
-      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
+      { noteIndex: 0, x: null, opacity: 0 }, // Movable note
+      { noteIndex: 1, x: 0, opacity: 0 }    // Tonic at 0 cents
     ];
 
-    // Добавляем глобальную переменную для ревербератора:
     let reverbNode = null;
+    let tonicTimeout = null; // Timer for delayed tonic note
 
     // Добавляем функцию для создания импульсного отклика ревербератора:
     function createImpulseResponse(context, duration, decay) {
@@ -736,156 +954,312 @@ class ChartRenderer {
       analyser.connect(audioContext.destination);
       return { oscillator, gainNode };
     }
-
-    // Обновляем opacity вертикальных индикаторов по данным анализатора
-    function updateNoteIndicatorsOpacity() {
-      analysers.forEach((analyser, i) => {
-        if (!analyser) return;
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteTimeDomainData(dataArray);
-        let level = 0;
-        for (let j = 0; j < dataArray.length; j++) {
-          level += Math.abs(dataArray[j] - 128);
-        }
-        level /= dataArray.length;
-        activeNoteIndicators[i].opacity = Math.min(1, Math.max(0, level / 50));
-      });
-      if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
-      requestAnimationFrame(updateNoteIndicatorsOpacity);
-    }
     function centsToFrequency(centsOffset) {
       return baseFrequency * Math.pow(2, centsOffset / 1200);
     }
 
+    // Helper function to stop a note gracefully
+    function stopNote(note, stopTime) {
+        if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
+            // Check oscillator playback state before stopping
+            // This might require tracking state, or relying on try/catch if stop throws error
+             try {
+                note.gainNode.gain.cancelScheduledValues(stopTime);
+                note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime); // Hold current gain
+                note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
+                note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
+             } catch (e) {
+                 // console.warn("Error stopping note (already stopped?):", e);
+                 // Might happen if stop is called multiple times rapidly
+             }
+        }
+    }
 
-    HEPlotDiv.addEventListener('mousemove', (event) => {
-      if (!isMouseDown || !chartRenderer) return;
-      const canvas = document.getElementById('heChart'); // Получаем элемент canvas
-      const rect = canvas.getBoundingClientRect(); // Получаем координаты canvas относительно окна
-      const clickX = event.clientX - rect.left; // Координата X клика относительно canvas
-      const canvasWidth = canvas.width / devicePixelRatio; // Ширина canvas с учетом pixel ratio
-      const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2; // Ширина графика с учетом padding
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth; // Нормализованная координата X внутри графика
-      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
-      activeNoteIndicators[0].x = xValue;
-      if (currentNote1) {
-        const freq1 = centsToFrequency(xValue);
-        currentNote1.oscillator.frequency.setValueAtTime(freq1, audioContext.currentTime);
+    // Update opacity of note indicators based on analyser data
+    function updateNoteIndicatorsOpacity() {
+      let needsRedraw = false;
+      analysers.forEach((analyser, i) => {
+        if (!analyser || !activeNoteIndicators[i]) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(dataArray);
+        let level = 0;
+        for (let j = 0; j < dataArray.length; j++) {
+          level += Math.abs(dataArray[j] - 128); // Sum deviations from midpoint
+        }
+        level = dataArray.length > 0 ? level / dataArray.length : 0; // Average deviation
+        // Map level to opacity (adjust divisor for sensitivity)
+        const newOpacity = Math.min(1, Math.max(0, level / 40)); // Lower divisor = more sensitive
+
+        // Only flag for redraw if opacity changes significantly
+        if (Math.abs(activeNoteIndicators[i].opacity - newOpacity) > 0.01) {
+          activeNoteIndicators[i].opacity = newOpacity;
+          needsRedraw = true;
+        }
+        // Ensure tonic opacity also updates if it's playing
+        if (i === 1 && currentNote2 && activeNoteIndicators[i].opacity <= 0.01) {
+            activeNoteIndicators[i].opacity = 0; // Snap to zero if very low
+            needsRedraw = true;
+        }
+         if (i === 0 && !currentNote1 && activeNoteIndicators[i].opacity <= 0.01) {
+             activeNoteIndicators[i].opacity = 0; // Snap to zero if very low
+             needsRedraw = true;
+         }
+
+      });
+
+      // Request redraw ONLY if opacity changed OR if mouse is down (to show moving line)
+      if ((needsRedraw || isMouseDown) && chartRenderer) {
+         // Pass the *updated* indicators to the renderer
+         chartRenderer.setNoteIndicators(activeNoteIndicators);
+         chartRenderer.requestDraw(); // Use the debounced draw request
       }
-    });
 
-    // Обработка кликов в области графика (HEPlotDiv) – теперь координата x вычисляется всегда через chartRenderer.currentView
-    let tonicTimeout = null; // Добавлено для хранения идентификатора таймера тоники
+      requestAnimationFrame(updateNoteIndicatorsOpacity); // Continue the loop
+    }
+
+    // Helper to get X data coordinate (cents) from mouse event
+    function getXValueFromEvent(event) {
+        if (!chartRenderer || !chartRenderer.currentView) return null;
+
+        const canvas = chartRenderer.canvas; // Use renderer's canvas reference
+        const rect = canvas.getBoundingClientRect(); // Get canvas position on screen
+
+        // Calculate click X relative to the canvas element's top-left corner
+        // event.clientX works relative to viewport, rect.left is canvas left relative to viewport
+        const clickX = event.clientX - rect.left;
+
+        // Use canvas bitmap width (which matches CSS width in our setup)
+        const canvasWidth = canvas.width;
+        const view = chartRenderer.currentView;
+        const padding = chartRenderer.options.paddingLeft;
+        const graphAreaWidth = canvasWidth - chartRenderer.options.paddingLeft - chartRenderer.options.paddingRight;
+
+        if (graphAreaWidth <= 0) return null;
+
+        // Calculate click relative to the graph *area* start
+        const clickXRelativeToGraph = clickX - padding;
+
+        // Normalize X within the graph area [0, 1], clamping to edges
+        const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+
+        // Convert normalized X back to data coordinates (cents)
+        const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+
+        return xValue;
+    }
+
+    // --- Event Listeners ---
+    const HEPlotDiv = document.getElementById('HEPlotDiv');
+
     HEPlotDiv.addEventListener('mousedown', async (event) => {
-      if (!audioContext) await initAudio();
-      if (!chartRenderer) return;
-      isMouseDown = true;
-      const canvas = document.getElementById('heChart');
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const canvasWidth = canvas.width / devicePixelRatio;
-      const view = chartRenderer.currentView;
-      const graphWidth = canvasWidth - chartRenderer.options.padding * 2;
-      const normalizedX = (clickX - chartRenderer.options.padding) / graphWidth;
-      const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
-      activeNoteIndicators[0].x = xValue;
-      // Запускаем первую ноту:
-      const now = audioContext.currentTime;
-      const freq1 = centsToFrequency(xValue);
-      currentNote1 = createNote(freq1, now, 0);
-      currentNote1.oscillator.start(now);
-      // Запускаем вторую ноту (тонику) с задержкой
-      const noteDelay = parseFloat(document.getElementById('noteDelay').value);
-      activeNoteIndicators[1].x = 0; // Тоника всегда на 0 центах
-      tonicTimeout = setTimeout(() => { // Сохраняем ID таймера
-        const freq2 = baseFrequency;
-        currentNote2 = createNote(freq2, audioContext.currentTime, 1);
-        currentNote2.oscillator.start(audioContext.currentTime);
-      }, noteDelay * 1000);
-    });
+        if (event.button !== 0) return; // Only react to left mouse button
 
-    document.addEventListener('mouseup', () => {
-      if (isMouseDown) {
-        isMouseDown = false;
+        if (!audioContext) await initAudio();
+        if (!chartRenderer) return; // Chart must be ready
+
+        const xValue = getXValueFromEvent(event);
+        if (xValue === null) return; // Ignore clicks outside valid area
+
+        isMouseDown = true;
+        document.body.classList.add('dragging'); // Add dragging cursor style
+
+        // Stop any existing notes immediately
         const now = audioContext.currentTime;
-        // Остановка первой ноты
-        if (currentNote1) {
-          currentNote1.gainNode.gain.cancelScheduledValues(now);
-          currentNote1.gainNode.gain.setValueAtTime(currentNote1.gainNode.gain.value, now);
-          currentNote1.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
-          currentNote1.oscillator.stop(now + audioParams.gainReleaseTime);
-          currentNote1 = null;
-        }
+        stopNote(currentNote1, now);
+        stopNote(currentNote2, now);
+        if (tonicTimeout) clearTimeout(tonicTimeout); // Clear delayed tonic timer
 
-        // Остановка второй ноты (тоники) - ПРОВЕРКА И ОЧИСТКА ТАЙМЕРА
-        if (currentNote2) {
-          currentNote2.gainNode.gain.cancelScheduledValues(now);
-          currentNote2.gainNode.gain.setValueAtTime(currentNote2.gainNode.gain.value, now);
-          currentNote2.gainNode.gain.linearRampToValueAtTime(0, now + audioParams.gainReleaseTime);
-          currentNote2.oscillator.stop(now + audioParams.gainReleaseTime);
-          currentNote2 = null;
-        } else {
-          clearTimeout(tonicTimeout); // Очищаем таймер, если тоника еще не была создана
-        }
+        // Start the first note (at cursor position)
+        activeNoteIndicators[0].x = xValue;
+        activeNoteIndicators[0].opacity = 1; // Show immediately at full opacity initially
+        const freq1 = centsToFrequency(xValue);
+        currentNote1 = createNote(freq1, now, 0);
+        currentNote1.oscillator.start(now);
 
+        // Schedule the second note (tonic) with delay
+        activeNoteIndicators[1].x = 0; // Tonic is always at 0 cents
+        activeNoteIndicators[1].opacity = 0; // Start tonic indicator hidden
+        const noteDelaySeconds = parseFloat(document.getElementById('noteDelay').value);
 
-        activeNoteIndicators[0].x = null;
-        activeNoteIndicators[0].opacity = 0;
-        activeNoteIndicators[1].opacity = 0;
-        if (chartRenderer) { chartRenderer.setNoteIndicators(activeNoteIndicators); }
-      }
+        tonicTimeout = setTimeout(() => {
+            // Check if mouse is still down when timer fires
+            if (isMouseDown && audioContext) {
+                 const tonicStartTime = audioContext.currentTime;
+                 const freq2 = baseFrequency; // Tonic frequency
+                 currentNote2 = createNote(freq2, tonicStartTime, 1);
+                 currentNote2.oscillator.start(tonicStartTime);
+                 activeNoteIndicators[1].opacity = 1; // Show tonic indicator
+                 if (chartRenderer) chartRenderer.requestDraw(); // Redraw to show tonic line immediately
+            }
+            tonicTimeout = null; // Clear timer ID
+        }, noteDelaySeconds * 1000);
+
+        // Initial draw to show the first note indicator
+        chartRenderer.setNoteIndicators(activeNoteIndicators);
+        chartRenderer.requestDraw();
     });
+
+    document.addEventListener('mousemove', (event) => { // Listen on document for dragging outside
+        if (!isMouseDown || !chartRenderer) return; // Only act if dragging
+
+        const xValue = getXValueFromEvent(event);
+        if (xValue === null) {
+            // If mouse moves outside valid area while dragging, maybe stop notes? Or just stop moving line?
+            // Let's just stop moving the line for now.
+            return;
+        };
+
+        // Update the position of the first note indicator
+        activeNoteIndicators[0].x = xValue;
+
+        // Smoothly change the frequency of the first note
+        if (currentNote1 && audioContext) {
+            const freq1 = centsToFrequency(xValue);
+            // Use setTargetAtTime for smoother frequency changes
+            currentNote1.oscillator.frequency.setTargetAtTime(freq1, audioContext.currentTime, 0.01); // 0.01s time constant
+        }
+
+        // Request redraw to show the moving indicator line
+        chartRenderer.setNoteIndicators(activeNoteIndicators);
+        chartRenderer.requestDraw();
+    });
+
+    document.addEventListener('mouseup', (event) => { // Listen on document
+        if (event.button !== 0 || !isMouseDown) return; // Only react to left mouse button release if dragging
+
+        isMouseDown = false;
+        document.body.classList.remove('dragging'); // Remove dragging cursor style
+
+        const now = audioContext ? audioContext.currentTime : 0;
+
+        // Stop both notes
+        stopNote(currentNote1, now);
+        stopNote(currentNote2, now);
+        currentNote1 = null;
+        currentNote2 = null;
+
+        // Clear the tonic timer if it hasn't fired yet
+        if (tonicTimeout) {
+            clearTimeout(tonicTimeout);
+            tonicTimeout = null;
+        }
+
+        // Hide the first note indicator (set x to null)
+        // Opacity will fade out naturally via updateNoteIndicatorsOpacity
+        activeNoteIndicators[0].x = null;
+        // We can optionally force opacity to 0 here, but letting the analyser handle it is smoother
+        // activeNoteIndicators[0].opacity = 0;
+        // activeNoteIndicators[1].opacity = 0; // Tonic indicator opacity will also fade via analyser
+
+        // Request a final draw to remove the line if opacity doesn't handle it fast enough
+        if (chartRenderer) {
+            chartRenderer.setNoteIndicators(activeNoteIndicators);
+            chartRenderer.requestDraw();
+        }
+    });
+
+
     /* ================================
          ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
        ================================ */
-    let chartRenderer = null;
+    let chartRenderer = null; // Ensure renderer is accessible globally
+
     window.addEventListener('DOMContentLoaded', () => {
       const calculator = new HarmonicEntropyCalculator();
-      function updatePlot() {
-        const HEinfo = {
-          N: parseInt(document.getElementById("textN").value),
-          mincents: parseFloat(document.getElementById("textmin").value) * 1200,
-          maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
-          s: parseFloat(document.getElementById("sliders").value / 100),
-          a: parseFloat(document.getElementById("slidera").value),
-          res: 1.0
-        };
-        calculator.preCalcRatios(HEinfo);
+
+      // Debounce updatePlot to avoid excessive calculations during slider drags
+      let debounceTimeout = null;
+      function debouncedUpdatePlot(delay = 250) { // 250ms delay
+          clearTimeout(debounceTimeout);
+          debounceTimeout = setTimeout(() => {
+             updatePlot();
+          }, delay);
       }
-      updatePlot();
+
+      function updatePlot() {
+          console.log("Updating plot..."); // Debug log
+          const HEinfo = {
+            // Provide default values in case parsing fails
+            N: parseInt(document.getElementById("textN").value) || 3000,
+            mincents: (parseFloat(document.getElementById("textmin").value) || 0) * 1200,
+            maxcents: (parseFloat(document.getElementById("textmax").value) || 1) * 1200,
+            s: (parseFloat(document.getElementById("sliders").value) || 1.25) / 100, // Convert percentage
+            a: parseFloat(document.getElementById("slidera").value) || 2.4,
+            res: 1.0 // Resolution seems fixed in calculation
+          };
+
+          // Basic validation
+          if (isNaN(HEinfo.mincents) || isNaN(HEinfo.maxcents) || HEinfo.mincents >= HEinfo.maxcents || HEinfo.N <= 0 || HEinfo.s <= 0 || HEinfo.a <= 0) {
+            console.error("Invalid HE parameters:", HEinfo);
+            // Maybe display an error message to the user?
+            return;
+          }
+          // Check if maxcents is reasonably larger than mincents
+           if (HEinfo.maxcents - HEinfo.mincents < 10) { // Require at least 10 cents range
+                console.warn("HE range too small:", HEinfo.maxcents - HEinfo.mincents);
+                // Optionally provide feedback or prevent calculation
+           }
+
+
+          calculator.preCalcRatios(HEinfo); // Start calculation process
+      }
+
+      // --- Setup Event Listeners ---
       document.getElementById("slidera").addEventListener("input", (e) => {
-        document.getElementById("aval").textContent = "Bandwidth (a): " + e.target.value;
-        updatePlot();
+        document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(e.target.value).toFixed(2);
+        debouncedUpdatePlot(); // Use debounced update for sliders
       });
       document.getElementById("sliders").addEventListener("input", (e) => {
         document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
-        updatePlot();
+        debouncedUpdatePlot(); // Use debounced update for sliders
       });
+
+      // Update label for Note Delay slider immediately on input
       document.getElementById("noteDelay").addEventListener("input", (e) => {
-        document.getElementById("delay").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "%";
-        updatePlot();
+        document.getElementById("noteDelayLabel").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+        // No need to updatePlot for note delay change
       });
-      document.getElementById('textN').addEventListener('input', updatePlot);
-      document.getElementById('textmin').addEventListener('input', updatePlot);
-      document.getElementById('textmax').addEventListener('input', updatePlot);
+
+      // Use 'change' event for text inputs to update plot after user finishes editing
+      document.getElementById('textN').addEventListener('change', updatePlot);
+      document.getElementById('textmin').addEventListener('change', updatePlot);
+      document.getElementById('textmax').addEventListener('change', updatePlot);
+
       document.querySelectorAll('.stepper-button').forEach(button => {
         button.addEventListener('click', function() {
           const targetInputId = this.dataset.target;
           const inputElement = document.getElementById(targetInputId);
           let currentValue = parseInt(inputElement.value, 10);
+          if (isNaN(currentValue)) currentValue = 0; // Handle non-numeric input
           const step = parseInt(inputElement.step, 10) || 1;
+
           currentValue += this.classList.contains('minus') ? -step : step;
+
+           // Add reasonable limits for min/max octaves if desired
+           if (targetInputId === 'textmin' || targetInputId === 'textmax') {
+                currentValue = Math.max(-2, Math.min(5, currentValue)); // Example limit: -2 to 5 octaves
+           }
+           if (targetInputId === 'textN') {
+                currentValue = Math.max(10, currentValue); // Minimum N value
+           }
+
+
           inputElement.value = currentValue;
-          updatePlot();
+          updatePlot(); // Update plot immediately on stepper click
         });
       });
-      // Обновление значения noteDelay на спане
-      document.getElementById('noteDelay').addEventListener('input', function(e) {
-        document.getElementById('noteDelayValue').textContent = parseFloat(e.target.value).toFixed(1);
-      });
-      // После инициализации графика запускаем обновление вертикальных индикаторов
-      updateNoteIndicatorsOpacity();
+
+      // --- Initial Setup ---
+      // Set initial label values from defaults
+      document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(document.getElementById("slidera").value).toFixed(2);
+      document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(document.getElementById("sliders").value).toFixed(2) + "%";
+      document.getElementById("noteDelayLabel").textContent = "Note Delay: " + parseFloat(document.getElementById('noteDelay').value).toFixed(2) + "s";
+
+      // Initial plot calculation
+      updatePlot();
+
+      // Start the audio analyser loop after a short delay
+      setTimeout(updateNoteIndicatorsOpacity, 200);
     });
   </script>
 </body>
