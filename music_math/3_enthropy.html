@@ -25,10 +25,12 @@
       flex-direction: column;
       align-items: center;
     }
+    /* Общий контейнер графика и панели */
     #appContainer {
       width: 90%;
       max-width: 1000px;
     }
+    /* Область для графика HE (и для взаимодействия с аудио) */
     #HEPlotDiv {
       position: relative;
       height: 50vh;
@@ -39,8 +41,9 @@
       background: var(--surface-color);
       padding: 16px;
       box-sizing: border-box;
-      cursor: pointer;
+      cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
     }
+    /* Панель управления – общая для HE и аудио */
     #controls {
       background: var(--surface-color);
       border-radius: 12px;
@@ -170,9 +173,11 @@
 </head>
 <body>
   <div id="appContainer">
+    <!-- График HE + область для интерактивного управления аудио -->
     <div id="HEPlotDiv">
       <canvas id="heChart"></canvas>
     </div>
+    <!-- Панель управления (общая для графика и аудио) -->
     <div id="controls">
       <div class="controls-column-left">
         <div class="controlrow">
@@ -211,8 +216,9 @@
             <input type="range" id="sliders" class="slider" min="0.5" max="2.1" step="0.001" value="1.25" />
           </div>
         </div>
+        <!-- Контрол для задержки нот -->
         <div class="controlrow">
-          <span class="label" id="noteDelayValue">Note Delay: 0.15s</span>
+          <span class="label" id="delay">Note Delay: 0.15%</span>
           <div class="slider-container">
             <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
           </div>
@@ -222,6 +228,9 @@
   </div>
 
   <script>
+    /* =================================
+         КЛАССЫ ДЛЯ ГРАФИКА HE
+       ================================= */
     class HarmonicEntropyCalculator {
       static instance = null;
       constructor() {
@@ -257,7 +266,7 @@
             maxima.push({ x: HE[i].x, y: HE[i].y, strength: Math.abs(dyPrev) + Math.abs(dyNext) });
           }
         }
-        return maxima.sort((a, b) => b.strength - b.strength);
+        return maxima.sort((a, b) => b.strength - a.strength);
       }
       findClosestHEPoint(HE, cent) {
         let low = 0, high = HE.length - 1, mid;
@@ -398,578 +407,298 @@
         }
       }
       plotHE(HEinfo) {
-        const HE = this.calculateHarmonicEntropy(HEinfo);
-        if (!HE || HE.length === 0) {
-            console.warn("No HE data to plot.");
+          const HE = this.calculateHarmonicEntropy(HEinfo);
+          if (!HE || HE.length === 0) {
+              console.warn("No HE data to plot.");
+              return;
+          }
+          const minima = this.findLocalMinima(HE);
+          const annotations = this.findRatiosAtMinima(HE, minima);
+          const canvas = document.getElementById('heChart');
+
+          if (!chartRenderer) {
+              chartRenderer = new ChartRenderer(canvas);
+          }
+
+          chartRenderer.setData(HE);
+          chartRenderer.setAnnotations(annotations);
+      }
+  }
+
+class ChartRenderer {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.data = [];
+        this.annotations = [];
+        this.options = {
+            padding: 20,
+            gridColor: 'rgba(255,255,255,0.05)',
+            textColor: 'rgba(255,255,255,0.6)',
+            lineColor: '#FFFFFF',
+            lineWidth: 2,
+            ...options
+        };
+        this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+        this.noteIndicators = [];
+        this.isDrawing = false;
+        this.drawRequestScheduled = false;
+
+        this.resizeObserver = new ResizeObserver(entries => this.requestDraw());
+        this.resizeObserver.observe(canvas.parentElement);
+        this.resizeAndDraw();
+    }
+
+    setAnnotations(annotations) {
+        this.annotations = annotations;
+        this.requestDraw();
+    }
+
+    setNoteIndicators(indicators) {
+        this.noteIndicators = indicators;
+    }
+
+    resizeAndDraw() {
+        const parent = this.canvas.parentElement;
+        if (!parent) return;
+        const cssWidth = parent.clientWidth;
+        const cssHeight = parent.clientHeight;
+
+        const currentCssWidth = parseFloat(this.canvas.style.width) || 0;
+        const currentCssHeight = parseFloat(this.canvas.style.height) || 0;
+
+        if (cssWidth === 0 || cssHeight === 0) return;
+
+        if (cssWidth !== currentCssWidth || cssHeight !== currentCssHeight) {
+            this.canvas.style.width = cssWidth + 'px';
+            this.canvas.style.height = cssHeight + 'px';
+            this.canvas.width = cssWidth * devicePixelRatio;
+            this.canvas.height = cssHeight * devicePixelRatio;
+            this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        }
+        this.draw();
+    }
+
+    setData(data) {
+        this.data = data;
+        this.autoScale();
+        this.requestDraw();
+    }
+
+    autoScale() {
+        if (this.data.length === 0) return;
+        let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+        this.data.forEach(point => {
+            xMin = Math.min(xMin, point.x);
+            xMax = Math.max(xMax, point.x);
+            yMin = Math.min(yMin, point.y);
+            yMax = Math.max(yMax, point.y);
+        });
+
+        const xRange = xMax - xMin || 1;
+        const yRange = yMax - yMin || 1;
+        const xPadding = xRange * 0.01;
+        const yPadding = yRange * 0.05;
+
+        this.currentView.xMin = xMin - xPadding;
+        this.currentView.xMax = xMax + xPadding;
+        this.currentView.yMin = Math.floor((yMin - yPadding) * 10) / 10;
+        this.currentView.yMax = Math.ceil((yMax + yPadding) * 10) / 10;
+    }
+
+    requestDraw() {
+        if (!this.drawRequestScheduled) {
+            this.drawRequestScheduled = true;
+            requestAnimationFrame(() => {
+                this.draw();
+                this.drawRequestScheduled = false;
+            });
+        }
+    }
+
+    draw() {
+        if (this.isDrawing) return;
+        this.isDrawing = true;
+
+        if (this.canvas.offsetParent === null || this.canvas.clientWidth === 0 || this.canvas.clientHeight === 0) {
+            this.isDrawing = false;
             return;
         }
-        const minima = this.findLocalMinima(HE);
-        const annotations = this.findRatiosAtMinima(HE, minima);
-        const canvas = document.getElementById('heChart');
 
-        if (!chartRenderer) {
-            chartRenderer = new ChartRenderer(canvas);
-        }
+        this.resizeAndDraw();
 
-        chartRenderer.setData(HE);
-        chartRenderer.setAnnotations(annotations);
-      }
-    }
+        const { ctx, options, canvas } = this;
+        const cssWidth = canvas.clientWidth;
+        const cssHeight = canvas.clientHeight;
 
-    class ChartRenderer {
-        constructor(canvas, options = {}) {
-            this.canvas = canvas;
-            this.ctx = canvas.getContext('2d');
-            this.data = [];
-            this.annotations = [];
-            this.options = {
-                padding: 20,
-                gridColor: 'rgba(255,255,255,0.05)',
-                textColor: 'rgba(255,255,255,0.6)',
-                lineColor: '#FFFFFF',
-                lineWidth: 2,
-                ...options
-            };
-            this.currentView = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
-            this.noteIndicators = [];
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        const { xMin, xMax, yMin, yMax } = this.currentView;
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        if (!xRange || !yRange || !Number.isFinite(xMin) || !Number.isFinite(xMax) || !Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+            console.error("Invalid view range for drawing:", this.currentView);
             this.isDrawing = false;
-            this.drawRequestScheduled = false;
-
-            this.resizeObserver = new ResizeObserver(entries => this.requestDraw());
-            this.resizeObserver.observe(canvas.parentElement);
-            this.resizeAndDraw();
+            return;
         }
 
-        setAnnotations(annotations) {
-            this.annotations = annotations;
-            this.requestDraw();
-        }
+        const padding = options.padding;
+        const graphAreaWidth = cssWidth - padding * 2;
+        const graphAreaHeight = cssHeight - padding * 2;
 
-        setNoteIndicators(indicators) {
-            this.noteIndicators = indicators;
-        }
-
-        resizeAndDraw() {
-            const parent = this.canvas.parentElement;
-            if (!parent) return;
-            const rect = parent.getBoundingClientRect();
-            const cssWidth = parent.clientWidth;
-            const cssHeight = parent.clientHeight;
-
-            const currentCssWidth = parseFloat(this.canvas.style.width) || 0;
-            const currentCssHeight = parseFloat(this.canvas.style.height) || 0;
-
-            if (cssWidth === 0 || cssHeight === 0) return;
-
-            if (cssWidth !== currentCssWidth || cssHeight !== currentCssHeight) {
-                this.canvas.style.width = cssWidth + 'px';
-                this.canvas.style.height = cssHeight + 'px';
-                this.canvas.width = cssWidth * devicePixelRatio;
-                this.canvas.height = cssHeight * devicePixelRatio;
-                this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-            }
-             this.draw();
-        }
-
-
-        setData(data) {
-            this.data = data;
-            this.autoScale();
-            this.requestDraw();
-        }
-
-        autoScale() {
-            if (this.data.length === 0) return;
-            let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-            this.data.forEach(point => {
-                xMin = Math.min(xMin, point.x);
-                xMax = Math.max(xMax, point.x);
-                yMin = Math.min(yMin, point.y);
-                yMax = Math.max(yMax, point.y);
-            });
-
-            const xRange = xMax - xMin || 1;
-            const yRange = yMax - yMin || 1;
-            const xPadding = xRange * 0.01;
-            const yPadding = yRange * 0.05;
-
-            this.currentView.xMin = xMin - xPadding;
-            this.currentView.xMax = xMax + xPadding;
-            this.currentView.yMin = Math.floor((yMin - yPadding)*10)/10;
-            this.currentView.yMax = Math.ceil((yMax + yPadding)*10)/10;
-        }
-
-        requestDraw() {
-            if (!this.drawRequestScheduled) {
-                this.drawRequestScheduled = true;
-                requestAnimationFrame(() => {
-                    this.draw();
-                    this.drawRequestScheduled = false;
-                });
-            }
-        }
-
-        draw() {
-            if (this.isDrawing) return;
-            this.isDrawing = true;
-
-            if (this.canvas.offsetParent === null || this.canvas.clientWidth === 0 || this.canvas.clientHeight === 0) {
-               this.isDrawing = false;
-               return;
-            }
-
-            this.resizeAndDraw();
-
-            const { ctx, options, canvas } = this;
-            const cssWidth = canvas.clientWidth;
-            const cssHeight = canvas.clientHeight;
-
-            ctx.clearRect(0, 0, cssWidth, cssHeight);
-
-            const { xMin, xMax, yMin, yMax } = this.currentView;
-            const xRange = xMax - xMin;
-            const yRange = yMax - yMin;
-
-            if (!xRange || !yRange || !Number.isFinite(xMin) || !Number.isFinite(xMax) || !Number.isFinite(yMin) || !Number.isFinite(yMax)) {
-                 console.error("Invalid view range for drawing:", this.currentView);
-                 this.isDrawing = false;
-                 return;
-            }
-
-            const padding = options.padding;
-            const graphAreaWidth = cssWidth - padding * 2;
-            const graphAreaHeight = cssHeight - padding * 2;
-
-            if (graphAreaWidth <= 0 || graphAreaHeight <= 0) {
-                this.isDrawing = false;
-                return;
-            }
-
-            this.drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight);
-
-            if (this.data.length > 0) {
-                ctx.beginPath();
-                let firstPoint = true;
-                for (const p of this.data) {
-                     if (p.x >= xMin && p.x <= xMax) {
-                        const screenX = padding + (p.x - xMin) / xRange * graphAreaWidth;
-                        const screenY = padding + graphAreaHeight - (p.y - yMin) / yRange * graphAreaHeight;
-
-                        if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) continue;
-
-                        if (firstPoint) {
-                            ctx.moveTo(screenX, screenY);
-                            firstPoint = false;
-                        } else {
-                            ctx.lineTo(screenX, screenY);
-                        }
-                    } else if (!firstPoint && p.x > xMax) {
-                         break;
-                    } else if (firstPoint && p.x < xMin) {
-                         continue;
-                    }
-                }
-                if (!firstPoint) {
-                    ctx.strokeStyle = options.lineColor;
-                    ctx.lineWidth = options.lineWidth;
-                    ctx.lineJoin = 'round';
-                    ctx.lineCap = 'round';
-                    ctx.stroke();
-                }
-            }
-
-            if (this.annotations.length > 0) {
-                 ctx.fillStyle = '#BB86FC';
-                 ctx.font = '11px Arial';
-                 ctx.textAlign = 'center';
-                 this.annotations.forEach(ann => {
-                    if (ann.x >= xMin && ann.x <= xMax && ann.y >= yMin && ann.y <= yMax) {
-                        const screenX = padding + (ann.x - xMin) / xRange * graphAreaWidth;
-                        const screenY = padding + graphAreaHeight - (ann.y - yMin) / yRange * graphAreaHeight;
-                        if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
-
-                        ctx.beginPath();
-                        ctx.arc(screenX, screenY, 4, 0, 2 * Math.PI);
-                        ctx.fill();
-
-                        ctx.fillStyle = options.textColor;
-                        ctx.textBaseline = 'top';
-                        ctx.fillText(ann.label, screenX, screenY + 6);
-                    }
-                });
-            }
-
-            ctx.lineWidth = 2;
-            ctx.setLineDash([4, 4]);
-            this.noteIndicators.forEach(ind => {
-                if (ind.x === null || ind.opacity <= 0) return;
-
-                if (ind.x >= xMin && ind.x <= xMax) {
-                    const screenX = padding + (ind.x - xMin) / xRange * graphAreaWidth;
-                    if (!Number.isFinite(screenX)) return;
-
-                    ctx.beginPath();
-                    ctx.moveTo(screenX, padding);
-                    ctx.lineTo(screenX, cssHeight - padding);
-                    const color = ind.noteIndex === 0 ? `rgba(30, 144, 255, ${ind.opacity})` : `rgba(255, 100, 0, ${ind.opacity})`;
-                    ctx.strokeStyle = color;
-                    ctx.stroke();
-                }
-            });
-            ctx.setLineDash([]);
-
+        if (graphAreaWidth <= 0 || graphAreaHeight <= 0) {
             this.isDrawing = false;
+            return;
         }
 
-        drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight) {
-            const { ctx, options } = this;
-            const padding = options.padding;
-            const graphAreaWidth = cssWidth - padding * 2;
-            const graphAreaHeight = cssHeight - padding * 2;
-            const xRange = xMax - xMin;
-            const yRange = yMax - yMin;
+        this.drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight);
 
-            if (graphAreaWidth <= 0 || graphAreaHeight <= 0 || !xRange || !yRange) return;
+        if (this.data.length > 0) {
+            ctx.beginPath();
+            let firstPoint = true;
+            for (const p of this.data) {
+                if (p.x >= xMin && p.x <= xMax) {
+                    const screenX = padding + (p.x - xMin) / xRange * graphAreaWidth;
+                    const screenY = padding + graphAreaHeight - (p.y - yMin) / yRange * graphAreaHeight;
 
-            ctx.lineWidth = 0.5;
-            ctx.strokeStyle = options.gridColor;
-            ctx.fillStyle = options.textColor;
-            ctx.font = '10px Arial';
+                    if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) continue;
 
-            const xStep = 100;
-            const startX = Math.ceil(xMin / xStep) * xStep;
-            const endX = Math.floor(xMax / xStep) * xStep;
+                    if (firstPoint) {
+                        ctx.moveTo(screenX, screenY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(screenX, screenY);
+                    }
+                } else if (!firstPoint && p.x > xMax) {
+                    break;
+                } else if (firstPoint && p.x < xMin) {
+                    continue;
+                }
+            }
+            if (!firstPoint) {
+                ctx.strokeStyle = options.lineColor;
+                ctx.lineWidth = options.lineWidth;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        if (this.annotations.length > 0) {
+            ctx.fillStyle = '#BB86FC';
+            ctx.font = '11px Arial';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            for (let x = startX; x <= endX; x += xStep) {
-                if (x < xMin || x > xMax) continue;
-                const screenX = padding + (x - xMin) / xRange * graphAreaWidth;
-                if (!Number.isFinite(screenX)) continue;
-                 const sharpX = Math.round(screenX);
-                 if (sharpX >= padding && sharpX <= cssWidth - padding) {
+            this.annotations.forEach(ann => {
+                if (ann.x >= xMin && ann.x <= xMax && ann.y >= yMin && ann.y <= yMax) {
+                    const screenX = padding + (ann.x - xMin) / xRange * graphAreaWidth;
+                    const screenY = padding + graphAreaHeight - (ann.y - yMin) / yRange * graphAreaHeight;
+                    if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+
                     ctx.beginPath();
-                    ctx.moveTo(sharpX, padding);
-                    ctx.lineTo(sharpX, cssHeight - padding);
-                    ctx.stroke();
-                    if (sharpX > padding + 10 && sharpX < cssWidth - padding - 10) {
-                        ctx.fillText(x.toFixed(0), sharpX, cssHeight - padding + 4);
-                    }
+                    ctx.arc(screenX, screenY, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    ctx.fillStyle = options.textColor;
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(ann.label, screenX, screenY + 6);
                 }
-            }
-             ctx.fillText(xMin.toFixed(0), padding, cssHeight - padding + 4);
-             ctx.textAlign = 'right';
-             ctx.fillText(xMax.toFixed(0), cssWidth - padding, cssHeight - padding + 4);
-
-            const yTargetSteps = Math.max(3, Math.floor(graphAreaHeight / 40));
-            const roughStep = yRange / yTargetSteps;
-            let yStep;
-            if (roughStep > 0) {
-                const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-                if (yRange / (magnitude * 1) >= yTargetSteps) yStep = magnitude * 1;
-                else if (yRange / (magnitude * 2) >= yTargetSteps) yStep = magnitude * 2;
-                else if (yRange / (magnitude * 5) >= yTargetSteps) yStep = magnitude * 5;
-                else yStep = magnitude * 10;
-            } else {
-                yStep = 1;
-            }
-
-            const startY = Math.ceil(yMin / yStep) * yStep;
-            const endY = Math.floor(yMax / yStep) * yStep;
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            for (let y = startY; y <= endY; y += yStep) {
-                 if (y < yMin || y > yMax) continue;
-                 const screenY = padding + graphAreaHeight - (y - yMin) / yRange * graphAreaHeight;
-                 if (!Number.isFinite(screenY)) continue;
-                  const sharpY = Math.round(screenY);
-                  if (sharpY >= padding && sharpY <= cssHeight - padding) {
-                    ctx.beginPath();
-                    ctx.moveTo(padding, sharpY);
-                    ctx.lineTo(cssWidth - padding, sharpY);
-                    ctx.stroke();
-                    if (sharpY > padding + 8 && sharpY < cssHeight - padding - 8) {
-                       ctx.fillText(y.toFixed(yStep < 1 ? 1 : 0), padding - 5, sharpY);
-                    }
-                }
-            }
-            ctx.fillText(yMin.toFixed(1), padding - 5, cssHeight - padding);
-            ctx.textBaseline = 'top';
-            ctx.fillText(yMax.toFixed(1), padding - 5, padding);
-        }
-    }
-
-    let isMouseDown = false;
-    let currentNote1 = null;
-    let currentNote2 = null;
-    let tonicTimeout = null;
-    const baseFrequency = 440;
-    const audioParams = {
-      oscillatorType: 'sawtooth',
-      filterFrequency: 1000,
-      filterType: 'lowpass',
-      gainAttackTime: 0.1,
-      gainSustainLevel: 0.5,
-      gainReleaseTime: 0.2,
-    };
-    let activeNoteIndicators = [
-      { noteIndex: 0, x: null, opacity: 0 },
-      { noteIndex: 1, x: 0, opacity: 0 }
-    ];
-    let reverbNode = null;
-    let audioContext = null;
-    let analysers = [null, null];
-    let gainNodes = [null, null];
-
-    function createImpulseResponse(context, duration, decay) {
-      const sampleRate = context.sampleRate;
-      const length = sampleRate * duration;
-      const impulse = context.createBuffer(2, length, sampleRate);
-      for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
-        const channelData = impulse.getChannelData(channel);
-        for (let i = 0; i < length; i++) {
-          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
-        }
-      }
-      return impulse;
-    }
-
-    async function initAudio() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (!reverbNode) {
-          reverbNode = audioContext.createConvolver();
-          reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
-          const reverbMix = audioContext.createGain();
-          reverbMix.gain.value = 0.3;
-          reverbNode.connect(reverbMix);
-          reverbMix.connect(audioContext.destination);
-        }
-      }
-    }
-
-    function createNote(frequency, startTime, noteIndex) {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analysers[noteIndex] = analyser;
-      gainNodes[noteIndex] = gainNode;
-      oscillator.type = audioParams.oscillatorType;
-      oscillator.frequency.value = frequency;
-      filter.type = audioParams.filterType;
-      filter.frequency.value = audioParams.filterFrequency;
-      gainNode.gain.setValueAtTime(0, startTime);
-      gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
-      oscillator.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(analyser);
-      gainNode.connect(reverbNode);
-      analyser.connect(audioContext.destination);
-      return { oscillator, gainNode };
-    }
-
-    function centsToFrequency(centsOffset) {
-      return baseFrequency * Math.pow(2, centsOffset / 1200);
-    }
-
-    function getXValueFromEvent(event) {
-        if (!chartRenderer || !chartRenderer.currentView) return null;
-
-        const canvas = document.getElementById('heChart');
-        if (event.target !== canvas) {
-            console.warn("Event target is not canvas, offsetX might be incorrect.");
-            return null;
-        }
-        const clickX = event.offsetX;
-
-        const canvasWidth = canvas.clientWidth;
-        const view = chartRenderer.currentView;
-        const padding = chartRenderer.options.padding;
-        const graphAreaWidth = canvasWidth - padding * 2;
-
-        if (graphAreaWidth <= 0) return null;
-
-        const clickXRelativeToGraph = clickX - padding;
-        const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
-        const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
-
-        return xValue;
-    }
-
-
-    HEPlotDiv.addEventListener('mousemove', (event) => {
-        if (!isMouseDown) return;
-
-        const xValue = getXValueFromEvent(event);
-        if (xValue === null) return;
-
-        activeNoteIndicators[0].x = xValue;
-        if (currentNote1 && audioContext) {
-            const freq1 = centsToFrequency(xValue);
-            currentNote1.oscillator.frequency.setTargetAtTime(freq1, audioContext.currentTime, 0.01);
-        }
-        if (chartRenderer) chartRenderer.requestDraw();
-    });
-
-    HEPlotDiv.addEventListener('mousedown', async (event) => {
-        if (!audioContext) await initAudio();
-
-        const xValue = getXValueFromEvent(event);
-        if (xValue === null) return;
-
-        isMouseDown = true;
-        document.body.classList.add('dragging');
-
-        activeNoteIndicators[0].x = xValue;
-        activeNoteIndicators[1].x = 0;
-
-        const now = audioContext.currentTime;
-        const freq1 = centsToFrequency(xValue);
-
-        stopNote(currentNote1, now);
-        stopNote(currentNote2, now);
-        if (tonicTimeout) clearTimeout(tonicTimeout);
-
-        currentNote1 = createNote(freq1, now, 0);
-        currentNote1.oscillator.start(now);
-
-        const noteDelaySeconds = parseFloat(document.getElementById('noteDelay').value);
-        tonicTimeout = setTimeout(() => {
-            if (isMouseDown && audioContext) {
-                const freq2 = baseFrequency;
-                const tonicStartTime = audioContext.currentTime;
-                currentNote2 = createNote(freq2, tonicStartTime, 1);
-                currentNote2.oscillator.start(tonicStartTime);
-            }
-            tonicTimeout = null;
-        }, noteDelaySeconds * 1000);
-
-        if (chartRenderer) chartRenderer.requestDraw();
-    });
-
-    document.addEventListener('mouseup', (event) => {
-        if (isMouseDown) {
-            isMouseDown = false;
-            document.body.classList.remove('dragging');
-            const now = audioContext ? audioContext.currentTime : 0;
-
-            stopNote(currentNote1, now);
-            stopNote(currentNote2, now);
-            currentNote1 = null;
-            currentNote2 = null;
-
-            if (tonicTimeout) {
-                clearTimeout(tonicTimeout);
-                tonicTimeout = null;
-            }
-
-            activeNoteIndicators[0].x = null;
-
-            if (chartRenderer) chartRenderer.requestDraw();
-        }
-    });
-
-    function stopNote(note, stopTime) {
-        if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
-            note.gainNode.gain.cancelScheduledValues(stopTime);
-            note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime);
-            note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
-            note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
-        }
-    }
-
-    function updateNoteIndicatorsOpacity() {
-        let needsRedraw = false;
-        analysers.forEach((analyser, i) => {
-            if (!analyser || !activeNoteIndicators[i]) return;
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            analyser.getByteTimeDomainData(dataArray);
-            let level = 0;
-            for (let j = 0; j < dataArray.length; j++) {
-                level += Math.abs(dataArray[j] - 128);
-            }
-            level = dataArray.length > 0 ? level / dataArray.length : 0;
-            const newOpacity = Math.min(1, Math.max(0, level / 40));
-
-            if (Math.abs(activeNoteIndicators[i].opacity - newOpacity) > 0.01) {
-                activeNoteIndicators[i].opacity = newOpacity;
-                needsRedraw = true;
-            }
-        });
-
-        if ((needsRedraw || isMouseDown) && chartRenderer) {
-           chartRenderer.requestDraw();
-        }
-
-        requestAnimationFrame(updateNoteIndicatorsOpacity);
-    }
-
-
-    let chartRenderer = null;
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const calculator = new HarmonicEntropyCalculator();
-
-        function updatePlot() {
-            const HEinfo = {
-                N: parseInt(document.getElementById("textN").value) || 3000,
-                mincents: parseFloat(document.getElementById("textmin").value) * 1200,
-                maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
-                s: parseFloat(document.getElementById("sliders").value / 100) || 0.0125,
-                a: parseFloat(document.getElementById("slidera").value) || 2.4,
-                res: 1.0
-            };
-            if (isNaN(HEinfo.mincents) || isNaN(HEinfo.maxcents) || HEinfo.mincents >= HEinfo.maxcents || HEinfo.N <= 0 || HEinfo.s <= 0 || HEinfo.a <= 0) {
-                console.error("Invalid HE parameters:", HEinfo);
-                return;
-            }
-            calculator.preCalcRatios(HEinfo);
-        }
-
-        document.getElementById("slidera").addEventListener("input", (e) => {
-            document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(e.target.value).toFixed(2);
-            updatePlot();
-        });
-        document.getElementById("sliders").addEventListener("input", (e) => {
-            document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
-            updatePlot();
-        });
-        document.getElementById("noteDelay").addEventListener("input", (e) => {
-            document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
-        });
-        document.getElementById('textN').addEventListener('change', updatePlot);
-        document.getElementById('textmin').addEventListener('change', updatePlot);
-        document.getElementById('textmax').addEventListener('change', updatePlot);
-
-        document.querySelectorAll('.stepper-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetInputId = this.dataset.target;
-                const inputElement = document.getElementById(targetInputId);
-                let currentValue = parseFloat(inputElement.value) || 0;
-                const step = parseFloat(inputElement.step) || 1;
-                currentValue += this.classList.contains('minus') ? -step : step;
-                 if (targetInputId === 'textmin' || targetInputId === 'textmax') {
-                    currentValue = Math.max(-2, Math.min(5, currentValue));
-                }
-                inputElement.value = currentValue.toFixed(targetInputId.includes('text') ? 0 : 2);
-                updatePlot();
             });
+        }
+
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        this.noteIndicators.forEach(ind => {
+            if (ind.x === null || ind.opacity <= 0) return;
+
+            if (ind.x >= xMin && ind.x <= xMax) {
+                const screenX = padding + (ind.x - xMin) / xRange * graphAreaWidth;
+                if (!Number.isFinite(screenX)) return;
+
+                ctx.beginPath();
+                ctx.moveTo(screenX, padding);
+                ctx.lineTo(screenX, cssHeight - padding);
+                const color = ind.noteIndex === 0 ? `rgba(30, 144, 255, ${ind.opacity})` : `rgba(255, 100, 0, ${ind.opacity})`;
+                ctx.strokeStyle = color;
+                ctx.stroke();
+            }
         });
+        ctx.setLineDash([]);
 
-        document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(document.getElementById("slidera").value).toFixed(2);
-        document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(document.getElementById("sliders").value).toFixed(2) + "%";
-        document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(document.getElementById('noteDelay').value).toFixed(2) + "s";
+        this.isDrawing = false;
+    }
 
-        updatePlot();
+    drawGrid(xMin, xMax, yMin, yMax, cssWidth, cssHeight) {
+        const { ctx, options } = this;
+        const padding = options.padding;
+        const graphAreaWidth = cssWidth - padding * 2;
+        const graphAreaHeight = cssHeight - padding * 2;
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
 
-        setTimeout(updateNoteIndicatorsOpacity, 200);
+        if (graphAreaWidth <= 0 || graphAreaHeight <= 0 || !xRange || !yRange) return;
 
-        const style = document.createElement('style');
-        style.textContent = `body.dragging, body.dragging * { cursor: grabbing !important; }`;
-        document.head.append(style);
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = options.gridColor;
+        ctx.fillStyle = options.textColor;
+        ctx.font = '10px Arial';
 
-    });
+        const xStep = 100;
+        const startX = Math.ceil(xMin / xStep) * xStep;
+        const endX = Math.floor(xMax / xStep) * xStep;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let x = startX; x <= endX; x += xStep) {
+            if (x < xMin || x > xMax) continue;
+            const screenX = padding + (x - xMin) / xRange * graphAreaWidth;
+            if (!Number.isFinite(screenX)) continue;
+            const sharpX = Math.round(screenX);
+            if (sharpX >= padding && sharpX <= cssWidth - padding) {
+                ctx.beginPath();
+                ctx.moveTo(sharpX, padding);
+                ctx.lineTo(sharpX, cssHeight - padding);
+                ctx.stroke();
+                if (sharpX > padding + 10 && sharpX < cssWidth - padding - 10) {
+                    ctx.fillText(x.toFixed(0), sharpX, cssHeight - padding + 4);
+                }
+            }
+        }
+        ctx.fillText(xMin.toFixed(0), padding, cssHeight - padding + 4);
+        ctx.textAlign = 'right';
+        ctx.fillText(xMax.toFixed(0), cssWidth - padding, cssHeight - padding + 4);
+
+        const yTargetSteps = Math.max(3, Math.floor(graphAreaHeight / 40));
+        const roughStep = yRange / yTargetSteps;
+        let yStep = roughStep > 0 ? Math.pow(10, Math.floor(Math.log10(roughStep))) : 1;
+        if (yRange / (yStep * 1) >= yTargetSteps) yStep *= 1;
+        else if (yRange / (yStep * 2) >= yTargetSteps) yStep *= 2;
+        else if (yRange / (yStep * 5) >= yTargetSteps) yStep *= 5;
+        else yStep *= 10;
+
+        const startY = Math.ceil(yMin / yStep) * yStep;
+        const endY = Math.floor(yMax / yStep) * yStep;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let y = startY; y <= endY; y += yStep) {
+            if (y < yMin || y > yMax) continue;
+            const screenY = padding + graphAreaHeight - (y - yMin) / yRange * graphAreaHeight;
+            if (!Number.isFinite(screenY)) continue;
+            const sharpY = Math.round(screenY);
+            if (sharpY >= padding && sharpY <= cssHeight - padding) {
+                ctx.beginPath();
+                ctx.moveTo(padding, sharpY);
+                ctx.lineTo(cssWidth - padding, sharpY);
+                ctx.stroke();
+                if (sharpY > padding + 8 && sharpY < cssHeight - padding - 8) {
+                    ctx.fillText(y.toFixed(yStep < 1 ? 1 : 0), padding - 5, sharpY);
+                }
+            }
+        }
+        ctx.fillText(yMin.toFixed(1), padding - 5, cssHeight - padding);
+        ctx.textBaseline = 'top';
+        ctx.fillText(yMax.toFixed(1), padding - 5, padding);
+    }
+}
 
     class FFT {
       constructor(size) {
@@ -1031,6 +760,302 @@
         return y;
       }
     }
+
+    /* ================================
+         АУДИО – интегрировано в область HEPlotDiv
+       ================================ */
+    let audioContext = null;
+    let analysers = [null, null];
+    let gainNodes = [null, null];
+    let currentNote1 = null;
+    let currentNote2 = null;
+    const baseFrequency = 440;
+    const semitonesPerOctave = 12;
+    const octaveRange = 2;
+    const totalSemitones = semitonesPerOctave * octaveRange;
+    const centsPerSemitone = 100;
+    const totalCentsRange = totalSemitones * centsPerSemitone;
+    let isMouseDown = false;
+
+    const audioParams = {
+      oscillatorType: 'sawtooth',
+      filterFrequency: 1000,
+      filterType: 'lowpass',
+      gainAttackTime: 0.1,
+      gainSustainLevel: 0.5,
+      gainReleaseTime: 0.2,
+    };
+    // Вертикальные индикаторы звука храним в виде объектов с координатой в центах и opacity
+    let activeNoteIndicators = [
+      { noteIndex: 0, x: null, opacity: 0 },
+      { noteIndex: 1, x: 0, opacity: 0 } // Тоника всегда на 0 центах
+    ];
+
+
+    // Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
+    async function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!reverbNode) {
+          reverbNode = audioContext.createConvolver();
+          // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
+          reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
+          const reverbMix = audioContext.createGain();
+          reverbMix.gain.value = 0.3; // уровень смешивания реверберации
+          reverbNode.connect(reverbMix);
+          reverbMix.connect(audioContext.destination);
+        }
+      }
+    }
+
+    // Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
+    function createNote(frequency, startTime, noteIndex) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analysers[noteIndex] = analyser;
+      gainNodes[noteIndex] = gainNode;
+      oscillator.type = audioParams.oscillatorType;
+      oscillator.frequency.value = frequency;
+      filter.type = audioParams.filterType;
+      filter.frequency.value = audioParams.filterFrequency;
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      // Подключаем как "сухой" сигнал к анализатору:
+      gainNode.connect(analyser);
+      // Отправляем часть сигнала в ревербератор (эффект "wet"):
+      gainNode.connect(reverbNode);
+      analyser.connect(audioContext.destination);
+      return { oscillator, gainNode };
+    }
+    function centsToFrequency(centsOffset) {
+      return baseFrequency * Math.pow(2, centsOffset / 1200);
+    }
+    // Добавляем глобальную переменную для ревербератора:
+    let reverbNode = null;
+
+    // Добавляем функцию для создания импульсного отклика ревербератора:
+    function createImpulseResponse(context, duration, decay) {
+      const sampleRate = context.sampleRate;
+      const length = sampleRate * duration;
+      const impulse = context.createBuffer(2, length, sampleRate);
+      for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+      }
+      return impulse;
+    }
+
+
+let tonicTimeout = null;
+
+
+function getXValueFromEvent(event) {
+    if (!chartRenderer || !chartRenderer.currentView) return null;
+
+    const canvas = document.getElementById('heChart');
+    if (event.target !== canvas) {
+        console.warn("Event target is not canvas, offsetX might be incorrect.");
+        return null;
+    }
+    const clickX = event.offsetX;
+
+    const canvasWidth = canvas.clientWidth;
+    const view = chartRenderer.currentView;
+    const padding = chartRenderer.options.padding;
+    const graphAreaWidth = canvasWidth - padding * 2;
+
+    if (graphAreaWidth <= 0) return null;
+
+    const clickXRelativeToGraph = clickX - padding;
+    const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+    const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+
+    return xValue;
+}
+
+const HEPlotDiv = document.getElementById('HEPlotDiv') || document.getElementById('heChart').parentElement;
+
+HEPlotDiv.addEventListener('mousemove', (event) => {
+    if (!isMouseDown) return;
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) return;
+
+    activeNoteIndicators[0].x = xValue;
+    if (currentNote1 && audioContext) {
+        const freq1 = centsToFrequency(xValue);
+        currentNote1.oscillator.frequency.setTargetAtTime(freq1, audioContext.currentTime, 0.01);
+    }
+    if (chartRenderer) chartRenderer.requestDraw();
+});
+
+HEPlotDiv.addEventListener('mousedown', async (event) => {
+    if (!audioContext) await initAudio();
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) return;
+
+    isMouseDown = true;
+    document.body.classList.add('dragging');
+
+    activeNoteIndicators[0].x = xValue;
+    activeNoteIndicators[1].x = 0;
+
+    const now = audioContext.currentTime;
+    const freq1 = centsToFrequency(xValue);
+
+    stopNote(currentNote1, now);
+    stopNote(currentNote2, now);
+    if (tonicTimeout) clearTimeout(tonicTimeout);
+
+    currentNote1 = createNote(freq1, now, 0);
+    currentNote1.oscillator.start(now);
+
+    const noteDelaySeconds = parseFloat(document.getElementById('noteDelay').value);
+    tonicTimeout = setTimeout(() => {
+        if (isMouseDown && audioContext) {
+            const freq2 = baseFrequency;
+            const tonicStartTime = audioContext.currentTime;
+            currentNote2 = createNote(freq2, tonicStartTime, 1);
+            currentNote2.oscillator.start(tonicStartTime);
+        }
+        tonicTimeout = null;
+    }, noteDelaySeconds * 1000);
+
+    if (chartRenderer) chartRenderer.requestDraw();
+});
+
+document.addEventListener('mouseup', (event) => {
+    if (isMouseDown) {
+        isMouseDown = false;
+        document.body.classList.remove('dragging');
+        const now = audioContext ? audioContext.currentTime : 0;
+
+        stopNote(currentNote1, now);
+        stopNote(currentNote2, now);
+        currentNote1 = null;
+        currentNote2 = null;
+
+        if (tonicTimeout) {
+            clearTimeout(tonicTimeout);
+            tonicTimeout = null;
+        }
+
+        activeNoteIndicators[0].x = null;
+
+        if (chartRenderer) chartRenderer.requestDraw();
+    }
+});
+
+function stopNote(note, stopTime) {
+    if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
+        note.gainNode.gain.cancelScheduledValues(stopTime);
+        note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime);
+        note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
+        note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
+    }
+}
+
+function updateNoteIndicatorsOpacity() {
+    let needsRedraw = false;
+    analysers.forEach((analyser, i) => {
+        if (!analyser || !activeNoteIndicators[i]) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(dataArray);
+        let level = 0;
+        for (let j = 0; j < dataArray.length; j++) {
+            level += Math.abs(dataArray[j] - 128);
+        }
+        level = dataArray.length > 0 ? level / dataArray.length : 0;
+        const newOpacity = Math.min(1, Math.max(0, level / 40));
+
+        if (Math.abs(activeNoteIndicators[i].opacity - newOpacity) > 0.01) {
+            activeNoteIndicators[i].opacity = newOpacity;
+            needsRedraw = true;
+        }
+    });
+
+    if ((needsRedraw || isMouseDown) && chartRenderer) {
+        chartRenderer.requestDraw();
+    }
+
+    requestAnimationFrame(updateNoteIndicatorsOpacity);
+}
+
+/* ================================
+     ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+   ================================ */
+    let chartRenderer = null;
+window.addEventListener('DOMContentLoaded', () => {
+    const calculator = new HarmonicEntropyCalculator();
+
+    function updatePlot() {
+        const HEinfo = {
+            N: parseInt(document.getElementById("textN").value) || 3000,
+            mincents: parseFloat(document.getElementById("textmin").value) * 1200,
+            maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
+            s: parseFloat(document.getElementById("sliders").value / 100) || 0.0125,
+            a: parseFloat(document.getElementById("slidera").value) || 2.4,
+            res: 1.0
+        };
+
+        if (isNaN(HEinfo.mincents) || isNaN(HEinfo.maxcents) || HEinfo.mincents >= HEinfo.maxcents || HEinfo.N <= 0 || HEinfo.s <= 0 || HEinfo.a <= 0) {
+            console.error("Invalid HE parameters:", HEinfo);
+            return;
+        }
+        calculator.preCalcRatios(HEinfo);
+    }
+
+    document.getElementById("slidera").addEventListener("input", (e) => {
+        document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(e.target.value).toFixed(2);
+        updatePlot();
+    });
+    document.getElementById("sliders").addEventListener("input", (e) => {
+        document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot();
+    });
+    document.getElementById("noteDelay").addEventListener("input", (e) => {
+        document.getElementById("noteDelayValue").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+    });
+    document.getElementById('textN').addEventListener('change', updatePlot);
+    document.getElementById('textmin').addEventListener('change', updatePlot);
+    document.getElementById('textmax').addEventListener('change', updatePlot);
+
+    document.querySelectorAll('.stepper-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetInputId = this.dataset.target;
+            const inputElement = document.getElementById(targetInputId);
+            let currentValue = parseFloat(inputElement.value) || 0;
+            const step = parseFloat(inputElement.step) || 1;
+            currentValue += this.classList.contains('minus') ? -step : step;
+
+            if (targetInputId === 'textmin' || targetInputId === 'textmax') {
+                currentValue = Math.max(-2, Math.min(5, currentValue));
+            }
+            inputElement.value = currentValue.toFixed(targetInputId.includes('text') ? 0 : 2);
+            updatePlot();
+        });
+    });
+
+    document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(document.getElementById("slidera").value).toFixed(2);
+    document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(document.getElementById("sliders").value).toFixed(2) + "%";
+    document.getElementById("noteDelay").textContent = "Note Delay: " + parseFloat(document.getElementById('noteDelay').value).toFixed(2) + "s";
+
+    updatePlot();
+
+    setTimeout(updateNoteIndicatorsOpacity, 200);
+
+    const style = document.createElement('style');
+    style.textContent = `body.dragging, body.dragging * { cursor: grabbing !important; }`;
+    document.head.append(style);
+});
   </script>
 </body>
 </html>
