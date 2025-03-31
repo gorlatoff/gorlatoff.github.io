@@ -738,7 +738,7 @@
              const xRange = xMax - xMin;
              const yRange = yMax - yMin;
 
-
+             ctx.fillStyle = options.annotationColor;
              ctx.font = '12px Arial';
              ctx.textAlign = 'center';
 
@@ -748,8 +748,7 @@
                      const screenY = gy + gh - (ann.y - yMin) / yRange * gh;
 
                      if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
-                  
-                     ctx.fillStyle = options.annotationColor;
+
                      ctx.beginPath();
                      ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
                      ctx.fill();
@@ -783,6 +782,8 @@
                  } else if (baseColor.startsWith('rgb')) {
                     colorWithAlpha = baseColor.replace('rgb', 'rgba').replace(')', `, ${ind.opacity.toFixed(2)})`);
                  }
+                 // Add fallback if color format is unexpected (e.g., hex)
+                 // else { colorWithAlpha = `rgba(some_default_rgb, ${ind.opacity.toFixed(2)})`; }
                  ctx.strokeStyle = colorWithAlpha;
                  ctx.beginPath();
                  ctx.moveTo(Math.round(screenX), gy);
@@ -946,11 +947,17 @@
     // Helper function to stop a note gracefully
     function stopNote(note, stopTime) {
         if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
+            // Check oscillator playback state before stopping
+            // This might require tracking state, or relying on try/catch if stop throws error
+             try {
                 note.gainNode.gain.cancelScheduledValues(stopTime);
                 note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime); // Hold current gain
                 note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
                 note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
-
+             } catch (e) {
+                 // console.warn("Error stopping note (already stopped?):", e);
+                 // Might happen if stop is called multiple times rapidly
+             }
         }
     }
 
@@ -1126,6 +1133,9 @@
         // Hide the first note indicator (set x to null)
         // Opacity will fade out naturally via updateNoteIndicatorsOpacity
         activeNoteIndicators[0].x = null;
+        // We can optionally force opacity to 0 here, but letting the analyser handle it is smoother
+        // activeNoteIndicators[0].opacity = 0;
+        // activeNoteIndicators[1].opacity = 0; // Tonic indicator opacity will also fade via analyser
 
         // Request a final draw to remove the line if opacity doesn't handle it fast enough
         if (chartRenderer) {
