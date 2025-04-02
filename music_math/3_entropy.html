@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивный график гармонической энтропии с аудио</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --surface-color: #1E1E1E;
+      --primary-color: #BB86FC;
+      --secondary-color: #03DAC6;
+      --text-primary: rgba(255,255,255,0.87);
+      --text-secondary: rgba(255,255,255,0.6);
+      --surface-overlay: rgba(255,255,255,0.05);
+      --border-color: rgba(255,255,255,0.1);
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text-primary);
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Общий контейнер графика и панели */
+    #appContainer {
+      width: 90%;
+      max-width: 1000px;
+      display: flex; /* Use flexbox for better layout control */
+      flex-direction: column;
+      height: 80vh; /* Example height, adjust as needed */
+    }
+    /* Область для графика HE (и для взаимодействия с аудио) */
+    #HEPlotDiv {
+      position: relative; /* Needed for absolute positioning of canvas? Maybe not needed */
+      flex-grow: 1; /* Allow the plot div to grow and fill available space */
+      width: 100%;
+      /* height: 50vh; Remove fixed height, let flexbox handle it */
+      border-radius: 8px;
+      overflow: hidden; /* Important: canvas should not overflow */
+      background: var(--surface-color);
+      padding: 0; /* Remove padding here, handle padding inside ChartRenderer */
+      box-sizing: border-box;
+      cursor: pointer; /* Указываем, что область графика интерактивна для аудио */
+      display: flex; /* Ensure canvas can fill this container */
+    }
+    #heChart {
+      display: block; /* Remove extra space below canvas */
+      width: 100%; /* Make canvas fill the container width */
+      height: 100%; /* Make canvas fill the container height */
+    }
+    /* Панель управления – общая для HE и аудио */
+    #controls {
+      background: var(--surface-color);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin: 20px 0 0 0; /* Adjust margin */
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex-shrink: 0; /* Prevent controls from shrinking */
+      box-sizing: border-box; /* Include padding in width */
+    }
+    .controls-column-left,
+    .controls-column-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .controlrow {
+      display: grid;
+      grid-template-columns: 0.8fr 2fr;
+      align-items: center;
+      gap: 12px;
+    }
+    .label {
+      color: var(--text-secondary);
+      font-size: 14px;
+      text-align: right;
+      padding-right: 8px;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 180px;
+    }
+    .textinput {
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 100%;
+      height: 44px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+    .textinput:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(187,134,252,0.2);
+    }
+    .stepper-button {
+      background: var(--surface-color);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      width: 32px;
+      height: 44px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stepper-button:hover {
+      background-color: var(--surface-overlay);
+      border-color: var(--primary-color);
+    }
+    .slider-container {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      min-width: 180px;
+      width: 100%;
+    }
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 2px;
+      background: var(--border-color);
+      border-radius: 1px;
+      outline: none;
+      padding: 0;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+    .slider::-webkit-slider-thumb:active {
+      transform: scale(0.95);
+    }
+    @media (max-width: 600px) {
+      #appContainer {
+          height: 70vh; /* Adjust height for smaller screens */
+      }
+      #controls {
+        grid-template-columns: 1fr;
+        padding: 12px 16px;
+        gap: 16px;
+      }
+      .controlrow {
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
+      }
+      .label {
+        font-size: 13px;
+        padding-right: 4px;
+      }
+      .input-group,
+      .slider-container {
+        max-width: none;
+      }
+      .textinput,
+      .stepper-button {
+        height: 48px;
+      }
+    }
+      /* Add cursor style for dragging */
+      body.dragging, body.dragging * { cursor: grabbing !important; }
+  </style>
+</head>
+<body>
+  <div id="appContainer">
+    <!-- График HE + область для интерактивного управления аудио -->
+    <div id="HEPlotDiv">
+      <canvas id="heChart"></canvas>
+    </div>
+    <!-- Панель управления (общая для графика и аудио) -->
+    <div id="controls">
+      <div class="controls-column-left">
+        <div class="controlrow">
+          <span class="label">N:</span>
+          <div class="input-group">
+            <input id="textN" type="number" class="textinput" value="3000" placeholder="Maximum ratio (N)" />
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label">Min cents:</span>
+          <div class="input-group">
+            <button class="stepper-button minus" data-target="textmin">-</button>
+            <input id="textmin" type="number" class="textinput" value="0" placeholder="Min (octaves)" step="1" />
+            <button class="stepper-button plus" data-target="textmin">+</button>
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label">Max cents:</span>
+          <div class="input-group">
+            <button class="stepper-button minus" data-target="textmax">-</button>
+            <input id="textmax" type="number" class="textinput" value="1" placeholder="Max (octaves)" step="1" />
+            <button class="stepper-button plus" data-target="textmax">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="controls-column-right">
+        <div class="controlrow">
+          <span class="label" id="aval">Bandwidth (a): 2.4</span>
+          <div class="slider-container">
+            <input type="range" id="slidera" class="slider" min="1" max="4" step="0.001" value="2.4" />
+          </div>
+        </div>
+        <div class="controlrow">
+          <span class="label" id="sval">Smoothing (s): 1.25%</span>
+          <div class="slider-container">
+            <input type="range" id="sliders" class="slider" min="0.5" max="2.1" step="0.001" value="1.25" />
+          </div>
+        </div>
+        <!-- Контрол для задержки нот -->
+        <div class="controlrow">
+           <span class="label" id="noteDelayLabel">Note Delay: 0.15s</span>
+          <div class="slider-container">
+            <input type="range" id="noteDelay" class="slider" min="0" max="0.3" step="0.0001" value="0.15" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="entropy.js"></script>
+  <!-- <script type="text/javascript" src="entropy-chart.js"></script> -->
+  <script>
+class ChartRenderer {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.data = [];
+        this.annotations = [];
+
+        // --- СТИЛИ И ОПЦИИ ИЗ "НОВОГО КОДА" ПОЛЬЗОВАТЕЛЯ ---
+        this.options = {
+            // Paddings из нового кода
+            paddingTop: 20,
+            paddingBottom: 30,
+            paddingLeft: 40,
+            paddingRight: 20,
+            // Цвета из нового кода
+            gridColor: "rgba(255,255,255,0.05)",
+            textColor: "rgba(255,255,255,0.6)",
+            annotationColor: "#BB86FC",
+            lineColor: "#FFFFFF",
+            noteIndicatorColor1: "rgba(30, 144, 255, 1)", // Цвет индикатора 1
+            noteIndicatorColor2: "rgba(255, 100, 0, 1)",  // Цвет индикатора 2
+            // Толщина линии из нового кода
+            lineWidth: 3,
+            // Добавляем опцию для скорости анимации
+            animationSpeed: 0.15, // Скорость анимации (0..1, ближе к 0 - быстрее)
+             // Переопределяем стандартные опции пользовательскими, если они есть
+            ...options,
+        };
+        // --- КОНЕЦ СТИЛЕЙ ---
+
+        // --- Анимация ---
+        this.currentView = { xMin: 0, xMax: 1200, yMin: 0, yMax: 1 }; // Текущее окно
+        this.targetView = { ...this.currentView };                   // Целевое окно
+        this.animationFrameId = null;                                // ID для requestAnimationFrame
+        // --- Конец Анимации ---
+
+        this.noteIndicators = [];
+        this.isDrawing = false;
+        this.drawRequestScheduled = false;
+
+        // Актуальный DPR (будет обновляться при ресайзе)
+        this.pixelRatio = window.devicePixelRatio || 1;
+
+        this.resizeObserver = new ResizeObserver(() => {
+            // При ресайзе просто запрашиваем перерисовку,
+            // resizeCanvas будет вызван внутри draw() если нужно
+            this.requestDraw();
+        });
+
+        if (this.canvas.parentElement) {
+            this.resizeObserver.observe(this.canvas.parentElement);
+        } else {
+            console.error("Canvas parent element not found for ResizeObserver.");
+        }
+
+        // Первоначальная установка размера и отрисовка
+        this.resizeCanvas();
+        this.requestDraw();
+    }
+
+    setAnnotations(annotations) {
+        this.annotations = annotations;
+        this.requestDraw();
+    }
+
+    setNoteIndicators(indicators) {
+        this.noteIndicators = indicators;
+        // Не рисуем сразу, внешний цикл запросит отрисовку при необходимости
+    }
+
+    // --- ВОССТАНОВЛЕННЫЙ МЕТОД plotHE из "нового кода" ---
+    plotHE(HE, annotations) {
+        if (!HE || HE.length === 0) {
+            console.warn("No HE data to plot.");
+            this.setData([]); // Используем setData для сброса и анимации к дефолту
+            this.setAnnotations([]);
+            return;
+        }
+        // Используем setData и setAnnotations для обновления и запуска анимации
+        this.setData(HE);
+        this.setAnnotations(annotations || []); // Убедимся, что annotations - массив
+         // Индикаторы устанавливаем напрямую, т.к. setData/setAnnotations не отвечают за них
+        // this.setNoteIndicators(activeNoteIndicators); // Это лучше делать извне рендерера
+    }
+    // --- КОНЕЦ plotHE ---
+
+
+    // Устанавливает корректный размер битмапа Canvas с учетом DPR
+    resizeCanvas() {
+        const parent = this.canvas.parentElement;
+        if (!parent) return false;
+
+        // Получаем актуальные CSS размеры
+        const cssWidth = parent.clientWidth;
+        const cssHeight = parent.clientHeight;
+
+        // !!! Важно: Обновляем DPR КАЖДЫЙ РАЗ перед расчетом размера битмапа !!!
+        // Это критично для корректной реакции на изменение масштаба браузера
+        this.pixelRatio = window.devicePixelRatio || 1;
+
+        // Целевые размеры битмапа
+        const targetWidth = Math.round(cssWidth * this.pixelRatio);
+        const targetHeight = Math.round(cssHeight * this.pixelRatio);
+
+        // Если размер 0 или не изменился, выходим
+        if (cssWidth <= 0 || cssHeight <= 0) {
+             if (this.canvas.width !== 0 || this.canvas.height !== 0) {
+                 this.canvas.width = 0; this.canvas.height = 0; return true;
+             } return false;
+        }
+        if (this.canvas.width === targetWidth && this.canvas.height === targetHeight) {
+            return false; // Размер не изменился
+        }
+
+        // Устанавливаем размер битмапа
+        this.canvas.width = targetWidth;
+        this.canvas.height = targetHeight;
+
+        // Сбрасываем и устанавливаем скейлинг контекста
+        // Координаты в draw() теперь будут в CSS пикселях
+        this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+
+        // console.log(`Canvas resized: CSS=${cssWidth}x${cssHeight}, Bitmap=${targetWidth}x${targetHeight}, DPR=${this.pixelRatio}`);
+        return true; // Размер изменился
+    }
+
+
+    // Устанавливает новые данные и запускает масштабирование/анимацию
+    setData(data) {
+        this.data = data && Array.isArray(data) ? data : [];
+        this.autoScale(); // Вычисляет targetView и запускает анимацию
+    }
+
+    // Вычисляет целевые границы (targetView) на основе данных
+    autoScale() {
+        let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+
+        // Логика расчета min/max ИЗ НОВОГО КОДА пользователя
+        if (this.data.length > 0) {
+            this.data.forEach((point) => {
+                if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+                xMin = Math.min(xMin, point.x);
+                xMax = Math.max(xMax, point.x);
+                yMin = Math.min(yMin, point.y);
+                yMax = Math.max(yMax, point.y);
+            });
+        }
+        // Обработка пустых/невалидных данных ИЗ НОВОГО КОДА
+        if (xMin === Infinity) {
+            xMin = 0; xMax = 1200; yMin = 0; yMax = 1; // Дефолтный вид
+        }
+        // Обработка нулевого диапазона ИЗ НОВОГО КОДА
+        if (xMin === xMax) { xMin -= 100; xMax += 100; }
+        if (yMin === yMax) { yMin -= 0.5; yMax += 0.5; }
+
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+        // Отступы ИЗ НОВОГО КОДА
+        const xPadding = xRange * 0.01;
+        const yPadding = yRange * 0.05;
+
+        // Устанавливаем ЦЕЛЕВЫЕ значения ИЗ НОВОГО КОДА
+        this.targetView.xMin = xMin - xPadding;
+        this.targetView.xMax = xMax + xPadding;
+        this.targetView.yMin = Math.floor((yMin - yPadding) * 10) / 10; // Округление Y из нового кода
+        this.targetView.yMax = Math.ceil((yMax + yPadding) * 10) / 10;  // Округление Y из нового кода
+
+        // Запускаем цикл анимации
+        this.startAnimationLoop();
+    }
+
+    // --- Логика Анимации (без изменений) ---
+    startAnimationLoop() { if (this.animationFrameId === null) this.animationStep(); }
+    stopAnimationLoop() { if (this.animationFrameId !== null) { cancelAnimationFrame(this.animationFrameId); this.animationFrameId = null; } }
+    animationStep() {
+        const speed = 1.0 - this.options.animationSpeed;
+        let changed = false;
+        const epsilon = 1e-5; // Порог малости изменения
+
+        for (const key of ['xMin', 'xMax', 'yMin', 'yMax']) {
+            const current = this.currentView[key];
+            const target = this.targetView[key];
+            const diff = target - current;
+            if (Math.abs(diff) > epsilon) {
+                this.currentView[key] = current + diff * (1 - speed);
+                changed = true;
+            } else {
+                this.currentView[key] = target;
+            }
+        }
+        if (changed) {
+            this.requestDraw();
+            this.animationFrameId = requestAnimationFrame(() => this.animationStep());
+        } else {
+            this.stopAnimationLoop();
+            // Финальная отрисовка с точными значениями
+            if (JSON.stringify(this.currentView) !== JSON.stringify(this.targetView)) {
+                 this.currentView = { ...this.targetView };
+                 this.requestDraw();
+            }
+        }
+    }
+    // --- Конец Логики Анимации ---
+
+    // Запрашивает перерисовку через requestAnimationFrame
+    requestDraw() {
+        if (!this.drawRequestScheduled) {
+            this.drawRequestScheduled = true;
+            requestAnimationFrame(() => {
+                this.draw();
+                this.drawRequestScheduled = false;
+            });
+        }
+    }
+
+    // Основная функция отрисовки
+    draw() {
+        if (this.isDrawing) return;
+        this.isDrawing = true;
+
+        // 1. Обновляем размер Canvas (если нужно) и DPR
+        this.resizeCanvas(); // Важно ДО получения размеров
+
+        if (this.canvas.width === 0 || this.canvas.height === 0) {
+            this.isDrawing = false; return;
+        }
+
+        // 2. Получаем CSS размеры (для расчетов координат)
+        const { clientWidth: cssWidth, clientHeight: cssHeight } = this.canvas.parentElement;
+        const { ctx, options } = this;
+
+        // 3. Очищаем холст (в CSS пикселях, т.к. контекст смасштабирован)
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        // 4. Определяем область графика (в CSS пикселях) - ИСПОЛЬЗУЕМ PADDING ИЗ OPTIONS
+        const gx = options.paddingLeft;
+        const gy = options.paddingTop;
+        const gw = cssWidth - options.paddingLeft - options.paddingRight;
+        const gh = cssHeight - options.paddingTop - options.paddingBottom;
+
+        if (gw <= 0 || gh <= 0) { this.isDrawing = false; return; }
+
+        // 5. Получаем ТЕКУЩИЕ (анимированные) границы данных
+        const { xMin, xMax, yMin, yMax } = this.currentView;
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        if (!xRange || !yRange || !Number.isFinite(xMin) || !Number.isFinite(xMax) || !Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+            console.warn("Invalid view range for drawing:", this.currentView);
+            this.isDrawing = false; return;
+        }
+
+        // 6. Рисуем компоненты, передавая CSS размеры и границы данных
+        this.drawGrid(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax);
+        this.drawDataLine(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax);
+        this.drawAnnotations(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax);
+        this.drawNoteIndicators(ctx, options, gx, gy, gw, gh, xMin, xMax);
+
+        this.isDrawing = false;
+    }
+
+    // --- Функции отрисовки компонентов (СТИЛЬ ИЗ НОВОГО КОДА ПОЛЬЗОВАТЕЛЯ) ---
+
+    drawGrid(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+        // Стили сетки из нового кода
+        ctx.lineWidth = 1; // Был 1 в новом коде (не 0.5)
+        ctx.strokeStyle = options.gridColor;
+        ctx.fillStyle = options.textColor;
+        ctx.font = "10px Arial"; // Был 10px в новом коде
+
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        // Вертикальные линии (X) - логика и стиль из нового кода
+        const xStep = 100;
+        const startX = Math.ceil(xMin / xStep) * xStep;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top"; // Было top в новом коде
+        for (let x = startX; x <= xMax; x += xStep) {
+            if (x < xMin) continue;
+            const screenX = gx + ((x - xMin) / xRange) * gw;
+            if (!Number.isFinite(screenX)) continue;
+            const sharpX = Math.round(screenX);
+            if (sharpX >= gx && sharpX <= gx + gw) {
+                ctx.beginPath();
+                ctx.moveTo(sharpX, gy);
+                ctx.lineTo(sharpX, gy + gh);
+                ctx.stroke();
+                // Условие рисования метки из нового кода
+                if (sharpX > gx + 10 && sharpX < gx + gw - 10) {
+                     ctx.fillText(x.toFixed(0), sharpX, gy + gh + 4); // Отступ 4 из нового кода
+                }
+            }
+        }
+        // Метки Min/Max X из нового кода
+        ctx.textAlign = "left";
+        ctx.fillText(xMin.toFixed(0), gx, gy + gh + 4);
+        ctx.textAlign = "right";
+        ctx.fillText(xMax.toFixed(0), gx + gw, gy + gh + 4);
+
+        // Горизонтальные линии (Y) - логика и стиль из нового кода
+        const yTargetSteps = Math.max(3, Math.floor(gh / 40)); // Расчет шага из нового кода
+        const roughYStep = yRange / yTargetSteps;
+        let yStep = roughYStep > 0 ? Math.pow(10, Math.floor(Math.log10(roughYStep))) : 0.1;
+        const mult = yTargetSteps > 0 ? yRange / (yStep * yTargetSteps) : 1; // Проверка деления на 0
+        if (mult > 5) yStep *= 5; else if (mult > 2) yStep *= 2;
+
+        const yNumDecimals = yStep > 0 ? Math.max(0, -Math.floor(Math.log10(yStep) + 0.01)) : 1; // Расчет точности
+
+        const startY = yStep > 0 ? Math.ceil(yMin / yStep) * yStep : yMin; // Проверка шага > 0
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle"; // Было middle в новом коде
+        for (let y = startY; y <= yMax; y += yStep) {
+            if (yStep <= 0) break; // Предохранитель от бесконечного цикла
+            if (y < yMin && Math.abs(y - yMin) > 1e-9) continue; // Корректное сравнение с плавающей точкой
+            const screenY = gy + gh - ((y - yMin) / yRange) * gh;
+            if (!Number.isFinite(screenY)) continue;
+            const sharpY = Math.round(screenY);
+            if (sharpY >= gy && sharpY <= gy + gh) {
+                ctx.beginPath();
+                ctx.moveTo(gx, sharpY);
+                ctx.lineTo(gx + gw, sharpY);
+                ctx.stroke();
+                // Условие рисования метки из нового кода
+                if (sharpY > gy + 8 && sharpY < gy + gh - 8) {
+                     ctx.fillText(y.toFixed(yNumDecimals), gx - 5, sharpY); // Отступ 5 из нового кода
+                }
+            }
+        }
+         // Метки Min/Max Y из нового кода
+        ctx.textBaseline = "bottom";
+        ctx.fillText(yMin.toFixed(1), gx - 5, gy + gh);
+        ctx.textBaseline = "top";
+        ctx.fillText(yMax.toFixed(1), gx - 5, gy);
+    }
+
+    drawDataLine(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+        if (this.data.length < 1) return; // Достаточно одной точки для начала
+
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        ctx.beginPath();
+        let firstPointDrawn = false;
+
+        // Оптимизация поиска видимых точек (как в предыдущем ответе)
+        let startIndex = this.data.findIndex(p => p.x >= xMin);
+        if (startIndex === -1) startIndex = this.data.length; // Все точки левее
+        let endIndex = this.data.length;
+        for(let i = startIndex; i < this.data.length; i++) {
+            if (this.data[i].x > xMax) { endIndex = i + 1; break; }
+        }
+        if (startIndex > 0) startIndex--; // Начинаем чуть раньше
+
+        for (let i = startIndex; i < Math.min(endIndex, this.data.length); i++) {
+            const p = this.data[i];
+             // Проверка на валидность точки данных
+             if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+
+            const screenX = gx + ((p.x - xMin) / xRange) * gw;
+            const screenY = gy + gh - ((p.y - yMin) / yRange) * gh;
+
+            if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) continue;
+            // Ограничение Y (clamping) из нового кода
+            const clampedY = Math.max(gy, Math.min(gy + gh, screenY));
+
+            if (!firstPointDrawn) {
+                ctx.moveTo(screenX, clampedY);
+                firstPointDrawn = true;
+            } else {
+                ctx.lineTo(screenX, clampedY);
+            }
+        }
+
+        if (firstPointDrawn) {
+            // Стили линии из нового кода
+            ctx.strokeStyle = options.lineColor;
+            ctx.lineWidth = options.lineWidth; // Используем толщину из опций (было 3)
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+    }
+
+    drawAnnotations(ctx, options, gx, gy, gw, gh, xMin, xMax, yMin, yMax) {
+        if (this.annotations.length === 0) return;
+
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        // Стили аннотаций из нового кода
+        ctx.font = "12px Arial"; // Был 12px в новом коде
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom"; // Было bottom в новом коде
+
+        this.annotations.forEach((ann) => {
+            if (ann.x >= xMin && ann.x <= xMax && ann.y >= yMin && ann.y <= yMax) {
+                const screenX = gx + ((ann.x - xMin) / xRange) * gw;
+                const screenY = gy + gh - ((ann.y - yMin) / yRange) * gh;
+
+                if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+
+                // Точка из нового кода
+                ctx.fillStyle = options.annotationColor;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 5, 0, Math.PI * 2); // Радиус 5 из нового кода
+                ctx.fill();
+
+                // Текст из нового кода
+                ctx.fillStyle = options.textColor;
+                ctx.fillText(ann.label, screenX, screenY - 8); // Смещение -8 из нового кода
+            }
+        });
+    }
+
+    drawNoteIndicators(ctx, options, gx, gy, gw, gh, xMin, xMax) {
+        if (this.noteIndicators.length === 0) return;
+
+        const xRange = xMax - xMin;
+
+        // Стили индикаторов из нового кода
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]); // Штриховка из нового кода [4, 4]
+
+        this.noteIndicators.forEach((ind) => {
+            if (ind.x === null || ind.opacity <= 0.01) return;
+            if (ind.x < xMin || ind.x > xMax) return; // Не рисуем вне видимости
+
+            const screenX = gx + ((ind.x - xMin) / xRange) * gw;
+            if (!Number.isFinite(screenX)) return;
+
+            const baseColor = ind.noteIndex === 0 ? options.noteIndicatorColor1 : options.noteIndicatorColor2;
+            // Формирование цвета с альфа-каналом из нового кода
+            let colorWithAlpha = baseColor;
+             // Проверяем и модифицируем RGBA или RGB цвет
+             if (baseColor.startsWith("rgba")) {
+                 colorWithAlpha = baseColor.replace(/(\d+(\.\d+)?)\)$/, `${ind.opacity.toFixed(2)})`);
+             } else if (baseColor.startsWith("rgb")) {
+                  colorWithAlpha = baseColor.replace("rgb", "rgba").replace(")", `, ${ind.opacity.toFixed(2)})`);
+             } else { // Если цвет задан иначе (напр. hex), пытаемся сделать rgba
+                 // Простая конвертация hex в rgba (может потребовать более надежной функции)
+                 const bigint = parseInt(baseColor.slice(1), 16);
+                 const r = (bigint >> 16) & 255;
+                 const g = (bigint >> 8) & 255;
+                 const b = bigint & 255;
+                 colorWithAlpha = `rgba(${r}, ${g}, ${b}, ${ind.opacity.toFixed(2)})`;
+             }
+
+            ctx.strokeStyle = colorWithAlpha;
+            ctx.beginPath();
+            const sharpX = Math.round(screenX); // Округление из нового кода
+            ctx.moveTo(sharpX, gy);
+            ctx.lineTo(sharpX, gy + gh);
+            ctx.stroke();
+        });
+
+        ctx.setLineDash([]); // Сброс штриховки
+    }
+    plotHE(HE, annotations) {
+        if (!HE || HE.length === 0) {
+            console.warn("No HE data to plot.");
+            this.setData([]);
+            this.setAnnotations([]);
+            return;
+        }
+        this.setData(HE);
+        this.setAnnotations(annotations);
+        this.setNoteIndicators(activeNoteIndicators);
+    }
+}
+
+/* ================================
+         АУДИО – интегрировано в область HEPlotDiv
+       ================================ */
+let audioContext = null;
+let analysers = [null, null];
+let gainNodes = [null, null];
+let currentNote1 = null;
+let currentNote2 = null;
+const baseFrequency = 440;
+let isMouseDown = false;
+
+const audioParams = {
+    oscillatorType: "sawtooth",
+    filterFrequency: 1000,
+    filterType: "lowpass",
+    gainAttackTime: 0.05, // Slightly faster attack
+    gainSustainLevel: 0.5,
+    gainReleaseTime: 0.2,
+};
+
+// Вертикальные индикаторы звука
+let activeNoteIndicators = [
+    { noteIndex: 0, x: null, opacity: 0 }, // Movable note
+    { noteIndex: 1, x: 0, opacity: 0 }, // Tonic at 0 cents
+];
+
+let reverbNode = null;
+let tonicTimeout = null; // Timer for delayed tonic note
+
+// Добавляем функцию для создания импульсного отклика ревербератора:
+function createImpulseResponse(context, duration, decay) {
+    const sampleRate = context.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = context.createBuffer(2, length, sampleRate);
+    for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+    }
+    return impulse;
+}
+
+// Изменённая функция initAudio – инициализируем ревербератор при создании audioContext:
+async function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!reverbNode) {
+            reverbNode = audioContext.createConvolver();
+            // Короткий импульс с длительностью 1.0 сек и затуханием 2.0:
+            reverbNode.buffer = createImpulseResponse(audioContext, 1.0, 2.0);
+            const reverbMix = audioContext.createGain();
+            reverbMix.gain.value = 0.3; // уровень смешивания реверберации
+            reverbNode.connect(reverbMix);
+            reverbMix.connect(audioContext.destination);
+        }
+    }
+}
+
+// Изменённая функция createNote – добавляем отправку сигнала в ревербератор:
+function createNote(frequency, startTime, noteIndex) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    analysers[noteIndex] = analyser;
+    gainNodes[noteIndex] = gainNode;
+    oscillator.type = audioParams.oscillatorType;
+    oscillator.frequency.value = frequency;
+    filter.type = audioParams.filterType;
+    filter.frequency.value = audioParams.filterFrequency;
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(audioParams.gainSustainLevel, startTime + audioParams.gainAttackTime);
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    // Подключаем как "сухой" сигнал к анализатору:
+    gainNode.connect(analyser);
+    // Отправляем часть сигнала в ревербератор (эффект "wet"):
+    gainNode.connect(reverbNode);
+    analyser.connect(audioContext.destination);
+    return { oscillator, gainNode };
+}
+function centsToFrequency(centsOffset) {
+    return baseFrequency * Math.pow(2, centsOffset / 1200);
+}
+
+// Helper function to stop a note gracefully
+function stopNote(note, stopTime) {
+    if (note && note.gainNode && note.gainNode.gain && note.oscillator) {
+        note.gainNode.gain.cancelScheduledValues(stopTime);
+        note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopTime); // Hold current gain
+        note.gainNode.gain.linearRampToValueAtTime(0, stopTime + audioParams.gainReleaseTime);
+        note.oscillator.stop(stopTime + audioParams.gainReleaseTime);
+    }
+}
+
+// Update opacity of note indicators based on analyser data
+function updateNoteIndicatorsOpacity() {
+    let needsRedraw = false;
+    analysers.forEach((analyser, i) => {
+        if (!analyser || !activeNoteIndicators[i]) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(dataArray);
+        let level = 0;
+        for (let j = 0; j < dataArray.length; j++) {
+            level += Math.abs(dataArray[j] - 128); // Sum deviations from midpoint
+        }
+        level = dataArray.length > 0 ? level / dataArray.length : 0; // Average deviation
+        // Map level to opacity (adjust divisor for sensitivity)
+        const newOpacity = Math.min(1, Math.max(0, level / 40)); // Lower divisor = more sensitive
+
+        // Only flag for redraw if opacity changes significantly
+        if (Math.abs(activeNoteIndicators[i].opacity - newOpacity) > 0.01) {
+            activeNoteIndicators[i].opacity = newOpacity;
+            needsRedraw = true;
+        }
+        // Ensure tonic opacity also updates if it's playing
+        if (i === 1 && currentNote2 && activeNoteIndicators[i].opacity <= 0.01) {
+            activeNoteIndicators[i].opacity = 0; // Snap to zero if very low
+            needsRedraw = true;
+        }
+        if (i === 0 && !currentNote1 && activeNoteIndicators[i].opacity <= 0.01) {
+            activeNoteIndicators[i].opacity = 0; // Snap to zero if very low
+            needsRedraw = true;
+        }
+    });
+
+    // Request redraw ONLY if opacity changed OR if mouse is down (to show moving line)
+    if ((needsRedraw || isMouseDown) && chartRenderer) {
+        // Pass the *updated* indicators to the renderer
+        chartRenderer.setNoteIndicators(activeNoteIndicators);
+        chartRenderer.requestDraw(); // Use the debounced draw request
+    }
+
+    requestAnimationFrame(updateNoteIndicatorsOpacity); // Continue the loop
+}
+
+// Helper to get X data coordinate (cents) from mouse event
+function getXValueFromEvent(event) {
+    if (!chartRenderer || !chartRenderer.currentView) return null;
+
+    const canvas = chartRenderer.canvas; // Use renderer's canvas reference
+    const rect = canvas.getBoundingClientRect(); // Get canvas position on screen
+
+    // Calculate click X relative to the canvas element's top-left corner
+    // event.clientX works relative to viewport, rect.left is canvas left relative to viewport
+    const clickX = event.clientX - rect.left;
+
+    // Use canvas bitmap width (which matches CSS width in our setup)
+    const canvasWidth = canvas.width;
+    const view = chartRenderer.currentView;
+    const padding = chartRenderer.options.paddingLeft;
+    const graphAreaWidth = canvasWidth - chartRenderer.options.paddingLeft - chartRenderer.options.paddingRight;
+
+    if (graphAreaWidth <= 0) return null;
+
+    // Calculate click relative to the graph *area* start
+    const clickXRelativeToGraph = clickX - padding;
+
+    // Normalize X within the graph area [0, 1], clamping to edges
+    const normalizedX = Math.max(0, Math.min(1, clickXRelativeToGraph / graphAreaWidth));
+
+    // Convert normalized X back to data coordinates (cents)
+    const xValue = view.xMin + normalizedX * (view.xMax - view.xMin);
+
+    return xValue;
+}
+
+// --- Event Listeners ---
+const HEPlotDiv = document.getElementById("HEPlotDiv");
+
+HEPlotDiv.addEventListener("mousedown", async (event) => {
+    if (event.button !== 0) return; // Only react to left mouse button
+
+    if (!audioContext) await initAudio();
+    if (!chartRenderer) return; // Chart must be ready
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) return; // Ignore clicks outside valid area
+
+    isMouseDown = true;
+    document.body.classList.add("dragging"); // Add dragging cursor style
+
+    // Stop any existing notes immediately
+    const now = audioContext.currentTime;
+    stopNote(currentNote1, now);
+    stopNote(currentNote2, now);
+    if (tonicTimeout) clearTimeout(tonicTimeout); // Clear delayed tonic timer
+
+    // Start the first note (at cursor position)
+    activeNoteIndicators[0].x = xValue;
+    activeNoteIndicators[0].opacity = 1; // Show immediately at full opacity initially
+    const freq1 = centsToFrequency(xValue);
+    currentNote1 = createNote(freq1, now, 0);
+    currentNote1.oscillator.start(now);
+
+    // Schedule the second note (tonic) with delay
+    activeNoteIndicators[1].x = 0; // Tonic is always at 0 cents
+    activeNoteIndicators[1].opacity = 0; // Start tonic indicator hidden
+    const noteDelaySeconds = parseFloat(document.getElementById("noteDelay").value);
+
+    tonicTimeout = setTimeout(() => {
+        // Check if mouse is still down when timer fires
+        if (isMouseDown && audioContext) {
+            const tonicStartTime = audioContext.currentTime;
+            const freq2 = baseFrequency; // Tonic frequency
+            currentNote2 = createNote(freq2, tonicStartTime, 1);
+            currentNote2.oscillator.start(tonicStartTime);
+            activeNoteIndicators[1].opacity = 1; // Show tonic indicator
+            if (chartRenderer) chartRenderer.requestDraw(); // Redraw to show tonic line immediately
+        }
+        tonicTimeout = null; // Clear timer ID
+    }, noteDelaySeconds * 1000);
+
+    // Initial draw to show the first note indicator
+    chartRenderer.setNoteIndicators(activeNoteIndicators);
+    chartRenderer.requestDraw();
+});
+
+document.addEventListener("mousemove", (event) => {
+    // Listen on document for dragging outside
+    if (!isMouseDown || !chartRenderer) return; // Only act if dragging
+
+    const xValue = getXValueFromEvent(event);
+    if (xValue === null) {
+        // If mouse moves outside valid area while dragging, maybe stop notes? Or just stop moving line?
+        // Let's just stop moving the line for now.
+        return;
+    }
+
+    // Update the position of the first note indicator
+    activeNoteIndicators[0].x = xValue;
+
+    // Smoothly change the frequency of the first note
+    if (currentNote1 && audioContext) {
+        const freq1 = centsToFrequency(xValue);
+        // Use setTargetAtTime for smoother frequency changes
+        currentNote1.oscillator.frequency.setTargetAtTime(freq1, audioContext.currentTime, 0.01); // 0.01s time constant
+    }
+
+    // Request redraw to show the moving indicator line
+    chartRenderer.setNoteIndicators(activeNoteIndicators);
+    chartRenderer.requestDraw();
+});
+
+document.addEventListener("mouseup", (event) => {
+    // Listen on document
+    if (event.button !== 0 || !isMouseDown) return; // Only react to left mouse button release if dragging
+
+    isMouseDown = false;
+    document.body.classList.remove("dragging"); // Remove dragging cursor style
+
+    const now = audioContext ? audioContext.currentTime : 0;
+
+    // Stop both notes
+    stopNote(currentNote1, now);
+    stopNote(currentNote2, now);
+    currentNote1 = null;
+    currentNote2 = null;
+
+    // Clear the tonic timer if it hasn't fired yet
+    if (tonicTimeout) {
+        clearTimeout(tonicTimeout);
+        tonicTimeout = null;
+    }
+
+    // Hide the first note indicator (set x to null)
+    // Opacity will fade out naturally via updateNoteIndicatorsOpacity
+    activeNoteIndicators[0].x = null;
+
+    // Request a final draw to remove the line if opacity doesn't handle it fast enough
+    if (chartRenderer) {
+        chartRenderer.setNoteIndicators(activeNoteIndicators);
+        chartRenderer.requestDraw();
+    }
+});
+
+/* ================================
+         ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+       ================================ */
+let chartRenderer = null; // Ensure renderer is accessible globally
+
+window.addEventListener("DOMContentLoaded", () => {
+    const calculator = new HarmonicEntropyCalculator();
+    const canvas = document.getElementById("heChart");
+    chartRenderer = new ChartRenderer(canvas); // Инициализируем chartRenderer
+    async function updatePlot() {
+        const HEinfo = {
+            N: parseInt(document.getElementById("textN").value),
+            mincents: parseFloat(document.getElementById("textmin").value) * 1200,
+            maxcents: parseFloat(document.getElementById("textmax").value) * 1200,
+            s: parseFloat(document.getElementById("sliders").value / 100),
+            a: parseFloat(document.getElementById("slidera").value),
+            res: 1.0,
+        };
+
+        await calculator.preCalcRatios(HEinfo); // Ждем завершения вычислений ratios
+        const HE = calculator.calculateHarmonicEntropy(HEinfo);
+        const minima = calculator.findLocalMinima(HE);
+        const annotations = calculator.findRatiosAtMinima(HE, minima);
+        if (chartRenderer) {
+            chartRenderer.plotHE(HE, annotations);
+        }
+    }
+
+    // --- Setup Event Listeners ---
+    document.getElementById("slidera").addEventListener("input", (e) => {
+        document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(e.target.value).toFixed(2);
+        updatePlot(); // Use debounced update for sliders
+    });
+    document.getElementById("sliders").addEventListener("input", (e) => {
+        document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(e.target.value).toFixed(2) + "%";
+        updatePlot(); // Use debounced update for sliders
+    });
+
+    // Update label for Note Delay slider immediately on input
+    document.getElementById("noteDelay").addEventListener("input", (e) => {
+        document.getElementById("noteDelayLabel").textContent = "Note Delay: " + parseFloat(e.target.value).toFixed(2) + "s";
+        // No need to updatePlot for note delay change
+    });
+
+    // Use 'change' event for text inputs to update plot after user finishes editing
+    document.getElementById("textN").addEventListener("change", updatePlot);
+    document.getElementById("textmin").addEventListener("change", updatePlot);
+    document.getElementById("textmax").addEventListener("change", updatePlot);
+
+    document.querySelectorAll(".stepper-button").forEach((button) => {
+        button.addEventListener("click", function () {
+            const targetInputId = this.dataset.target;
+            const inputElement = document.getElementById(targetInputId);
+            let currentValue = parseInt(inputElement.value, 10);
+            if (isNaN(currentValue)) currentValue = 0; // Handle non-numeric input
+            const step = parseInt(inputElement.step, 10) || 1;
+
+            currentValue += this.classList.contains("minus") ? -step : step;
+
+            // Add reasonable limits for min/max octaves if desired
+            if (targetInputId === "textmin" || targetInputId === "textmax") {
+                currentValue = Math.max(-2, Math.min(5, currentValue)); // Example limit: -2 to 5 octaves
+            }
+            if (targetInputId === "textN") {
+                currentValue = Math.max(10, currentValue); // Minimum N value
+            }
+
+            inputElement.value = currentValue;
+            updatePlot(); // Update plot immediately on stepper click
+        });
+    });
+
+    // --- Initial Setup ---
+    // Set initial label values from defaults
+    document.getElementById("aval").textContent = "Bandwidth (a): " + parseFloat(document.getElementById("slidera").value).toFixed(2);
+    document.getElementById("sval").textContent = "Smoothing (s): " + parseFloat(document.getElementById("sliders").value).toFixed(2) + "%";
+    document.getElementById("noteDelayLabel").textContent = "Note Delay: " + parseFloat(document.getElementById("noteDelay").value).toFixed(2) + "s";
+
+    // Initial plot calculation
+    updatePlot();
+
+    // Start the audio analyser loop after a short delay
+    setTimeout(updateNoteIndicatorsOpacity, 200);
+});
+  </script>
+</body>
+</html>
