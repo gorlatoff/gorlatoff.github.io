@@ -338,66 +338,6 @@ input:focus {
         return a;
     }
 
-    function primeFactors(n) {
-        const factors = {3: 0, 5: 0, 7: 0};
-        let num = n;
-
-        for (const prime of [3, 5, 7]) {
-            while (num % prime === 0) {
-                factors[prime]++;
-                num /= prime;
-            }
-        }
-
-        return factors;
-    }
-
-    function consonance(num, den) {
-        return 1 / den + 1 / num;
-    }
-
-
-
-// function is_valid_prime_ratio(frequency_ratio::Rational)
-//     ispow2(denominator(frequency_ratio)) == false && return false 
-
-//     prime_factors = Primes.factor(Vector, numerator(frequency_ratio))
-
-//     return count(x ->  (x == 3), prime_factors) <= 4 &&   # не более 4-х троек
-//            count(x -> (5 <= x <= 7), prime_factors) <= 2 &&  # Не более 2-х пятерок или семерок
-//            count(x ->  (x == 7), prime_factors) <= 1 &&       # нет простых больше 7
-//            count(x ->  (x > 7), prime_factors) == 0      # нет простых больше 7
-// end
-
-    function generateIntervals() {
-        const maxDenom = parseInt(document.getElementById('maxDenom').value);
-        const edo = parseInt(document.getElementById('edo').value);
-        const prime3Limit = parseInt(document.getElementById('prime3').value);
-        const prime5Limit = parseInt(document.getElementById('prime5').value);
-        const prime7Limit = parseInt(document.getElementById('prime7').value);
-        const consonanceThreshold = parseFloat(document.getElementById('consonanceSlider').value);
-        const sortBy = document.getElementById('sortBy').value;
-
-        let intervals = [];
-
-        for (let den = 1; den <= maxDenom; den++) {
-            for (let num = 1; num <= maxDenom; num++) {
-
-                if (gcd(num, den) !== 1) continue;
-
-                const interval = new RationalInterval(num, den);
-
-                const numFactors = primeFactors(num);
-                const denFactors = primeFactors(den);
-
-                if (numFactors[3] + denFactors[3] > prime3Limit) continue;
-                if (numFactors[5] + denFactors[5] > prime5Limit) continue;
-                if (numFactors[7] + denFactors[7] > prime7Limit) continue;
-
-                intervals.push(interval);
-            }
-        }
-
         // Сначала нормализуем интервалы
         intervals = intervals.map(interval => interval.normalize());
 
