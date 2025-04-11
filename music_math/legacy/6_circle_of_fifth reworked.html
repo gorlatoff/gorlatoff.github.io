@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Сircle of fifth</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+  <style>
+    :root {
+      --bg-color: hsl(231, 15%, 19%);
+      --header-color: #ffffff;
+      --canvas-bg-color: hsl(210, 8%, 12%);
+      --button-bg-color: hsl(220, 87%, 80%);
+      --button-hover-bg-color: hsl(220, 97%, 90%);
+      --button-text-color: hsl(231, 15%, 19%);
+      --text-color: hsl(60, 8%, 96%);
+      --central-text-color: hsl(0, 0%, 100%);
+      --active-sector-color: hsla(210, 84%, 75%, 0.2);
+      --stroke-color: hsla(210, 84%, 75%, 0.5);
+      --active-stroke-color: hsl(210, 84%, 75%);
+      --sector-divider-color: hsl(231, 14%, 31%);
+      --cents-text-color: hsl(0, 0%, 72%);
+    }
+    
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+    
+    /* Заголовок без фона, белым шрифтом, английский язык, такой же шрифт как у кнопок */
+    h1 {
+      color: var(--header-color);
+      font-size: 28px;
+      font-weight: 200;
+      text-align: center;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'Roboto', sans-serif;
+      background: none;
+      border: none;
+      box-shadow: none;
+      cursor: default;
+    }
+    
+    .container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+    }
+    
+    canvas {
+      background-color: var(--canvas-bg-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    canvas:hover {
+      transform: scale(1.03);
+    }
+    
+    #centralText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 42px;
+      font-weight: bold;
+      color: var(--central-text-color);
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .controls button {
+      background-color: var(--button-bg-color);
+      color: var(--button-text-color);
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Roboto', sans-serif;
+    }
+    
+    .controls button:hover {
+      background-color: var(--button-hover-bg-color);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .cents-text {
+      font-size: 11px;
+      color: var(--cents-text-color);
+      margin-top: 2px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Circle of fifth</h1>
+  
+  <div class="container">
+    <canvas id="circleCanvas" width="400" height="400"></canvas>
+    <div id="centralText"></div>
+  </div>
+  
+  <div class="controls">
+    <button id="equalTemperament">Equal Temperament</button>
+    <button id="pythagoreanScale">Pythagorean Scale</button>
+    <button id="justIntonation">Just Intonation</button>
+  </div>
+  
+  <script type="text/javascript" src="rationals.js"></script> 
+  <!-- Флейтовый синтезатор -->
+  <script>
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const NUM_HARMONICS = 12;
+    const VIBRATO_DEPTH = 0.1;
+    const VIBRATO_RATE = 5;
+    const ADSR = {
+      attack: 0.15,
+      decay: 0.25,
+      sustain: 0.7,
+      release: 0.6
+    };
+    
+    const activeNotes = new Map(); // Map<frequency, Map<id, Note>>
+    const sustainingNotes = new Map(); // Map<frequency, Set<id>>
+    let noteIdCounter = 0;
+    
+    class Note {
+      constructor(frequency, id) {
+        this.frequency = frequency;
+        this.id = id;
+        this.oscillators = [];
+        this.gains = [];
+        this.isPlaying = true;
+        this.isSustaining = true;
+        this.releaseTimeout = null;
+      }
+      
+      play() {
+        for (let i = 1; i <= NUM_HARMONICS; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const vibratoLFO = ctx.createOscillator();
+          const vibratoGain = ctx.createGain();
+          
+          osc.frequency.setValueAtTime(this.frequency * i, ctx.currentTime);
+          
+          vibratoLFO.frequency.setValueAtTime(VIBRATO_RATE, ctx.currentTime);
+          vibratoGain.gain.setValueAtTime((this.frequency * i * VIBRATO_DEPTH) / 100, ctx.currentTime);
+          vibratoLFO.connect(vibratoGain);
+          vibratoGain.connect(osc.frequency);
+          vibratoLFO.start(ctx.currentTime);
+          
+          const isEven = i % 2 === 0;
+          const baseGain = isEven ? 0.5 / (i * 1.2) : 0.15 / (i * 1.2);
+          gain.gain.setValueAtTime(0, ctx.currentTime);
+          
+          const startDelay = (i - 1) * 0.005;
+          const attackTime = ADSR.attack + (i - 1) * 0.01;
+          const decayTime = ADSR.decay;
+          const sustainLevel = baseGain * ADSR.sustain;
+          
+          gain.gain.setValueAtTime(0, ctx.currentTime + startDelay);
+          gain.gain.linearRampToValueAtTime(baseGain, ctx.currentTime + startDelay + attackTime);
+          gain.gain.linearRampToValueAtTime(sustainLevel, ctx.currentTime + startDelay + attackTime + decayTime);
+          gain.gain.setValueAtTime(sustainLevel, ctx.currentTime + startDelay + attackTime + decayTime + 0.001);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.start(ctx.currentTime + startDelay);
+          
+          this.oscillators.push({ osc, vibratoLFO });
+          this.gains.push(gain);
+        }
+      }
+      
+      stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        this.isSustaining = false;
+        
+        const sustainingSet = sustainingNotes.get(this.frequency);
+        if (sustainingSet) {
+          sustainingSet.delete(this.id);
+          if (sustainingSet.size === 0) {
+            sustainingNotes.delete(this.frequency);
+          }
+        }
+        
+        if (this.releaseTimeout) {
+          clearTimeout(this.releaseTimeout);
+          this.releaseTimeout = null;
+        }
+        
+        const releaseStart = ctx.currentTime;
+        let maxReleaseTime = 0;
+        
+        this.gains.forEach((gain, index) => {
+          const harmonicReleaseTime = ADSR.release - (index * 0.03);
+          const releaseTime = Math.max(harmonicReleaseTime, 0.1);
+          gain.gain.cancelScheduledValues(releaseStart);
+          gain.gain.setValueAtTime(gain.gain.value, releaseStart);
+          gain.gain.linearRampToValueAtTime(0, releaseStart + releaseTime);
+          maxReleaseTime = Math.max(maxReleaseTime, releaseTime);
+        });
+        
+        this.releaseTimeout = setTimeout(() => {
+          this.oscillators.forEach(({ osc, vibratoLFO }) => {
+            osc.stop();
+            vibratoLFO.stop();
+          });
+          const notesForFrequency = activeNotes.get(this.frequency);
+          if (notesForFrequency) {
+            notesForFrequency.delete(this.id);
+            if (notesForFrequency.size === 0) {
+              activeNotes.delete(this.frequency);
+            }
+          }
+          this.releaseTimeout = null;
+        }, (maxReleaseTime + 0.1) * 1000);
+      }
+    }
+    
+    function playNote(frequency) {
+      const noteId = noteIdCounter++;
+      let notesForFrequency = activeNotes.get(frequency);
+      if (!notesForFrequency) {
+        notesForFrequency = new Map();
+        activeNotes.set(frequency, notesForFrequency);
+      }
+      
+      const note = new Note(frequency, noteId);
+      notesForFrequency.set(noteId, note);
+      
+      let sustainingSet = sustainingNotes.get(frequency);
+      if (!sustainingSet) {
+        sustainingSet = new Set();
+        sustainingNotes.set(frequency, sustainingSet);
+      }
+      sustainingSet.add(noteId);
+      
+      note.play();
+    }
+    
+    function stopNote(frequency) {
+      const sustainingSet = sustainingNotes.get(frequency);
+      if (!sustainingSet || sustainingSet.size === 0) return;
+      
+      const oldestNoteId = Math.min(...sustainingSet);
+      const notesForFrequency = activeNotes.get(frequency);
+      if (notesForFrequency) {
+        const note = notesForFrequency.get(oldestNoteId);
+        if (note && note.isSustaining) {
+          note.stop();
+        }
+      }
+    }
+  </script>
+  
+  <!-- Отрисовка Flute Circle и переключение масштабов -->
+  <script>
+      class NoteData {
+        constructor(name, frequency, cents) {
+          this.name = name;
+          this.frequency = frequency;
+          this.cents = cents;
+        }
+      }
+      
+      class Scheme {
+        constructor(notes) {
+          this.notes = notes;
+        }
+      }
+
+    function centsDifference() {
+      const rounded = Math.round(this.originalCents / 100) * 100;
+      return this.originalCents - rounded;
+    }
+
+    const baseFreq = 261.63;
+
+    function edo(edoN, step) {
+      const semitone = Math.pow(2, 1 / edoN); // Локальная переменная
+      return Math.pow(semitone, step) * baseFreq;
+    }
+
+    // Функция для 12-ступенчатой равномерной темперации
+    const edo12 = (step) => edo(12, step, baseFreq);
+        
+    const schemes = [
+      new Scheme([ // Equal Temperament
+        new NoteData('C', edo12(0), 0),
+        new NoteData('G', edo12(7), 700),
+        new NoteData('D', edo12(2), 200),
+        new NoteData('A', edo12(9), 900),
+        new NoteData('E', edo12(4), 400),
+        new NoteData('B', edo12(1), 1100),
+        new NoteData('F♯', edo12(6), 600),
+        new NoteData('C♯', edo12(1), 100),
+        new NoteData('G♯', edo12(8), 800),
+        new NoteData('D♯', edo12(3), 300),
+        new NoteData('A♯', edo12(0), 1000),
+        new NoteData('F', edo12(5), 500)
+      ]),
+      new Scheme([ // Pythagorean Scale
+        new NoteData('1/1', 261.63, 0),
+        new NoteData('3/2', 392.44, 2.04),
+        new NoteData('9/8', 294.33, 3.92),
+        new NoteData('27/16', 441.49, 5.88),
+        new NoteData('81/64', 331.12, 7.84),
+        new NoteData('243/128', 496.68, 9.80),
+        new NoteData('729/512', 372.51, 11.76),
+        new NoteData('256/243', 279.38, 13.72),
+        new NoteData('128/81', 419.07, 15.68),
+        new NoteData('32/27', 314.31, 17.64),
+        new NoteData('16/9', 471.46, 19.60),
+        new NoteData('4/3', 348.84, -1.96)
+      ]),
+      new Scheme([ // Just Intonation
+        new NoteData('1/1', 261.63, 0),
+        new NoteData('3/2', 392.00, 1.96),
+        new NoteData('9/8', 294.33, 3.92),
+        new NoteData('5/3', 440.00, -15.64),
+        new NoteData('5/4', 327.03, -13.69),
+        new NoteData('15/8', 490.55, -11.73),
+        new NoteData('45/32', 368.31, -9.77),
+        new NoteData('16/15', 279.07, 11.73),
+        new NoteData('8/5', 418.60, -1.96),
+        new NoteData('6/5', 313.95, 15.64),
+        new NoteData('16/9', 466.16, -3.92),
+        new NoteData('4/3', 348.84, -1.96)
+      ])
+    ];
+    
+    let currentScheme = 0;
+    let selectedSector = null;
+    
+    const canvas = document.getElementById('circleCanvas');
+    const ctxCanvas = canvas.getContext('2d');
+    const radius = canvas.width / 2;
+    const innerRadius = radius * 0.66;
+    const outerRadius = radius;
+    const sectorAngle = (2 * Math.PI) / 12;
+    const centralText = document.getElementById('centralText');
+    
+    function drawCircle() {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const colors = {
+        sectorDivider: rootStyles.getPropertyValue('--sector-divider-color').trim(),
+        activeStroke: rootStyles.getPropertyValue('--active-stroke-color').trim(),
+        stroke: rootStyles.getPropertyValue('--stroke-color').trim(),
+        text: rootStyles.getPropertyValue('--text-color').trim(),
+        cents: rootStyles.getPropertyValue('--cents-text-color').trim(),
+        activeSector: rootStyles.getPropertyValue('--active-sector-color').trim()
+      };
+      
+      ctxCanvas.clearRect(0, 0, canvas.width, canvas.height);
+      
+      schemes[currentScheme].notes.forEach((note, i) => {
+        const startAngle = i * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+        const endAngle = (i + 1) * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+        
+        ctxCanvas.beginPath();
+        ctxCanvas.arc(radius, radius, outerRadius, startAngle, endAngle);
+        ctxCanvas.arc(radius, radius, innerRadius, endAngle, startAngle, true);
+        ctxCanvas.closePath();
+        ctxCanvas.fillStyle = i === selectedSector ? colors.activeSector : 'transparent';
+        ctxCanvas.fill();
+        ctxCanvas.strokeStyle = colors.sectorDivider;
+        ctxCanvas.lineWidth = 1;
+        ctxCanvas.stroke();
+        
+        if (selectedSector !== null) {
+          if (i === selectedSector) {
+            ctxCanvas.strokeStyle = colors.activeStroke;
+            ctxCanvas.lineWidth = 3;
+          } else if (i === (selectedSector + 1) % 12 || i === (selectedSector + 11) % 12) {
+            ctxCanvas.strokeStyle = colors.stroke;
+            ctxCanvas.lineWidth = 2;
+          }
+          ctxCanvas.stroke();
+        }
+        
+        const textAngle = startAngle + sectorAngle / 2;
+        const textRadius = (innerRadius + outerRadius) / 2;
+        const x = radius + textRadius * Math.cos(textAngle);
+        const y = radius + textRadius * Math.sin(textAngle);
+        
+        ctxCanvas.fillStyle = colors.text;
+        ctxCanvas.font = '16px Roboto';
+        ctxCanvas.textAlign = 'center';
+        ctxCanvas.textBaseline = 'bottom';
+        ctxCanvas.fillText(note.name, x, y - 4);
+        
+        ctxCanvas.fillStyle = colors.cents;
+        ctxCanvas.font = '11px Roboto';
+        ctxCanvas.textBaseline = 'top';
+        ctxCanvas.fillText(`${note.cents} cents`, x, y + 4);
+      });
+    }
+    
+    function getSector(x, y) {
+      const dx = x - radius;
+      const dy = y - radius;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < innerRadius || distance > outerRadius) return null;
+      let angle = Math.atan2(dy, dx) + Math.PI / 2 + sectorAngle / 2;
+      if (angle < 0) angle += 2 * Math.PI;
+      return Math.floor(angle / sectorAngle) % 12;
+    }
+    
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const sector = getSector(x, y);
+      if (sector !== null) {
+        selectedSector = sector;
+        drawCircle();
+        centralText.textContent = schemes[currentScheme].notes[sector].name;
+        const cents = schemes[currentScheme].notes[sector].cents;
+        const freq = baseFreq * Math.pow(2, cents / 1200);
+        playNote(freq);
+        setTimeout(() => {
+          stopNote(freq);
+        }, 250);
+      }
+    });
+    
+    document.getElementById('equalTemperament').addEventListener('click', () => {
+      currentScheme = 0;
+      selectedSector = null;
+      centralText.textContent = '';
+      drawCircle();
+    });
+    
+    document.getElementById('pythagoreanScale').addEventListener('click', () => {
+      currentScheme = 1;
+      selectedSector = null;
+      centralText.textContent = '';
+      drawCircle();
+    });
+    
+    document.getElementById('justIntonation').addEventListener('click', () => {
+      currentScheme = 2;
+      selectedSector = null;
+      centralText.textContent = '';
+      drawCircle();
+    });
+    
+    drawCircle();
+  </script>
+</body>
+</html>

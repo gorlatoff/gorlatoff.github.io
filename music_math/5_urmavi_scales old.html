@@ -262,11 +262,8 @@
       <canvas id="myCanvas"></canvas>
     </div>
   </div>
-  <script src="scales.js"></script>
+
   <script>
-
-
-
     /******************************************************************
      * Глобальные переменные
      ******************************************************************/
@@ -397,8 +394,6 @@
       return intervals;
     }
 
-
-
     // Асинхронная функция генерации ладов с оверлеем
     async function generateScales(maxNotes = 8, searchLimit = 32, minConsonance = 0.2) {
       let scalesDB = {};
@@ -451,39 +446,13 @@
       });
     }
 
-
-
-    // JI-интервал → ближайший темперированный полутон
-    const jiToSemitone = r => {
-      const semitoneFloat = Math.log2(r.toDecimal()) * 12;
-      return Math.round(semitoneFloat);
-    };
-
-    // Из массива полу́тонов (0…11) делаем строку "{0, 1, 3, 5, …}"
-    const makeKeyFromSemitones = semitones => {
-      const classes = semitones
-        .map(s => ((s % 12) + 12) % 12)
-        .sort((a, b) => a - b);
-      return `{${classes.join(', ')}}`;
-    };
-
-    // Теперь функция присвоения имени ладу:
     function generateScaleName(scale) {
-      // 1) переводим каждый JI‑интервал в полутоны
-      const semitones = scale.map(jiToSemitone);
-
-      // 2) собираем строковый ключ точно в том же формате, что и в scales.json
-      const key = makeKeyFromSemitones(semitones);
-
-      // 3) если в мапе есть имя — берём первое, иначе ставим "-"
-      const names = scalesNamesMap[key];
-      return (names && names.length > 0)
-        ? names.join(', ')
-        : '-';
+      const scaleNameWords = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'];
+      const randomIndex = Math.floor(Math.random() * scaleNameWords.length);
+      const randomWord = scaleNameWords[randomIndex];
+      const scaleSize = scale.length;
+      return `${randomWord}_${scaleSize}`;
     }
-
-
-
     /******************************************************************
      * Функции для отрисовки
      ******************************************************************/
@@ -668,7 +637,7 @@
 
         const scaleName = generateScaleName(entry.scale); // entry.scale — это массив интервалов строя
         tdName.textContent = scaleName; // Присваиваем имя ячейке таблицы
-
+        
         tr.appendChild(tdN);
         tr.appendChild(tdConsonance);
         tr.appendChild(tdName);
@@ -753,9 +722,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
