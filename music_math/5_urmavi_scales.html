@@ -959,7 +959,7 @@ input[type="number"]:focus { border-color: transparent; }
   window.addEventListener("resize", () => {
     if(currentScale) requestAnimationFrame(() => drawScale(currentScale));
   });
-  
+
   window.addEventListener("load", () => {
     setupCustomSelect();
     document.getElementById("genScalesBtn").click();
