@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style Reference — App Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================
+   FONTS:
+   - JetBrains Mono: NUMBERS ONLY (inputs, displays, values)
+   - Space Grotesk: ALL OTHER TEXT (labels, buttons, UI)
+   ============================================ */
+
+:root {
+  /* === PALETTE (LOCKED) === */
+  --bg-void: hsl(225, 21.5%, 5%);
+  --bg-panel: hsl(225, 24%, 8%);
+  
+  --hue-cyan: 190;
+  --hue-purple: 260;
+  --hue-warm: 35;
+  
+  --color-cyan: hsla(190, 90%, 62.5%, 1);
+  --color-purple: hsla(260, 85%, 67.5%, 1);
+  --color-warm: hsla(35, 100%, 67.5%, 1);
+  
+  --text-bright: hsl(0, 0%, 100%);
+  --text-main: hsl(220, 28.5%, 91%);
+  --text-dim: hsl(223, 18.5%, 69%);
+  
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  /* Shadows & Glows */
+  --shadow-input: inset 0 2px 4px hsla(0, 0%, 0%, 0.45);
+  --shadow-panel: 0 15px 40px -7.5px hsla(0, 0%, 0%, 0.6);
+  
+  --border-base: 1px solid hsla(0, 0%, 100%, 0.065);
+  
+  /* Inner Glows */
+  --glow-cyan-inner: inset 0 0 0 1px hsla(190, 80%, 65%, 0.35), inset -1px -3px 20px hsla(190, 80%, 62.5%, 0.1);
+  --glow-purple-inner: inset 0 0 0 1px hsla(260, 80%, 65%, 0.35), inset -1px -3px 20px hsla(260, 80%, 67.5%, 0.1);
+  --glow-warm-inner: inset 0 0 0 1px hsla(35, 80%, 65%, 0.35), inset -1px -3px 20px hsla(35, 80%, 67.5%, 0.1);
+  
+  /* Slider gradient colors (reusable) */
+  --slider-gradient: linear-gradient(90deg, 
+    hsla(260, 75%, 60%, 0.6) 0%, 
+    hsla(190, 85%, 61%, 0.9) 100%
+  );
+  --slider-track-bg: hsla(0, 0%, 100%, 0.08);
+}
+
+/* === RESET === */
+* { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+body, button, label, .label, .label-row, .toggle-face, .select-trigger, .option, .tick-marks {
+  user-select: none; -webkit-user-select: none;
+}
+input[type="number"] { user-select: text; -webkit-user-select: text; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg-void);
+  background-image: radial-gradient(circle at 50% -20%, hsl(225, 25%, 14.5%) 0%, var(--bg-void) 67.5%);
+  color: var(--text-main);
+  font-family: 'Space Grotesk', sans-serif;
+  display: flex; flex-direction: column; overflow-x: hidden;
+}
+
+
+
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* === APP TITLE === */
+.app-title {
+  padding: 20px 24px 12px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-bright);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* === MAIN PANEL === */
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px 16px 24px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-panel);
+  border: var(--border-base);
+  border-radius: 16px;
+  padding: clamp(20px, 4vw, 32px);
+  display: flex; flex-direction: column; gap: 28px;
+  box-shadow: var(--shadow-panel);
+}
+
+.label, .label-row {
+  font-size: 10px; text-transform: uppercase; color: var(--text-dim);
+  letter-spacing: 1px; margin-bottom: 10px; display: block; font-weight: 600;
+}
+.label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+/* === COMPONENT: SELECT === */
+.custom-select { position: relative; font-family: 'Space Grotesk', sans-serif; }
+.select-trigger {
+  background: hsla(0, 0%, 0%, 0.25);
+  color: var(--text-main); padding: 12px 16px;
+  border-radius: var(--radius-md); cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  border: var(--border-base); box-shadow: var(--shadow-input);
+  font-size: 13.5px; font-weight: 500; transition: border-color 0.2s;
+}
+.select-trigger:hover { border-color: hsla(0, 0%, 100%, 0.15); }
+
+.custom-select.open .select-trigger {
+  background-color: hsla(260, 75%, 50%, 0.05);
+  box-shadow: var(--glow-purple-inner); border-color: transparent; color: var(--text-bright);
+}
+.select-arrow { font-size: 9px; color: var(--text-dim); transition: transform 0.2s; }
+.custom-select.open .select-arrow { transform: rotate(180deg); color: var(--color-purple); }
+
+.select-options {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #0b0d12; border: var(--border-base);
+  border-radius: var(--radius-md); overflow: hidden;
+  max-height: 0; opacity: 0; z-index: 10;
+  transition: all 0.2s var(--ease-out); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.custom-select.open .select-options { max-height: 200px; opacity: 1; }
+
+.option {
+  padding: 10px 16px; cursor: pointer; font-size: 13px; color: var(--text-dim);
+  border-left: 2px solid transparent; transition: all 0.2s;
+}
+.option:hover { color: var(--text-bright); background: hsla(0, 0%, 100%, 0.04); }
+.option.selected {
+  color: var(--text-bright); border-left-color: var(--color-purple);
+  background: linear-gradient(90deg, hsla(260, 85%, 67.5%, 0.06), transparent);
+}
+
+/* === COMPONENT: TOGGLE === */
+.toggle-group {
+  display: flex; background: hsla(0, 0%, 0%, 0.25); padding: 3px;
+  border-radius: var(--radius-md); border: var(--border-base); height: 42px;
+}
+.toggle-opt { flex: 1; position: relative; cursor: pointer; }
+.toggle-opt input { display: none; }
+
+.toggle-face {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-size: 11.5px; font-weight: 500;
+  border-radius: var(--radius-sm); transition: all 0.2s; border: 1px solid transparent;
+}
+.toggle-opt:hover .toggle-face { color: var(--text-main); }
+
+.toggle-opt input:checked + .toggle-face {
+  background: hsla(0, 0%, 100%, 0.06); color: var(--text-bright);
+  border: 1px solid hsla(0, 0%, 100%, 0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.toggle-opt input:checked + .toggle-face::after {
+  content: ''; position: absolute; bottom: -1px; left: 30%; right: 30%; height: 2px;
+  background: var(--color-cyan); box-shadow: 0 0 6px var(--color-cyan); border-radius: 2px;
+}
+
+/* === COMPONENT: INPUTS === */
+.input-row { display: flex; align-items: center; gap: 12px; }
+
+/* NUMBERS: JetBrains Mono */
+input[type="number"] {
+  background-color: hsla(0, 0%, 0%, 0.25);
+  border: var(--border-base); border-radius: var(--radius-sm);
+  color: var(--text-bright);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center; padding: 8px 0; width: 60px;
+  box-shadow: var(--shadow-input); font-size: 14px; font-weight: 500; transition: all 0.2s;
+}
+input[type="number"]:hover { border-color: hsla(0, 0%, 100%, 0.15); }
+
+.inp-large { width: 68px; height: 44px; font-size: 16px; }
+
+.inp-warm:focus { background-color: hsla(35, 75%, 50%, 0.05); box-shadow: var(--glow-warm-inner); border-color: transparent; }
+.inp-cool:focus { background-color: hsla(190, 75%, 50%, 0.05); box-shadow: var(--glow-cyan-inner); border-color: transparent; }
+
+.ratio-divider { font-size: 16px; color: var(--text-dim); padding-bottom: 2px; font-family: 'Space Grotesk', sans-serif; }
+
+/* ============================================
+   COMPONENT: SLIDER (SHARED STYLES)
+   ============================================ */
+.slider-wrap {
+  flex: 1; position: relative; display: flex; align-items: center; height: 32px; padding: 0 8px;
+}
+
+/* Track element: gray base with gradient ::before */
+.slider-track {
+  position: absolute; left: 8px; right: 8px; height: 2px;
+  background: var(--slider-track-bg); border-radius: 2px; pointer-events: none;
+  overflow: hidden;
+}
+
+/* Full gradient, clipped to reveal "window" */
+.slider-track::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg,
+    hsla(260, 75%, 60%, 0.6) 0%,
+    hsla(190, 85%, 61%, 0.9) 100%
+  );
+  border-radius: 2px;
+  /* Single slider: reveal from left, clip right side */
+  clip-path: inset(0 var(--clip-right, 50%) 0 0);
+  transition: clip-path 0.05s ease-out;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+  position: relative; /* Above the track */
+  z-index: 1;
+}
+
+/* Track on input itself: transparent (we use .slider-track instead) */
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%; height: 2px; cursor: pointer; border-radius: 2px;
+  background: transparent;
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%; height: 2px; cursor: pointer; border-radius: 2px;
+  background: transparent;
+}
+
+/* Thumb */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px; width: 4px;
+  border-radius: 2px;
+  background: #fff;
+  cursor: grab; margin-top: -7px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5);
+  transition: all 0.2s;
+  opacity: 0.8;
+}
+
+input[type=range]::-moz-range-thumb {
+  border: none; height: 16px; width: 4px; border-radius: 2px;
+  background: #fff; cursor: grab;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5);
+  transition: all 0.2s; opacity: 0.8;
+}
+
+input[type=range]:hover::-webkit-slider-thumb,
+input[type=range]:focus::-webkit-slider-thumb {
+  opacity: 1;
+  background: #fff;
+  transform: scaleY(1.1);
+  box-shadow: 0 0 10px rgba(255,255,255,0.6), 0 0 2px var(--color-cyan);
+}
+input[type=range]:active::-webkit-slider-thumb {
+  cursor: grabbing; background: var(--color-cyan);
+  box-shadow: 0 0 15px var(--color-cyan);
+}
+
+/* ============================================
+   COMPONENT: DUAL RANGE SLIDER (extends shared styles)
+   Same "window reveal" effect
+   ============================================ */
+.dual-slider-wrap {
+  flex: 1; position: relative; height: 32px; padding: 0 8px; display: flex; align-items: center;
+}
+
+/* Base track: gray */
+.dual-slider-wrap .slider-track {
+  /* Inherits base styles from .slider-track */
+}
+
+/* Dual slider: clip both sides */
+.dual-slider-wrap .slider-track::before {
+  /* Override clip-path for dual handles */
+  clip-path: inset(0 var(--clip-right, 66.67%) 0 var(--clip-left, 33.33%));
+}
+
+/* Remove old range bar - now using clip-path on track::before */
+.dual-slider-range {
+  display: none;
+}
+
+/* Stacked Inputs */
+.dual-slider-wrap input[type=range] {
+  position: absolute; left: 0; right: 0; pointer-events: none;
+}
+.dual-slider-wrap input[type=range]::-webkit-slider-thumb { pointer-events: auto; }
+.dual-slider-wrap input[type=range]::-moz-range-thumb { pointer-events: auto; }
+/* Track already transparent from base styles */
+.dual-slider-wrap input[type=range]::-webkit-slider-runnable-track { background: transparent; }
+.dual-slider-wrap input[type=range]::-moz-range-track { background: transparent; }
+
+.tick-marks {
+  position: absolute; top: 18px; left: 8px; right: 8px;
+  display: flex; justify-content: space-between; pointer-events: none;
+}
+.tick { width: 1px; height: 4px; background: hsla(0, 0%, 100%, 0.15); }
+
+/* === COMPONENT: ACTION BUTTON === */
+.btn-action {
+  width: 100%; padding: 16px; margin-top: 12px;
+  background: linear-gradient(180deg, hsl(225, 20%, 15%), hsl(225, 20%, 9%));
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-main); font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px;
+  cursor: pointer; overflow: hidden;
+  transition: all 0.2s var(--ease-out);
+  position: relative;
+  white-space: nowrap;
+}
+
+.btn-action:hover {
+  border-color: hsla(0, 0%, 100%, 0.2);
+  background: linear-gradient(180deg, hsl(225, 20%, 17%), hsl(225, 20%, 11%));
+  color: var(--text-bright); transform: translateY(-1px);
+  box-shadow: 0 8px 25px hsla(0, 0%, 0%, 0.5);
+}
+
+.btn-action::after {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--color-cyan); transform: scaleX(0.5); opacity: 0.6;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 -1px 6px hsla(190, 90%, 62.5%, 0.2);
+}
+.btn-action:hover::after { transform: scaleX(1); opacity: 1; height: 3px; box-shadow: 0 0 15px var(--color-cyan); }
+.btn-action:active { transform: translateY(0); opacity: 0.9; }
+
+/* === FOOTER === */
+footer {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.5;
+  padding: 16px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 480px) {
+  .app-title { padding: 16px 16px 8px; }
+  .panel { gap: 24px; }
+  .toggle-face { font-size: 10.5px; }
+  .inp-large { width: 56px; height: 40px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-title">Lorem Ipsum Calculator</div>
+
+<main>
+  <div class="panel">
+    
+    <!-- Model Select -->
+    <div>
+      <span class="label">Modus Operandi</span>
+      <div class="custom-select" id="modelSelect">
+        <div class="select-trigger">
+          <span>Veni Vidi Vici</span>
+          <span class="select-arrow">▼</span>
+        </div>
+        <div class="select-options">
+          <div class="option selected">Veni Vidi Vici</div>
+          <div class="option">Carpe Diem</div>
+          <div class="option">Memento Mori</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Mode -->
+    <div>
+      <span class="label">Tempus Fugit</span>
+      <div class="toggle-group">
+        <label class="toggle-opt">
+          <input type="radio" name="mode" checked>
+          <div class="toggle-face">Alpha</div>
+        </label>
+        <label class="toggle-opt">
+          <input type="radio" name="mode">
+          <div class="toggle-face">Beta</div>
+        </label>
+        <label class="toggle-opt">
+          <input type="radio" name="mode">
+          <div class="toggle-face">Gamma</div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Interval Ratio -->
+    <div>
+      <div class="label-row"><span>Ratio Aurea</span></div>
+      <div class="input-row">
+        <input type="number" value="5" class="inp-large inp-warm">
+        <span class="ratio-divider">:</span>
+        <input type="number" value="4" class="inp-large inp-cool">
+        <div class="slider-wrap">
+          <div class="slider-track"></div>
+          <input type="range" min="0" max="100" value="55" class="js-slider">
+        </div>
+      </div>
+    </div>
+
+    <!-- Range Selector (Dual) -->
+    <div>
+      <div class="label-row">
+        <span>Spatium Infinitum</span>
+        <span id="rangeVal" style="color:var(--color-cyan); font-family:'JetBrains Mono'">0 – +1</span>
+      </div>
+      <div class="input-row">
+        <input type="number" value="0" min="-1" max="2" class="inp-cool js-range-min">
+        <span class="ratio-divider">–</span>
+        <input type="number" value="1" min="-1" max="2" class="inp-cool js-range-max">
+        
+        <div class="dual-slider-wrap">
+          <div class="slider-track"></div>
+          <input type="range" min="-1" max="2" step="1" value="0" class="js-range-lower" id="lowerSlider">
+          <input type="range" min="-1" max="2" step="1" value="1" class="js-range-upper" id="upperSlider">
+          <div class="tick-marks">
+            <span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-action">Fiat Lux</button>
+
+  </div>
+</main>
+
+<footer>Status: Lorem Ipsum • V 0.0.0 (Reference)</footer>
+
+<script>
+// === SINGLE SLIDER ===
+function updateSingleSlider(input) {
+  const percent = (input.value - input.min) / (input.max - input.min) * 100;
+  const track = input.parentElement.querySelector('.slider-track');
+  if (track) {
+    track.style.setProperty('--clip-right', (100 - percent) + '%');
+  }
+}
+document.querySelectorAll('.js-slider').forEach(s => {
+  updateSingleSlider(s); s.addEventListener('input', e => updateSingleSlider(e.target));
+});
+
+// === SELECT ===
+const select = document.getElementById('modelSelect');
+const trigger = select.querySelector('.select-trigger span');
+select.addEventListener('click', () => select.classList.toggle('open'));
+select.querySelectorAll('.option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    select.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected'); trigger.textContent = opt.textContent;
+  });
+});
+document.addEventListener('click', e => { if(!select.contains(e.target)) select.classList.remove('open'); });
+
+// === DUAL SLIDER with clip-path "window reveal" ===
+const lower = document.getElementById('lowerSlider');
+const upper = document.getElementById('upperSlider');
+const track = document.querySelector('.dual-slider-wrap .slider-track');
+const disp = document.getElementById('rangeVal');
+const minInp = document.querySelector('.js-range-min');
+const maxInp = document.querySelector('.js-range-max');
+
+function fmt(v) { return v > 0 ? '+' + v : v; }
+
+function updateDual() {
+  let l = parseInt(lower.value), u = parseInt(upper.value);
+  if (l > u) { [l, u] = [u, l]; lower.value = l; upper.value = u; }
+  
+  const min = -1, max = 2;
+  const range = max - min; // 3
+  
+  // Calculate percentages for clip-path
+  const leftPercent = ((l - min) / range) * 100;
+  const rightPercent = 100 - ((u - min) / range) * 100;
+  
+  // Update clip-path via CSS custom properties
+  track.style.setProperty('--clip-left', leftPercent + '%');
+  track.style.setProperty('--clip-right', rightPercent + '%');
+  
+  disp.textContent = `${fmt(l)} – ${fmt(u)}`;
+  minInp.value = l; maxInp.value = u;
+}
+
+lower.addEventListener('input', updateDual);
+upper.addEventListener('input', updateDual);
+minInp.addEventListener('change', e => { lower.value = Math.max(-1, Math.min(2, e.target.value)); updateDual(); });
+maxInp.addEventListener('change', e => { upper.value = Math.max(-1, Math.min(2, e.target.value)); updateDual(); });
+
+updateDual();
+</script>
+
+</body>
+</html>

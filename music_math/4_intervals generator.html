@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intervals Generator</title>
+<style>
+:root{--bg:#121212; --surf:#1e1e1e; --acc:#00e676; --err:#cf6679; --txt:#e0e0e0; --border:#333;}
+body{font-family:'Segoe UI', Roboto, monospace; margin:0; padding:1rem; background:var(--bg); color:var(--txt); height:100vh; display:flex; flex-direction:column; gap:1rem;}
+
+/* Запрет выделения текста */
+.no-select { user-select: none; -webkit-user-select: none; }
+
+/* --- CONTROLS --- */
+.controls{
+    background:var(--surf); 
+    padding:1rem; 
+    border-radius:8px; 
+    display:grid; 
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+    gap:1rem; 
+    border:1px solid var(--border); 
+    align-items: start; 
+}
+
+.col{ display:flex; flex-direction:column; gap:0.4rem; }
+.input-box { height: 36px; box-sizing: border-box; display: flex; align-items: center; }
+
+label{font-size:0.65rem; text-transform:uppercase; color:#888; font-weight:700; letter-spacing:0.5px; margin-bottom: 2px; user-select: none;}
+
+input[type="number"], input[type="text"], select{
+    background:#252525; border:1px solid #444; color:var(--txt); padding:0 0.5rem; 
+    border-radius:4px; font-size:0.9rem; width: 100%; height: 100%; outline: none;
+}
+
+/* --- SLIDERS (Unified Style) --- */
+.range-wrap {
+    position: relative; width: 100%; height: 100%; display: flex; align-items: center; z-index: 1;
+}
+/* Линия фона */
+.range-bg { position: absolute; width: 100%; height: 4px; background: #333; border-radius: 2px; z-index: 1; }
+/* Активная заливка */
+.range-fill { position: absolute; height: 4px; background: var(--acc); border-radius: 2px; z-index: 2; pointer-events: none; }
+
+input[type="range"] {
+    -webkit-appearance: none; appearance: none; background: transparent; margin: 0; border: none; width: 100%; height: 100%;
+    position: absolute; z-index: 3; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.5); margin-top: -5px;
+}
+/* Хак для центровки Thumb в Chrome/Webkit */
+.range-wrap input[type="range"]::-webkit-slider-thumb { margin-top: 0; }
+
+/* --- TABLE --- */
+.table-wrap{flex:1; overflow:auto; border:1px solid var(--border); border-radius:8px; background:var(--surf); position:relative;}
+table{width:100%; border-collapse:collapse; font-size:0.85rem;}
+th{
+    position:sticky; top:0; background:#222; text-align:left; padding:0.7rem 1rem; 
+    color:var(--acc); font-weight:600; border-bottom:2px solid var(--border); z-index:2; 
+    cursor: pointer;
+}
+th:hover { background: #2a2a2a; }
+
+td{padding:0.5rem 1rem; border-bottom:1px solid #2a2a2a; font-family:'Consolas', monospace; transition: background 0.1s, color 0.1s;}
+tr:hover td{background:#252525;}
+
+/* Подсветка строки */
+tr.playing td { background: #2c2c2c; color: #eee; }
+
+/* Вспышка конкретной ячейки */
+@keyframes pulse-cell {
+    0% { color: #fff; text-shadow: 0 0 5px var(--acc); transform: scale(1); }
+    50% { color: var(--acc); text-shadow: 0 0 15px var(--acc); transform: scale(1.15); }
+    100% { color: var(--acc); text-shadow: none; transform: scale(1); }
+}
+td.active-pulse {
+    animation: pulse-cell 0.3s ease-out forwards;
+    font-weight: bold;
+    color: var(--acc) !important;
+}
+
+/* Интерактивные ячейки */
+td.clickable { cursor: pointer; }
+td.clickable:hover { background: #333; color: var(--acc); }
+
+.bar-ctn{width:80px; height:4px; background:#333; border-radius:2px; display:inline-block; margin-right:8px; vertical-align:middle; overflow: hidden;}
+.bar-fill{height:100%; background:var(--acc); border-radius:2px; }
+.desc-box{font-size:0.85rem; color:#bbb; padding:0.8rem; background:#1a1a1a; border-left: 3px solid var(--acc); border-radius:0 4px 4px 0; line-height: 1.4;}
+.val-disp { float: right; color: var(--acc); font-weight: normal; }
+.prime-inputs { display: flex; gap: 4px; height: 100%; width: 100%; }
+.prime-inputs input { text-align: center; padding: 0; }
+</style>
+</head>
+<body>
+
+<!-- CONTROLS -->
+<div class="controls no-select">
+    <div class="col" style="grid-column: span 2;">
+        <label>Metric Model</label>
+        <div class="input-box">
+            <select id="method">
+                <option value="euler">Euler (Gradus Suavitatis)</option>
+                <option value="murzin">Murzin (Periodicity)</option>
+                <option value="sopfr">SOPFR (Sum of Primes)</option>
+                <option value="barlow">Barlow (Indigestibility)</option>
+                <option value="harmUtility">HarmUtility (Log Weighted Sum)</option>
+            </select>
+        </div>
+    </div>
+        
+    <div class="col">
+        <label>Max Denom</label>
+        <div class="input-box"><input type="number" id="maxDenom" value="15"></div>
+    </div>
+    
+    <!-- OCTAVE RANGE -->
+    <div class="col">
+        <label>Octaves Range <span id="octDisp" class="val-disp">0 : 1</span></label>
+        <div class="input-box">
+            <div class="range-wrap">
+                <div class="range-bg"></div>
+                <div class="range-fill" id="octFill"></div>
+                <input type="range" id="octMin" min="-1" max="2" step="1" value="0">
+                <input type="range" id="octMax" min="-1" max="2" step="1" value="1">
+            </div>
+        </div>
+    </div>
+
+    <!-- CONSONANCE SLIDER -->
+    <div class="col">
+        <label>Consonance (Min) <span id="consDisp" class="val-disp">0.22</span></label>
+        <div class="input-box">
+            <div class="range-wrap">
+                <div class="range-bg"></div>
+                <div class="range-fill" id="consFill" style="width: 42%"></div>
+                <input type="range" id="consMin" min="0" max="1" step="0.01" value="0.22">
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <label>Limits (3/5/7/Big)</label>
+        <div class="input-box">
+            <div class="prime-inputs">
+                <input type="text" id="l3" value="4">
+                <input type="text" id="l5" value="2">
+                <input type="text" id="l7" value="1">
+                <input type="text" id="lBig" value="1" title="Max count of primes > 7">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="desc-box" id="desc"></div>
+
+<div class="table-wrap">
+    <table id="tbl" class="no-select">
+        <thead><tr>
+            <th onclick="setSort('ratio')">Ratio (JI)</th>
+            <th onclick="setSort('cents')">Cents</th>
+            <th onclick="setSort('step')" title="12-TET Semitones">Semitones</th>
+            <th>Factors</th>
+            <th onclick="setSort('score')">Consonance</th>
+            <th onclick="setSort('raw')">Raw Value</th>
+        </tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="lib/audio-lib.js"></script>
+<script src="lib/ji-lib.js"></script>
+<script>
+
+if(typeof Synth === 'undefined'){
+    window.Synth = class { constructor(){ console.warn('Synth lib missing'); } connect(){} triggerAttackRelease(){} }
+}
+
+const ctx = Utils.initAudio();
+
+const PIANO = {
+  harmonics: 16,
+  envelope: { attack: 0.005, decay: 0.4, sustain: 0.2, release: 0.8 }
+};
+
+const pianoPartials = (freq) => 
+  Array.from({ length: PIANO.harmonics }, (_, i) => {
+    const n = i + 1;
+    const oddBoost = (n % 2 === 1) ? 1.2 : 0.8;
+    const gain = oddBoost / Math.pow(n, 1.8); 
+    return {
+      ratio: n,
+      amp: gain,
+      startDelay: 0,
+      attack: PIANO.envelope.attack,
+      decay: PIANO.envelope.decay + (n * 0.05),
+      sustain: Math.max(PIANO.envelope.sustain - (n * 0.02), 0.1),
+      release: PIANO.envelope.release
+    };
+  });
+
+const synth = new Synth(ctx, {
+  partials: pianoPartials,
+  type: 'sine'
+});
+synth.connect(ctx.destination);
+
+function playInterval(n, d, duration = 0.5) {
+  if (ctx.state === 'suspended') ctx.resume();
+  const baseFreq = 220;
+  const ratio = n / d;
+  const intervalFreq = baseFreq * ratio;
+  
+  // Если интервал уходит сильно вниз (например 1/2), поднимаем базовую ноту
+  let octaveShift = 0;
+  if (ratio < 0.5) octaveShift = 1;
+  // Если сильно вверх
+  if (ratio > 4) octaveShift = -1;
+
+  const f1 = baseFreq * Math.pow(2, octaveShift);
+  const f2 = intervalFreq * Math.pow(2, octaveShift);
+
+  synth.triggerAttackRelease('voice_root', f1, duration, 0.4);
+  synth.triggerAttackRelease('voice_interval', f2, duration, 0.4);
+}
+
+// Обертка для визуала и вызова аудио
+function handlePlay(n, d, cell) {
+    // Сброс подсветки
+    document.querySelectorAll('tr.playing').forEach(tr=>tr.classList.remove('playing'));
+    document.querySelectorAll('td.active-pulse').forEach(td=>td.classList.remove('active-pulse'));
+    
+    // Новая подсветка
+    cell.parentElement.classList.add('playing');
+    cell.classList.add('active-pulse');
+
+    // Звук
+    playInterval(n, d);
+}
+
+
+/* --- APP STATE --- */
+const $ = id => document.getElementById(id);
+let currentData = [];
+let currentSort = 'score'; 
+
+function setSort(type){
+    currentSort = type;
+    render(false);
+}
+
+function render(recalc = true){
+    const mKey = $('method').value;
+    
+    if(recalc){
+        const method = Methods[mKey];
+        const maxD = parseInt($('maxDenom').value);
+        
+        // Octave Slider Logic
+        let oMin = parseInt($('octMin').value);
+        let oMax = parseInt($('octMax').value);
+        if(oMin > oMax) { 
+            if(document.activeElement === $('octMin')) { oMax = oMin; $('octMax').value = oMax; }
+            else { oMin = oMax; $('octMin').value = oMin; }
+        }
+        $('octDisp').innerText = `${oMin} : ${oMax}`;
+
+        const minVal = -1, maxVal = 2;
+        const total = maxVal - minVal;
+        const left = ((oMin - minVal) / total) * 100;
+        const width = (((oMax - minVal) / total) * 100) - left;
+        const fill = document.getElementById('octFill');
+        if(fill) { fill.style.left = left + '%'; fill.style.width = width + '%'; }
+
+        // Consonance Slider
+        const consSlider = $('consMin');
+        const sliderVal = parseFloat(consSlider.value);
+        const consThreshold = Math.pow(sliderVal, 2);
+        $('consDisp').innerText = consThreshold.toFixed(3);
+
+        const consFill = $('consFill');
+        if(consFill) { consFill.style.width = (sliderVal * 100) + '%'; }
+
+        const l3=$('l3').value, l5=$('l5').value, l7=$('l7').value, lBig=$('lBig').value;
+
+        $('desc').innerHTML = method.desc;
+        currentData = [];
+        let seen = new Set();
+
+        for(let d=1; d<=maxD; d++){
+            let minN = Math.ceil(d * Math.pow(2, oMin));
+            let maxN = Math.floor(d * Math.pow(2, oMax));
+
+            for(let n=minN; n<=maxN; n++){
+                let g = jiLib.gcd(n,d);
+                let sn=n/g, sd=d/g;
+                let key = sn+'/'+sd;
+                
+                if(seen.has(key)) continue; seen.add(key);
+
+                let fn=jiLib.primeFactors(sn), fd=jiLib.primeFactors(sd);
+                let c3=0,c5=0,c7=0,cBig=0;
+                [fn,fd].forEach(o=>{ for(let k in o){
+                    let p=Number(k), c=o[k];
+                    if(p===3)c3+=c; else if(p===5)c5+=c; else if(p===7)c7+=c; else if(p>7)cBig+=c;
+                }});
+                if(c3>l3 || c5>l5 || c7>l7 || cBig>lBig) continue;
+
+                let raw = method.calc(sn, sd); 
+                let ratioVal = sn/sd;
+                let cents = 1200 * Math.log2(ratioVal);
+                let step = jiLib.toSemitones(sn, sd); // Используем новую логику
+
+                currentData.push({n:sn, d:sd, key, cents, step, raw, ratioVal});
+            }
+        }
+
+        // Normalize Score
+        let min = Infinity, max = -Infinity;
+        currentData.forEach(i => { if(i.raw<min)min=i.raw; if(i.raw>max)max=i.raw; });
+        if(Math.abs(max-min)<1e-9) max=min+1;
+
+        currentData.forEach(i => {
+            i.score = i.raw; 
+            i.normScore = (i.raw - min) / (max - min); 
+        });
+
+        // Filter
+        currentData = currentData.filter(i => i.normScore >= consThreshold);
+    }
+
+    // Sorting
+    if(currentSort === 'score') currentData.sort((a,b) => b.score - a.score);
+    else if(currentSort === 'raw') currentData.sort((a,b) => b.raw - a.raw); 
+    else if(currentSort === 'cents') currentData.sort((a,b) => a.cents - b.cents);
+    else if(currentSort === 'step') currentData.sort((a,b) => a.step - b.step || a.cents - b.cents);
+    else if(currentSort === 'ratio') currentData.sort((a,b) => a.ratioVal - b.ratioVal);
+
+    // Render HTML
+    const tbody = $('tbl').querySelector('tbody');
+    let html = '';
+    const displaySet = currentData.slice(0, 300);
+
+    if(displaySet.length === 0) {
+        html = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#666">No intervals match current filters</td></tr>';
+    } else {
+        displaySet.forEach(i => {
+            let factors = (x) => {
+                let f = jiLib.primeFactors(x);
+                return Object.keys(f).map(k => f[k]>1 ? k+'<sup>'+f[k]+'</sup>' : k).join('.');
+            };
+            let hue = i.normScore * 120; 
+            
+            // JI клик: передаем натуральную дробь
+            const jiClick = `onclick="handlePlay(${i.n}, ${i.d}, this)" class="clickable"`;
+            
+            // TET клик: передаем искусственно созданную дробь (2^(step/12) / 1)
+            const tetRatio = Math.pow(2, i.step/12);
+            const tetClick = `onclick="handlePlay(${tetRatio}, 1, this)" class="clickable"`;
+            
+            const noClick = `style="color:#888"`;
+
+            html += `<tr>
+                <td ${jiClick}><b>${i.key}</b></td>
+                <td ${jiClick}>${i.cents.toFixed(1)}</td>
+                <td ${tetClick}>${i.step}</td>
+                <td ${noClick} style="font-size:0.8em">${factors(i.n)}:${factors(i.d)}</td>
+                <td ${noClick}>
+                    <div class="bar-ctn"><div class="bar-fill" style="width:${i.normScore*100}%; background:hsl(${hue},70%,50%)"></div></div> 
+                    ${i.score.toFixed(3)}
+                </td>
+                <td ${noClick} style="color:#666; font-size:0.8em">${i.raw.toFixed(4)}</td>
+            </tr>`;
+        });
+    }
+    tbody.innerHTML = html;
+}
+
+document.querySelectorAll('input, select').forEach(e => e.addEventListener('input', ()=>render(true)));
+render(true);
+</script>
+</body>
+</html>

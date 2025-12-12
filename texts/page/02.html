@@ -1,0 +1,317 @@
+<html>
+<title>Zakaznik</title>
+<style>
+    :root {
+        --background-color: hsl(240, 5%, 10%);
+        --text-color-dark: hsl(0, 0%, 95%);
+        --text-color-light: hsl(0, 0%, 50%);
+        --hover-color: hsl(0, 0%, 100%);
+    }
+
+    body, html {
+        background-color: var(--background-color);
+        color: var(--text-color-dark);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Space Grotesk';
+    }
+
+
+.slider {
+    overflow: auto;
+    width: 100%;
+    height: 100vh;
+    float: left;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+
+
+.slide {
+    will-change: transform;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    background: var(--background-color);
+    transition: transform 0.8s ease-in-out;
+    flex-direction: row;
+}
+
+.text-block {
+    width: 60%;
+    padding: 2%;
+}
+
+.text-block p {
+    font-size: 15pt; /* Это приблизительно соответствуют шрифту 14 в Google Docs */
+    line-height: 1.2; /* Междустрочный интервал */
+    width: 100%; /* Ограничение по ширине для текста */
+}
+
+.slide-image {
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.title-separator {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.25rem;
+}
+
+.title-separator h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    color: var(--text-color-light);
+    transition: color 200s ease-in-out;
+}
+
+.title-separator .separator {
+    width: 80%;
+    height: 2px;
+    background: var(--text-color-light);
+    transition: background-color 200s ease-in-out;
+}
+
+.text-block:hover .title-separator h1,
+.text-block.hovered .title-separator h1 { /* Добавлена поддержка класса 'hovered' */
+    color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.text-block:hover .separator,
+.text-block.hovered .separator { /* Добавлена поддержка класса 'hovered' */
+    background-color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.text-block:not(:hover) h1,
+.text-block:not(:hover) .separator {
+    transition-duration: 5s;
+}
+
+@media (max-width: 500px) {
+    .slide {
+        flex-direction: column;
+    }
+
+    .text-block, .slide-image {
+        width: 100%;
+    }
+
+    .slide-image {
+        order: 1;
+        height: 50vh;
+    }
+}
+</style>
+
+
+<script>
+class PhysicsSlider {
+  constructor(element) {
+    this.element = element;
+    this.velocity = 0;
+    this.isPressed = false;
+    this.lastY = 0;
+    this.lastTime = Date.now();
+    this.slideHeight = window.innerHeight;
+    this.springConstant = 0.1; // константа пружины
+    this.damping = 0.9; // коэффициент затухания
+    this.snapThreshold = 0.66; // порог для snap-эффекта
+    this.init();
+  }
+
+  init() {
+    this.bindEvents();
+    this.startAnimation();
+  }
+
+  bindEvents() {
+    this.element.addEventListener('mousedown', (e) => {
+      this.isPressed = true;
+      this.lastY = e.clientY;
+      this.lastTime = Date.now();
+      this.velocity = 0;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isPressed) return;
+
+      const now = Date.now();
+      const deltaTime = (now - this.lastTime) / 1000; // конвертируем в секунды
+      const deltaY = this.lastY - e.clientY;
+
+      this.velocity = deltaY / deltaTime; // пикселей в секунду
+      this.element.scrollTop += deltaY;
+
+      this.lastY = e.clientY;
+      this.lastTime = now;
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isPressed = false;
+    });
+
+    // Добавляем поддержку touch events
+    this.element.addEventListener('touchstart', (e) => {
+      this.isPressed = true;
+      this.lastY = e.touches[0].clientY;
+      this.lastTime = Date.now();
+      this.velocity = 0;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!this.isPressed) return;
+
+      const now = Date.now();
+      const deltaTime = (now - this.lastTime) / 1000;
+      const deltaY = this.lastY - e.touches[0].clientY;
+
+      this.velocity = deltaY / deltaTime;
+      this.element.scrollTop += deltaY;
+
+      this.lastY = e.touches[0].clientY;
+      this.lastTime = now;
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      this.isPressed = false;
+    });
+  }
+
+  snapToNearestSlide() {
+    const currentScroll = this.element.scrollTop;
+    const targetSlide = Math.round(currentScroll / this.slideHeight);
+
+    this.element.scroll({
+      top: targetSlide * this.slideHeight,
+      behavior: 'smooth'
+    });
+
+    this.velocity = 0;
+  }
+
+  startAnimation() {
+    const animate = () => {
+      if (!this.isPressed) {
+        const currentScroll = this.element.scrollTop;
+        const targetSlide = Math.round(currentScroll / this.slideHeight);
+        const distanceToSnap = Math.abs(currentScroll - targetSlide * this.slideHeight);
+
+        if (distanceToSnap < this.snapThreshold * this.slideHeight) {
+          this.snapToNearestSlide();
+        } else {
+          this.velocity += (targetSlide * this.slideHeight - currentScroll) * this.springConstant;
+          this.velocity *= this.damping;
+          this.element.scrollTop += this.velocity * (1 / 60); // Для 60fps
+        }
+      }
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.querySelector('.slider');
+    new PhysicsSlider(slider);
+});
+
+document.addEventListener('mousedown', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.add('hovered');
+    });
+});
+document.addEventListener('mouseup', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.remove('hovered');
+    });
+});
+</script>
+
+
+<body>
+<div class="vertical slider">
+<img src="1.png" class="slide" style="object-fit: cover;   width: 100%;">
+<div class="slide">
+    <div class="text-block">
+    <div class="title-separator">
+        <h1>25 maja 2025</h1>
+        <div class="separator"></div>
+    </div>
+        <p>Sěry ofis Sberbanka šuměl kako napȯlnjena pčelami ulja. Ja jesm sěděl, gledeči na črveny nadpis "Projekt je odklonjeny". God råboty, bezsȯnne noći, gory kavy — vsečto je izšlo v ničto. "Prěmnogo rizikovano", skazali sųt oni. Ha! Možno je pomysliti, že ostavjeńje banka bez obråny od izmamiteljev ne je rizik.</p>
+        <p>Moja rųka potegnula sę k telefonu — pozvoniti Polině, råzkazati jej... Stop. "Nam je potrěbna pauza, Anton," ehom odzvalo sę v mojej glåvě. Prošėl je měsęc, a ja ješče ne mogl jesm privyknųti sę.</p>
+        <p>"Hej, kako ty se imaš?" Glås sųråbotnika izvedl mene iz otųpělosti.</p>
+        <p>"Dobro," promrmhal jesm ja, zatvarjajųći laptop.</p>
+        <p>"Poslušaj, my sbirajemo se večerom..."</p>
+        <p>"Ne dneś," ja jesm odsěkl jego. "Imam děla."</p>
+        <p>Imam děla. Kake děla može imati člověk, projekt ktorogo nedavno byl pogrebeny? Jedino sȯbrati věći i ujdti v zahod sȯlnca. To je imenno to, čto ja jesm stvoril.</p>
+    </div>
+</div>
+
+<div class="slide">
+    <div class="text-block">
+        <p>Ja jesm šėl do doma pěše, mašinaľno prěstavjajųći nogy. Moskva šuměla okolo mene, no ja ne jesm viděl ni ljudij, ni avta. Ja jesm avtomatično povråtil se do mojej omiljenoj kavarnje, ale zastanovil se jesm prěd vhodom — zamnogo vȯzpomněnij bylo svęzano s tym stolikom na kraju.</p>
+        <p>Ja jesm potręsl glåvojų i pošėl prȯč. V domu otvoril laptop, bez nikakoj myslji gledeči novosti. Ješče jedno odkryťje v kvantovom izčisljeńju, neurosět, ktora je sposobna pisati simfonije... Moj vȯzględ zastanovil se na fotografiji lěsa. Tajga.</p>
+        <p>Na stěně visěl stary snimȯk: ja, ješče hlåpčik, s mojim otcem v bezkrajnyh lěsah pod Irkutskom. Na moment komnata zapȯlnila se aromatom hvoje i ognja.</p>
+        <p>"A jestli...?" Blěsknųla bezumna myslj. Odpraviti se. Ujehati tamo, kde nema ni korporativnyh intrig, ni bezkonečnoj gonky tehnologij, ni dušęćej samotnosti v gromadě ljudij. Čto mene tut drži? Ja jesm otvoril novų strånicų i počęl iskati informacijų o životu v lěsu. Glupo? Možlivo. No tutčas ono izględaje kako jedinstvena metoda da byh ja ne utratil råzuma.</p>
+        <p>Možlivo ja nakonec bųdų skončiti svoj sbornik hokku? Ili počnų pisati humoristične stihy? "V tajgu uhodi programist, da by on stal kak čisty list." Prividno, nastalo je vrěmę za poezijų i prigody.</p>
+    </div>
+</div>
+
+
+<div class="slide">
+    <div class="text-block">
+        <div class="title-separator">
+            <h1>19 maja 2025 goda</h1>
+            <div class="separator"></div>
+        </div>
+        <p>Našėl jesm město 90 km od Irkutska, daleko od ljudnyh měst. Dika priroda, ne dotknųta civilizacijejų. Imenno to, čto ja jesm iskal.</p>
+        <p>Poslědnje dnje obråtili sę v bezkonečny kvest po sbirańju amunicije. Turističny šator, sěkyra, zapasy/rezervy produktov, mylo, bytove prědmety, sěmena, kartoflja za sađeńje… Spis izględal kako by on byl bezkonečny. Na dnu ranca — iznošeny "Voditelj po tajgě" od Istomina, povŕh njego — knigy o sadu i prirųčnik stoljaŕa. Izględaje, že ja potrěbujų stati majstrom na vśako remeslo.</p>
+        <p>Najęl jesm městnyh mųžev, utratili jesmo vyše než jednų sedmicų za tęgańje zapasov na 20 km v glųbinų lěsa. Jedva ne umŕli jesmo kȯgda tęgali prěnosny peć — ale iz čego sdělaš dymovu trųbų v lěsu? Ne htělo sę by topiti s dymom v hatě, kako prědki. Leha, najmlady pomoćnik, cěly čas råzpytyval o Moskvě. Oči goręt entuziazmom, hće uvezti sę v glåvny grad. A vsi drugi jedino hihotajųt nad nami dvoma.</p>
+        <p>Vzęl jesm sputnikovy telefon — mama bųde trevožiti sę. Hoti my i tutčas rědko vidimo sę, ja prilětal jesm jedino na Novy god. Zautra počinaje sę nova glåva mojego žiťja. Zajmlivo, kako brzo ja bųdų priučiti sę ko lěsnomu pokoju zaměsto grådskogo šuma? I koliko vrěmena projde prěd tym časom, kȯgda počnų besědovati s drěvami?</p>
+    </div>
+</div>
+
+
+
+<div class="slide">
+    <div class="text-block">
+        <div class="title-separator">
+            <h1>20 maja 2025</h1>
+            <div class="separator"></div>
+        </div>
+        <p>Moje prigody v tajgě sųt počęli sę. Pŕvų noć jesm provedl v turističnom šatoru. Komari mene sjedli za živo, ale ja jesm ščęstlivy. Tišina jest tako glųboka, že až v ušah mi šumi.</p>
+        <p>V jutro ja jesm viděl medvěďji slěd — je strašno i zahvaćajųće jednočasno. To jest tako, kako byh ja vråtil sę v dětstvo, kȯgda jesm hodil s otcem na sbirańje gribov. Pamętam, kako on učil mene råzličati slědy zvěŕev.</p>
+        <p>Počęl jesm råzčišćati město pod domče i sad. Posadil jesm kartoflje, mrkvų i cibuljų — zimojų bųdų variti normaľnų sųpu, a ne tutų měšaninų iz turističnyh paketov. A tomaty nehaj počekajųt do nastųpnogo lěta, najpŕvo jest potrěbny dobry dom.</p>
+        <p>V večer jesm telefonoval do mamy. Ona je råzkazala, kako moja plemenica Maša gotovi sę ko školě. Ješče ona je govorila, že v Irkutsku sųt pušćene někake nove elektrobusy. Udiviteljno je, daže v provinciji něčto měnjaje sę.</p>
+    </div>
+    <img src="2.png" class="slide" style="object-fit: cover;   width: 100%;">
+</div>
+
+
+<div class="slide">
+    <div class="slide-content">
+        <div class="title-separator">
+            <h1>26 julija 2025</h1>
+            <div class="separator"></div>
+        </div>
+        <p>История продолжается... <br> Дата: 2024-11-28</p>
+    </div>
+    <img src="3.png" alt="Иллюстрация 3" class="slide-image">
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<html>    
+
+<body>
+</div>
+</body>
+
+<script>
+const SliderConfig = {
+    TRANSITION: 'transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000)',
+    RESISTANCE: 3,
+    SCROLL_DELAY: 500
+};
+
+class Slider {
+    constructor(sliderId) {
+        this.slider = document.getElementById(sliderId);
+        this.slides = document.querySelectorAll('.slide');
+        this.translateY = 0;
+        this.startY = 0;
+        this.isDragging = false;
+        this.isScrolling = false;
+        
+        this.initEvents();
+        this.preventImageDrag();
+    }
+
+    initEvents() {
+        // Привязываем обработчики к элементу слайдера, а не к window
+        ['mousedown', 'touchstart'].forEach(event => 
+            this.slider.addEventListener(event, e => this.startDrag(e)));
+        
+        // Эти обработчики оставляем на window для корректной работы драга
+        ['mousemove', 'touchmove'].forEach(event => 
+            window.addEventListener(event, e => this.drag(e), { passive: false }));
+        
+        ['mouseup', 'touchend'].forEach(event => 
+            window.addEventListener(event, () => this.endDrag()));
+        
+        this.slider.addEventListener('wheel', e => this.handleWheel(e), { passive: false });
+    }
+
+    preventImageDrag() {
+        this.slider.addEventListener('dragstart', e => {
+            if (e.target.tagName.toLowerCase() === 'img') e.preventDefault();
+        });
+    }
+
+    setTransition(enable) {
+        this.slider.style.transition = enable ? SliderConfig.TRANSITION : 'none';
+    }
+
+    updatePosition(y) {
+        const maxScroll = -(this.slides.length - 1) * window.innerHeight;
+        
+        // Добавляем проверку границ и сопротивление
+        if (y > 0) {
+            this.translateY = y / SliderConfig.RESISTANCE;
+        } else if (y < maxScroll) {
+            this.translateY = maxScroll + (y - maxScroll) / SliderConfig.RESISTANCE;
+        } else {
+            this.translateY = y;
+        }
+        
+        this.slider.style.transform = `translateY(${this.translateY}px)`;
+    }
+
+    getTargetSlide(position) {
+        return Math.round(-position / window.innerHeight);
+    }
+
+    snapTo(slideIndex) {
+        this.setTransition(true);
+        const targetY = -slideIndex * window.innerHeight;
+        this.updatePosition(targetY);
+    }
+
+    startDrag(e) {
+        this.isDragging = true;
+        this.startY = e.touches ? e.touches[0].clientY : e.clientY;
+        this.startY -= this.translateY;
+        this.setTransition(false);
+    }
+
+    drag(e) {
+        if (!this.isDragging) return;
+        e.preventDefault();
+        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+        const y = currentY - this.startY;
+        this.updatePosition(y);
+    }
+
+    endDrag() {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+        const targetSlide = this.getTargetSlide(this.translateY);
+        this.snapTo(targetSlide);
+    }
+
+    handleWheel(e) {
+        if (this.isScrolling) return;
+        e.preventDefault();
+        
+        this.isScrolling = true;
+        const direction = Math.sign(e.deltaY);
+        const currentSlide = this.getTargetSlide(this.translateY);
+        const targetSlide = Math.max(0, Math.min(
+            this.slides.length - 1, 
+            currentSlide + direction
+        ));
+        
+        this.snapTo(targetSlide);
+        setTimeout(() => this.isScrolling = false, SliderConfig.SCROLL_DELAY);
+    }
+}
+
+// Initialize slider
+new Slider('slider');
+</script>
+</html>

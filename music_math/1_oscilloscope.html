@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Аддитивный синтезатор</title>
+  <style>
+    /* Определяем CSS-константы (переменные) */
+    :root {
+      --color-bg: hsl(100, 100%, 100%);
+      --color-canvas-bg: hsla(100, 100%, 100%, 0.33);
+      --color-horizontal-line: #616161;
+      --color-waveform: #00BCD4;
+      --color-button-bg: #303f9f;
+      --color-button-hover: rgba(33, 150, 243, 0.8);
+      --color-button-text: #FFFFFF;
+      --text-primary: #FFFFFF;
+    }
+
+    /* Сброс стилей */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      font-family: "Roboto", sans-serif;
+      background-color: var(--color-bg);
+    }
+    /* Контейнер, занимающий весь экран */
+    #oscillator-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    /* Canvas занимает весь контейнер */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #button-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 2;
+    }
+    button {
+      background-color: rgb(25, 70, 81);
+      color: rgb(255, 255, 255);
+      font-size: 14px;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: rgb(30, 85, 97);
+    }
+    button:active {
+      background-color: rgb(20, 60, 71);
+    }
+    /* Оверлей "Tap to start" с изменённым стилем*/
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.66);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      font-size: 20px;
+      z-index: 1000;
+      cursor: pointer;
+    }
+    #overlay:hover {
+      background-color: rgba(0,0,0,0.50);
+    }
+  </style>
+</head>
+<script src="lib/audio-lib.js"></script>
+<body>
+  <div id="oscillator-container">
+    <canvas></canvas>
+    <div id="button-container"></div>
+  </div>
+
+  <div id="overlay">Tap to start</div>
+
+  <script>
+    // Параметры отрисовки
+    const lineWidth = 12;
+    const HORIZONTAL_LINE_COLOR = '#616161';
+    const WAVEFORM_COLOR = '#00BCD4';
+
+    // Инициализация аудио (используем Utils из audio-lib.js)
+    const audioCtx = Utils.initAudio();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.connect(audioCtx.destination);
+
+    let base = 200;
+    const oscillators = [];
+
+    const waveformHistory = [];
+    const historySize = 10;
+    const waveEnd = 121;
+
+    class SynthButton {
+      constructor(freq) {
+        this.freq = freq;
+        this.synth = new Synth(audioCtx, {
+          envelope: { attack: 0.6, decay: 1.2, sustain: 0.9, release: 0.6 }
+        });
+        this.synth.connect(analyser);
+        this.isPlaying = false;
+
+        this.button = document.createElement('button');
+        this.button.textContent = freq + ' Hz';
+        this.button.className = 'synth-button';
+
+        this.button.addEventListener('pointerdown', this.playNote.bind(this));
+        this.button.addEventListener('pointerup', this.stopNote.bind(this));
+        this.button.addEventListener('pointercancel', this.stopNote.bind(this));
+        this.button.addEventListener('pointerleave', this.stopNote.bind(this));
+
+        document.getElementById('button-container').appendChild(this.button);
+      }
+
+      playNote(e) {
+        e.preventDefault();
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        this.synth.noteOn('main', this.freq, 1);
+      }
+
+      stopNote(e) {
+        e.preventDefault();
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        this.synth.noteOff('main');
+      }
+    }
+
+    function resizeCanvas(canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function setup() {
+      const oscillatorContainer = document.getElementById('oscillator-container');
+      const canvas = oscillatorContainer.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+
+      resizeCanvas(canvas);
+      window.addEventListener('resize', () => resizeCanvas(canvas));
+
+      for (let i = 1; i <= 5; i++) {
+        let frequency = base * i;
+        oscillators.push(new SynthButton(frequency));
+      }
+
+      drawWaveform(ctx, canvas);
+    }
+
+    function map(value, inMin, inMax, outMin, outMax) {
+      return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+    }
+
+    function cropWaveform(waveform) {
+      let changeIndex = 0;
+      let delta = 1;
+      for (let i = 1; i < waveform.length - 1; i++) {
+        if (Math.abs(waveform[i]) < delta && waveform[i - 1] > waveform[i + 1]) {
+          delta = Math.abs(waveform[i]);
+          changeIndex = i;
+        }
+      }
+      return changeIndex !== 0 ? waveform.slice(changeIndex) : waveform;
+    }
+
+    function drawWaveform(ctx, canvas) {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      let waveform = Array.from(dataArray).map(value => (value - 128) / 128);
+      let croppedWaveform = cropWaveform(waveform);
+      let waveformToDraw = croppedWaveform.slice(0, waveEnd);
+
+      waveformHistory.push(waveformToDraw);
+      if (waveformHistory.length > historySize) {
+        waveformHistory.shift();
+      }
+
+      const blendedWaveform = [];
+      for (let i = 0; i < waveEnd; i++) {
+        let sum = 0, weightSum = 0;
+        for (let j = 0; j < waveformHistory.length; j++) {
+          const weight = map(j, 0, waveformHistory.length - 1, 0.2, 1);
+          sum += (waveformHistory[j][i] || 0) * weight;
+          weightSum += weight;
+        }
+        blendedWaveform.push(sum / weightSum);
+      }
+
+      // Очистка канвы (эффект trail)
+      ctx.fillStyle = getComputedStyle(document.documentElement)
+                        .getPropertyValue('--color-canvas-bg');
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Центральная линия
+      ctx.strokeStyle = HORIZONTAL_LINE_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      // Волна
+      ctx.beginPath();
+      ctx.strokeStyle = WAVEFORM_COLOR;
+      ctx.lineWidth = lineWidth;
+      const scale = canvas.height * 0.48;
+      const offset = canvas.height / 2;
+      for (let i = 0; i < blendedWaveform.length; i++) {
+        let x = map(i, 0, blendedWaveform.length - 1, 0, canvas.width);
+        let y = blendedWaveform[i] * scale + offset;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      requestAnimationFrame(() => drawWaveform(ctx, canvas));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      setup();
+
+      const overlay = document.getElementById('overlay');
+      overlay.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        audioCtx.resume().then(() => {
+          overlay.style.display = 'none';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Harmonic Series</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* === PALETTE (HSL) === */
+      --bg-void: hsl(230, 25%, 6%);
+      --bg-void: hsl(240, 25%, 5%);
+
+/*      --bg-panel: hsl(225, 15%, 9%);*/
+      --bg-panel: hsl(222, 20%, 11%);
+      
+      /* Vibrant Colors */
+      --hue-red: 0;
+      --hue-green: 130;
+      
+      /* Input Colors */
+      --ratio1-color: hsl(0, 100%, 80%);
+      --ratio2-color: hsl(120, 100%, 80%);
+      
+      /* Text */
+      --text-bright: hsl(0, 0%, 100%);
+      --text-dim: hsl(220, 10%, 60%);
+
+      /* UI Dimensions */
+      --panel-height: 70px;
+    }
+
+    /* === RESET & LAYOUT === */
+    html, body {
+      margin: 0;
+      height: 100vh;
+      width: 100vw;
+      color: var(--text-bright);
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* === HEADER PANEL === */
+    #row {
+      background-color: var(--bg-panel);
+      height: var(--panel-height);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid hsla(0, 0%, 100%, 0.1);
+      z-index: 10;
+      gap: 20px;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-bright);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .controls-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    /* === INPUTS (STYLED FROM FIRST FILE) === */
+    input {
+      width: 60px;
+      text-align: center;
+      border: none;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Ratio 1 Styles */
+    #ratio1 {
+      background-color: hsla(0, 100%, 80%, 0.15);
+      color: var(--ratio1-color);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    }
+    #ratio1:focus {
+      background-color: hsla(0, 100%, 80%, 0.2);
+      box-shadow:
+        inset 0 1px 2px hsla(0, 0%, 0%, 0.1),
+        inset -2px -6px 24px 0px hsla(0, 100%, 80%, 0.25);
+    }
+
+    /* Ratio 2 Styles */
+    #ratio2 {
+      background-color: hsla(120, 100%, 80%, 0.15);
+      color: var(--ratio2-color);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    }
+    #ratio2:focus {
+      background-color: hsla(120, 100%, 80%, 0.2);
+      box-shadow:
+        inset 0 1px 2px hsla(0, 0%, 0%, 0.1),
+        inset -2px -6px 24px 0px hsla(120, 100%, 80%, 0.25);
+    }
+
+    /* Static Text & Math */
+    .math-op {
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #divided, #gcd_value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      color: var(--text-bright);
+      padding: 4px 8px;
+      background: transparent;
+      font-weight: 300;
+    }
+
+    #gcd {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 20px;
+      color: var(--text-dim);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* === CANVAS === */
+    canvas {
+      flex: 1;
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-void);
+      touch-action: none;
+    }
+
+    /* === OVERLAY === */
+    #overlay {
+      position: absolute;
+      top: var(--panel-height);
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      cursor: pointer;
+    }
+    #overlay-text {
+      border: 1px solid var(--text-bright);
+      color: var(--text-bright);
+      padding: 12px 24px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 700px) {
+      #row {
+        height: auto;
+        padding: 15px;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .controls-container {
+        width: 100%;
+        justify-content: space-between;
+      }
+      #gcd { 
+        margin-left: 0; 
+      }
+      #overlay { 
+        top: 0; 
+      }
+      input {
+        width: 50px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="row">
+    <div class="app-title">Harmonic Series</div>
+    
+    <div class="controls-container">
+      <input type="text" id="ratio1" value="3/2" inputmode="decimal">
+      <span class="math-op">×</span>
+      <div id="divided">4/3</div>
+      <span class="math-op">=</span>
+      <input type="text" id="ratio2" value="2/1" inputmode="decimal">
+      
+      <div id="gcd">
+        <span>Тоника:</span>
+        <div id="gcd_value"></div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="myCanvas"></canvas>
+
+  <div id="overlay">
+    <div id="overlay-text">Tap to start</div>
+  </div>
+
+  <script type="text/javascript" src="lib/ji-lib.js"></script>
+  <script>
+    // ===== Настройка Web Audio API =====
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.suspend();
+    
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -30;
+    compressor.ratio.value = 12;
+    compressor.attack.value = 0.03;
+    compressor.release.value = 0.1;
+    compressor.knee.value = 30;
+    compressor.connect(audioCtx.destination);
+    
+    function logAttenuation(freq, cutoff, startFraction = 0.95) {
+      const startFreq = cutoff * startFraction;
+      if (freq <= startFreq) return 1;
+      if (freq >= cutoff) return 0;
+      const ratio = (Math.log(freq) - Math.log(startFreq)) / (Math.log(cutoff) - Math.log(startFreq));
+      return 1 - ratio;
+    }
+    
+    // ===== Класс простого синтезатора с огибающей =====
+    class SimpleSynth {
+      constructor(volumeDb, envelope) {
+        this.volumeDb = volumeDb;
+        this.envelope = envelope;
+      }
+      
+      triggerAttack(freq) {
+        this.oscillator = audioCtx.createOscillator();
+        this.oscillator.type = 'sine';
+        this.oscillator.frequency.value = freq;
+        
+        this.gainNode = audioCtx.createGain();
+        this.gainNode.gain.value = 0;
+        
+        this.oscillator.connect(this.gainNode);
+        this.gainNode.connect(compressor);
+        
+        const amp = Math.pow(10, this.volumeDb / 20);
+        const now = audioCtx.currentTime;
+        this.gainNode.gain.linearRampToValueAtTime(amp, now + this.envelope.attack);
+        this.oscillator.start(now);
+      }
+      
+      triggerRelease() {
+        if (this.oscillator && this.gainNode) {
+          const now = audioCtx.currentTime;
+          const amp = Math.pow(10, this.volumeDb / 20);
+          this.gainNode.gain.setValueAtTime(amp, now);
+          this.gainNode.gain.linearRampToValueAtTime(0, now + this.envelope.release);
+          this.oscillator.stop(now + this.envelope.release);
+          this.oscillator = null;
+          this.gainNode = null;
+        }
+      }
+      
+      triggerAttackRelease(freq, duration) {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0;
+        
+        osc.connect(gainNode);
+        gainNode.connect(compressor);
+        
+        const amp = Math.pow(10, this.volumeDb / 20);
+        const now = audioCtx.currentTime;
+        gainNode.gain.linearRampToValueAtTime(amp, now + this.envelope.attack);
+        const sustainStart = now + duration - this.envelope.release;
+        gainNode.gain.setValueAtTime(amp, sustainStart);
+        gainNode.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+    }
+    
+    // ===== Canvas и автомасштабирование =====
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext("2d");
+    
+    let dynamicLowerLog = 0;
+    let dynamicUpperLog = 1;
+    
+    const marginSemitones = 2;
+    const smoothingFactor = 0.05;
+    let targetDynamicLowerLog = dynamicLowerLog;
+    let targetDynamicUpperLog = dynamicUpperLog;
+    
+    const topMargin = 0;
+    const bottomMargin = 40;
+    
+    function logScale(freq) {
+      return Math.log2(freq);
+    }
+    
+    function map(value, inMin, inMax, outMin, outMax) {
+      return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+    }
+    
+    function updateCanvasSize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - document.getElementById('row').offsetHeight;
+    }
+    
+    function brightenColor(color, amount) {
+      return {
+        r: Math.min(color.r + amount, 255),
+        g: Math.min(color.g + amount, 255),
+        b: Math.min(color.b + amount, 255),
+        a: color.a
+      };
+    }
+
+    const GLOBAL_CUTOFF = 2000;
+    
+    let notes = [];
+    let selectedNote = null;
+    let dragOffsetX = 0;
+    const circleR = 8;
+    const rectHeight = 4;
+    
+    class Harmonic {
+      constructor(freq, finalVol, noteLength, x, noteColor) {
+        this.freq = freq;
+        this.vol = finalVol;
+        this.noteLength = noteLength;
+        this.x = x;
+        this.noteColor = noteColor;
+        this.highlighted = false;
+        const audioVol = finalVol * 0.7;
+        const volDb = (audioVol > 0) ? 20 * Math.log10(audioVol) : -60;
+        this.synth = new SimpleSynth(volDb, { attack: 0.1, release: 0.5 });
+      }
+      
+      display() {
+        let logY = map(logScale(this.freq), dynamicLowerLog, dynamicUpperLog, bottomMargin, canvas.height - topMargin);
+        this.y = canvas.height - logY;
+        ctx.save();
+        
+        if (this.highlighted) {
+          const brightColor = brightenColor(this.noteColor, 80);
+          let gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.noteLength, this.y);
+          gradient.addColorStop(0, `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, ${this.vol})`);
+          gradient.addColorStop(0.5, `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, ${Math.min(this.vol * 1.3,1)})`);
+          gradient.addColorStop(1, 'rgba(9, 9, 15, 0)');
+          ctx.fillStyle = gradient;
+          ctx.shadowColor = `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.9)`;
+          ctx.shadowBlur = 30;
+          ctx.fillRect(this.x, this.y, this.noteLength, rectHeight);
+        } else {
+          let gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.noteLength, this.y);
+          gradient.addColorStop(0, `rgba(${this.noteColor.r}, ${this.noteColor.g}, ${this.noteColor.b}, ${this.vol})`);
+          gradient.addColorStop(1, 'rgba(9, 9, 15, 0)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(this.x, this.y, this.noteLength, rectHeight);
+        }
+        ctx.restore();
+      }
+    }
+    
+    class Note {
+      constructor(freq, ratio, x, noteLength, noteColor) {
+        this.freq = freq * ratio.numerator / ratio.denominator;
+        this.x = x;
+        this.noteLength = noteLength;
+        this.noteColor = noteColor;
+        this.numHarmonics = Math.max(1, Math.round(GLOBAL_CUTOFF / this.freq));
+        this.harmonics = [];
+        const localCutoff = this.freq * this.numHarmonics;
+        for (let i = 1; i <= this.numHarmonics; i++) {
+          let harmonicFreq = this.freq * i;
+          let attenuation = logAttenuation(harmonicFreq, localCutoff, 0.95);
+          let frequencyAttenuation = 1 / i;
+          let finalVol = attenuation * frequencyAttenuation;
+          this.harmonics.push(new Harmonic(harmonicFreq, finalVol, this.noteLength, this.x, this.noteColor));
+        }
+      }
+      
+      display() {
+        let logY = map(logScale(this.freq), dynamicLowerLog, dynamicUpperLog, bottomMargin, canvas.height - topMargin);
+        this.y = canvas.height - logY;
+        ctx.save();
+        ctx.fillStyle = 'white';
+        if (selectedNote === this) {
+          ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+          ctx.shadowBlur = 15;
+        }
+
+        for (let harmonic of this.harmonics) {
+          harmonic.x = this.x;
+          harmonic.display();
+        }
+        ctx.beginPath();
+        ctx.arc(this.x, this.y + rectHeight / 2, circleR, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+      }
+      
+      playSound() {
+        for (let harmonic of this.harmonics) {
+          harmonic.synth.triggerAttackRelease(harmonic.freq, 0.5);
+        }
+      }
+    }
+    
+    function updateDynamicBoundaries() {
+      let minFreq = Infinity;
+      let maxFreq = 0;
+      for (let note of notes) {
+        for (let harmonic of note.harmonics) {
+          if (harmonic.freq < minFreq) minFreq = harmonic.freq;
+          if (harmonic.freq > maxFreq) maxFreq = harmonic.freq;
+        }
+      }
+      const newTargetLower = Math.log2(minFreq) - (marginSemitones / 12);
+      const newTargetUpper = Math.log2(maxFreq) + (marginSemitones / 12);
+      
+      targetDynamicLowerLog = newTargetLower;
+      targetDynamicUpperLog = newTargetUpper;
+      
+      dynamicLowerLog += (targetDynamicLowerLog - dynamicLowerLog) * smoothingFactor;
+      dynamicUpperLog += (targetDynamicUpperLog - dynamicUpperLog) * smoothingFactor;
+    }
+    
+    function setup() {
+      const ratio1Input = document.getElementById('ratio1').value;
+      const ratio2Input = document.getElementById('ratio2').value;
+      
+      let [numerator1, denominator1] = ratio1Input.split('/').map(Number);
+      let [numerator2, denominator2] = ratio2Input.split('/').map(Number);
+      
+      const checkNumber = (number) => Number.isInteger(number) && (number >= 1 && number <= 12);
+      let note1, note2;
+      if (checkNumber(numerator1) && checkNumber(denominator1) &&
+          checkNumber(numerator2) && checkNumber(denominator2)) {
+          note1 = new jiLib.RationalInterval(numerator1, denominator1);
+          note2 = new jiLib.RationalInterval(numerator2, denominator2);
+      }
+      
+      let tonica = jiLib.gcdOfRationals(note1, note2);
+      
+      const color1 = { r: 128, g: 128, b: 128, a: 0.5 };
+      const color2 = { r: 255, g: 0, b: 0, a: 1 };
+      const color3 = { r: 0, g: 255, b: 0, a: 1 };
+      
+      notes = [
+        new Note(100, tonica, 50, 600, color1),
+        new Note(100, note1, 100, 150, color2),
+        new Note(100, note2, 200, 150, color3)
+      ];
+      
+      const divisionResult = note2.divide(note1);
+      const gcdResult = jiLib.gcdOfRationals(note1, note2);
+
+      document.getElementById('divided').innerHTML = `${divisionResult.numerator}/${divisionResult.denominator}`;
+      document.getElementById('gcd_value').innerHTML = `${gcdResult.numerator}/${gcdResult.denominator}`;
+    }
+    
+    function draw() {
+      updateDynamicBoundaries();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Аддитивный режим смешивания для свечения
+      // ctx.globalCompositeOperation = 'lighter';
+      
+      for (let note of notes) {
+        note.display();
+      }
+      
+      // Возврат к обычному режиму
+      // ctx.globalCompositeOperation = 'source-over';
+      
+      requestAnimationFrame(draw);
+    }
+    
+    function getCanvasCoordinates(event) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (event.touches && event.touches.length > 0) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    
+    function handlePointerDown(event) {
+      event.preventDefault();
+      const pos = getCanvasCoordinates(event);
+
+      for (let note of notes) {
+        const dx = pos.x - (note.x - circleR);
+        const dy = pos.y - (note.y + rectHeight / 2);
+        if (Math.hypot(dx, dy) < circleR * 3) {
+          selectedNote = note;
+          dragOffsetX = pos.x - note.x;
+          note.playSound();
+          note.harmonics.forEach(h => { h.highlighted = true; });
+          setTimeout(() => {
+            note.harmonics.forEach(h => { h.highlighted = false; });
+          }, 700);
+          return;
+        }
+      }
+
+      let candidates = [];
+      for (let note of notes) {
+        for (let harmonic of note.harmonics) {
+          let hx = note.x;
+          if (
+            pos.x > hx &&
+            pos.x < hx + harmonic.noteLength &&
+            pos.y > harmonic.y - rectHeight / 2 - 8 &&
+            pos.y < harmonic.y + rectHeight + 8
+          ) {
+            candidates.push({ note, harmonic });
+          }
+        }
+      }
+      if (candidates.length > 0) {
+        let bestCandidate = candidates[0];
+        for (let candidate of candidates) {
+          if (candidate.note.y < bestCandidate.note.y) {
+            bestCandidate = candidate;
+          }
+        }
+        bestCandidate.harmonic.synth.triggerAttackRelease(bestCandidate.harmonic.freq, 0.5);
+        bestCandidate.harmonic.highlighted = true;
+        setTimeout(() => {
+          bestCandidate.harmonic.highlighted = false;
+        }, 700);
+        return;
+      }
+    }
+    
+    function handlePointerMove(event) {
+      if (!selectedNote) return;
+      event.preventDefault();
+      const pos = getCanvasCoordinates(event);
+      selectedNote.x = pos.x - dragOffsetX;
+    }
+    
+    function handlePointerUp(event) {
+      selectedNote = null;
+    }
+    
+    updateCanvasSize();
+    setup();
+    draw();
+    
+    window.addEventListener('resize', updateCanvasSize);
+    
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('touchstart', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('touchmove', handlePointerMove);
+    canvas.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('touchend', handlePointerUp);
+    
+    document.getElementById('ratio1').addEventListener('input', setup);
+    document.getElementById('ratio2').addEventListener('input', setup);
+    
+    document.getElementById('overlay').addEventListener('click', function() {
+      if (audioCtx.state !== 'running') {
+        audioCtx.resume();
+      }
+      this.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

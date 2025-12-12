@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Музыкальная Арифметика: В поисках кода гармонии</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        /* === PALETTE === */
+        --bg-void: hsl(225, 21.5%, 5%);
+        --bg-panel: hsl(225, 24%, 9%);
+        
+        --color-cyan: hsla(190, 90%, 62.5%, 1);
+        --color-purple: hsla(260, 85%, 67.5%, 1);
+        --color-warm: hsla(35, 100%, 67.5%, 1);
+        
+        --text-bright: hsl(0, 0%, 98%);
+        --text-main: hsl(220, 20%, 85%);
+        --text-dim: hsl(223, 15%, 65%);
+        
+        --border-base: 1px solid hsla(0, 0%, 100%, 0.08);
+        --radius-md: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background-color: var(--bg-void);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.8;
+        font-size: 18px;
+        overflow-x: hidden;
+    }
+
+    /* TYPOGRAPHY */
+    h1, h2, h3, h4 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: var(--text-bright);
+        line-height: 1.2;
+    }
+
+    h1 {
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 1.5rem 0;
+        background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    h2 {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        margin-top: 5rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--color-purple);
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+        margin-top: 3rem;
+        margin-bottom: 1rem;
+        color: var(--color-cyan);
+    }
+
+    p { margin-bottom: 1.5rem; }
+
+    strong { color: var(--text-bright); font-weight: 600; }
+    em { font-family: 'Merriweather', serif; color: var(--color-warm); font-style: italic; }
+
+    a { color: var(--color-cyan); text-decoration: none; border-bottom: 1px dashed var(--color-cyan); transition: all 0.2s; }
+    a:hover { border-bottom-style: solid; opacity: 0.8; }
+
+    /* LAYOUT */
+    .article-container {
+        max-width: 740px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    .intro-block {
+        padding: 6rem 0 4rem;
+        text-align: center;
+    }
+
+    .meta-info {
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+
+    /* BOXES */
+    .highlight-box {
+        background: linear-gradient(90deg, hsla(260, 50%, 10%, 0.5), hsla(260, 50%, 5%, 0.5));
+        border-left: 4px solid var(--color-purple);
+        padding: 1.5rem 2rem;
+        margin: 2.5rem 0;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        font-size: 0.95em;
+    }
+
+    .definition-box {
+        border: 1px solid var(--border-base);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin: 2rem 0;
+    }
+    .definition-title {
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--color-warm);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .math-block {
+        font-family: 'JetBrains Mono', monospace;
+        background: rgba(0,0,0,0.3);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-base);
+        margin: 1.5rem 0;
+        overflow-x: auto;
+        font-size: 0.9rem;
+        color: var(--color-warm);
+        line-height: 1.6;
+    }
+
+    /* LISTS */
+    ul, ol { padding-left: 1.2rem; margin-bottom: 2rem; }
+    li { margin-bottom: 1rem; position: relative; }
+    
+    /* APPS (IFRAMES) */
+    .app-frame-container {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        margin-top: 4rem;
+        margin-bottom: 1rem;
+        background: var(--bg-panel);
+        border-top: var(--border-base);
+        border-bottom: var(--border-base);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .app-frame {
+        width: 100%;
+        max-width: 1200px;
+        border: none;
+        background: transparent;
+    }
+
+    /* Heights */
+    .frame-oscilloscope { height: 600px; }
+    .frame-harmonics { height: 750px; }
+    .frame-entropy { height: 800px; }
+    .frame-intervals { height: 750px; }
+    .frame-keyboard { height: 650px; }
+    .frame-umbral { height: 800px; } /* Polyundertonality */
+    .frame-scales { height: 750px; } /* Urmavi */
+    .frame-circle { height: 650px; }
+    .frame-tonnetz { height: 750px; }
+
+    .app-caption {
+        font-family: 'Space Grotesk', sans-serif;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        margin-bottom: 4rem;
+        text-align: center;
+        max-width: 700px;
+        padding: 0 1rem;
+        border-bottom: 1px solid var(--border-base);
+        padding-bottom: 1rem;
+    }
+
+    /* IMAGES */
+    .image-container {
+        margin: 3rem 0;
+        text-align: center;
+    }
+    
+    .content-image {
+        max-width: 100%;
+        border-radius: var(--radius-md);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border: 1px solid var(--border-base);
+    }
+
+    .image-caption {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        margin-top: 0.8rem;
+        font-style: italic;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        body { font-size: 16px; }
+        h1 { font-size: 2.5rem; }
+        .app-frame { height: 550px; }
+    }
+</style>
+</head>
+<body>
+
+<article>
+    <!-- Вступление -->
+    <div class="intro-block article-container">
+        <span class="meta-info">Неостановимая Машина Добра • Исследования</span>
+        <h1>Музыкальная арифметика: в поисках кода гармонии</h1>
+        <p style="font-size: 1.2rem; color: var(--text-dim); line-height: 1.6;">
+            Почему одни звуки сливаются в экстазе, а другие конфликтуют? Мы разбираем музыку на атомы, чтобы найти математические законы красоты.
+        </p>
+    </div>
+
+    <div class="article-container">
+        <p>Задумывались ли вы, почему одни сочетания звуков ласкают слух, а другие вызывают дискомфорт? Почему одни музыкальные фразы кажутся завершенными, а другие – будто обрываются на полуслове? Дело не только в мелодии, ритме или таланте композитора. Есть ещё гармония – таинственная система отношений, которая, как выяснилось ещё в древности, тесно связана с... арифметикой.</p>
+
+        <p>Пифагор ещё в VI веке до н.э. заметил: если взять струну и зажать её ровно посередине, получится звук на октаву выше. Отношение длин частей струны будет 2:1. А если зажать в отношении 3:2 — родится квинта, основа многих гармонических построений. И если Пифагору приходилось полагаться на монохорд и собственные уши, то сегодня у нас есть инструмент куда более мощный – компьютер. С его помощью мы можем не просто повторить опыты древних, но и пойти гораздо дальше.</p>
+
+        <p>Эта статья – не очередной пересказ основ теории музыки. Это приглашение к исследованию. Мы посмотрим на музыку глазами математика (и немного – программиста), разберем звук на составляющие и, вооружившись современными веб-инструментами, попытаемся нащупать те самые "правила", которые управляют гармонией.</p>
+    </div>
+
+    <!-- ГЛАВА 1 -->
+    <div class="article-container">
+        <h2>I. Анатомия звука: симфония внутри одной ноты</h2>
+        <p>Закройте глаза и представьте гитарную струну. Одно касание пальца – и вот, рождается звук. Нам кажется, это просто один тон, но на самом деле, это – целый космос колебаний, скрытая симфония, невидимая обычному глазу.</p>
+        
+        <h3>Фокус со струной</h3>
+        <p>Вспомните, как меняется звук гитарной струны, когда вы прижимаете ее в разных точках. Попробуйте этот "звуковой микроскоп" на любой струне:</p>
+        <ol>
+            <li>Извлеките чистый звук.</li>
+            <li>Легко касаясь середины струны (над 12-м ладом), вы услышите, как тон становится тоньше, прозрачнее. Это флажолет — октава.</li>
+            <li>Повторите, разделяя струну на три части (над 7-м ладом). Звук снова преобразится — это квинта через октаву.</li>
+        </ol>
+        <p>Что происходит? Вы не создаете новых звуков, а лишь выступаете в роли звукового фильтра, отсекая одни колебания и выпуская на свободу другие. <strong>Разгадка тайны: Музыкальный звук – это не монолитная волна, а целый хор колебаний, скрытых гармоник (или обертонов).</strong></p>
+
+        <div class="image-container">
+            <img src="images/1_harmonics.png" alt="Визуализация гармоник как синусоид" class="content-image">
+            <span class="image-caption">Рис 1. Струна колеблется не только целиком, но и половинками, третями, четвертями...</span>
+        </div>
+
+        <p>Кто есть кто в этом хоре?</p>
+        <ul>
+            <li><strong>Основной тон:</strong> Король звука, самое низкое и мощное колебание. Именно его высоту мы слышим отчетливее всего.</li>
+            <li><strong>Обертоны (гармоники):</strong> Свита короля – призрачные, более высокие и тихие призвуки. Их частоты – словно зеркальные отражения основного тона, помноженные на целые числа: $2f, 3f, 4f, 5f$ и так далее. Они – словно невидимые спутники, окружающие каждый музыкальный звук.</li>
+        </ul>
+    </div>
+
+    <!-- APP 1: Oscilloscope -->
+    <div class="app-frame-container">
+        <iframe src="1_oscilloscope.html" class="app-frame frame-oscilloscope" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 1. Интерактивный осциллограф. Нажмите на экран (Tap to start), чтобы услышать, как отдельные гармоники складываются в богатый тембр.</div>
+
+    <div class="article-container">
+        <p>Почему мы не слышим обертоны отдельно? Наш мозг – гениальный дирижер, он мгновенно объединяет все эти колебания в цельный звуковой образ, который мы называем <strong>тембром</strong>. Разные инструменты обладают уникальным набором обертонов, словно отпечатком пальца звука.</p>
+    </div>
+
+    <!-- ГЛАВА 2 -->
+    <div class="article-container">
+        <h2>II. Математика консонанса: когда числа звучат в унисон</h2>
+        <p>Итак, мы узнали, что музыкальный звук – это "коктейль" гармоник. Но почему некоторые сочетания звуков ласкают слух, словно пение ангелов (консонансы), а другие режут его, словно скрежет металла (диссонансы)? Почему одни звуки "дружат", словно родственные души, а другие "враждуют", создавая напряжение?</p>
+        
+        <h3>Разгадка лежит на поверхности... точнее, в совпадении!</h3>
+        <p>Когда два звука консонируют, их гармоники словно встречаются друг с другом в звуковом пространстве, часто совпадая или образуя простые, "красивые" математические отношения. В диссонансе же гармоники словно сталкиваются, порождая звуковое трение и дискомфорт.</p>
+        
+        <p>Возьмем для примера <strong>Квинту</strong> – один из самых "дружелюбных" интервалов. Отношение частот в квинте – 3:2. Это значит, что если нижний звук звучит на частоте $f=100$ Гц, то верхний – на частоте $1.5f = 150$ Гц.</p>
+        <p>А теперь заглянем в их обертоновый мир:</p>
+        <div class="math-block">
+            Нижний (100 Гц): 100, 200, <strong>300</strong>, 400, 500, <strong>600</strong>...<br>
+            Верхний (150 Гц): 150, <strong>300</strong>, 450, <strong>600</strong>, 750...
+        </div>
+        <p>Видите волшебство? Каждый второй обертон верхнего звука (3f, 6f, 9f...) словно зеркальное отражение каждого третьего обертона нижнего звука! Они встречаются в общем звуковом пространстве, создавая ощущение гармонии.</p>
+
+        <div class="image-container">
+            <img src="images/2_harmonic_series.jpeg" alt="Совпадение гармоник на герцах" class="content-image">
+            <span class="image-caption">Рис 2. Схема совпадения гармоник для квинты 3:2.</span>
+        </div>
+    </div>
+
+    <!-- APP 2: Harmonics Visualizer -->
+    <div class="app-frame-container">
+        <iframe src="2_harmonics.html" class="app-frame frame-harmonics" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 2. Визуализатор гармоник. Измените отношение (Ratio) на 3/2 или 4/3. Видите, как светящиеся точки гармоник выстраиваются в ряд? А теперь попробуйте "Волчью квинту" или Тритон (45/32) — и увидите хаос.</div>
+
+    <div class="article-container">
+        <h3>Гармоническая энтропия: мера сложности</h3>
+        <p>Но не только совпадение гармоник определяет наше восприятие консонанса. Важную роль играет <strong>Гармоническая Энтропия</strong>. Это понятие из теории информации, которое в музыкальном контексте отражает сложность соотношения частот.</p>
+        <p>Наш мозг постоянно пытается найти паттерн, "общий период" для слышимых звуков. Чем проще и "красивее" числа в дроби ($3/2, 4/3, 5/4$), тем ниже энтропия, тем более упорядоченным нам кажется созвучие. Сложные же соотношения ($15/8, 45/32$) порождают высокую энтропию и ощущение диссонанса, звукового хаоса.</p>
+        
+        <div class="image-container">
+            <img src="images/3_consonance_measure.jpeg" alt="Графики консонантности" class="content-image">
+            <span class="image-caption">А это реальные измерения консонантности созвучий, на музыкантах и обычных людях. Не правда ли, графики кое-что напоминают?</span>
+        </div>
+    </div>
+
+    <!-- APP 3: Entropy -->
+    <div class="app-frame-container">
+        <iframe src="3_entropy.html" class="app-frame frame-entropy" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 3. Карта Хаоса. Интерактивная модель гармонической энтропии. Глубокие "ямы" — это зоны комфорта (консонансы), пики — зоны напряжения. Проведите мышкой, чтобы услышать переход от порядка к хаосу.</div>
+
+    <!-- ГЛАВА 3 -->
+    <div class="article-container">
+        <h2>III. Музыкальная арифметика: интервалы как кирпичики</h2>
+        <p>Теперь, когда мы постигли тайну консонанса, научимся оперировать интервалами. Интервал в музыке – это не расстояние, а отношение их частот.</p>
+        
+        <h3>Магия умножения звуковых отношений</h3>
+        <p>Чтобы сложить два интервала (например, терцию и терцию), нужно не складывать их ноты, а <strong>перемножать</strong> их частотные отношения. Словно умножая звуковые силы, мы получаем новый интервал.</p>
+        <div class="math-block">
+            Большая терция (5/4) * Малая терция (6/5) = 30/20 = <strong>3/2 (Квинта)</strong><br>
+            Звуковые кирпичики соединяются в более крупную конструкцию.
+        </div>
+
+        <h3>Пример звуковой хирургии</h3>
+        <p>Чтобы вычесть один интервал из другого, нужно <strong>разделить</strong> большее отношение на меньшее.</p>
+        <div class="math-block">
+            Квинта (3/2) / Большая терция (5/4) = (3*4) / (2*5) = 12/10 = <strong>6/5 (Малая терция)</strong>
+        </div>
+
+        <p>Однако человек воспринимает звук логарифмически. Поэтому музыканты используют <strong>центы</strong> — логарифмическую линейку для мира звука. Октава = 1200 центов. Полутон = 100 центов. В центах интервалы можно просто складывать и вычитать, как сантиметры.</p>
+        
+        <p>Но не все дроби одинаково полезны. Для фильтрации "золота от песка" мы используем понятие <strong>Prime Limit</strong> (предел простых чисел). Ограничивая делители числами 2, 3, 5 (и иногда 7), мы остаемся в зоне гармонии, которую наш мозг способен легко переварить.</p>
+    </div>
+
+    <!-- APP 4: Intervals -->
+    <div class="app-frame-container">
+        <iframe src="4_intervals generator.html" class="app-frame frame-intervals" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 4. Генератор Интервалов. Исследуйте "звуковые кирпичи". Фильтруйте их по Odd Limit (сложности чисел) и Prime Limit, чтобы найти уникальные микротональные созвучия, недоступные на обычном фортепиано.</div>
+
+    <!-- ГЛАВА 4 -->
+    <div class="article-container">
+        <h2>IV. Акустическая тоника: невидимый центр Вселенной</h2>
+        <p>До сих пор мы изучали отдельные звуки. Но музыка — это созвездия звуков. Чтобы они не рассыпались, нужен центр притяжения. Обычно тоникой называют главную ноту лада. Но что если пойти глубже?</p>
+        
+        <div class="definition-box">
+            <span class="definition-title">Определение: Акустическая Тоника (System Root)</span>
+            Это не звук, который можно услышать. Это математическая абстракция, невидимый стержень. Это общий период колебания для всех нот аккорда или лада.
+        </div>
+
+        <p>Как её найти? С помощью <strong>Наименьшего Общего Знаменателя (LCM)</strong>. Представьте аккорд из нот: 4/3, 6/5 и 3/2. Это дроби. Но если мы найдем их общий знаменатель (3, 5, 2 -> 30), то получим дробь 1/30. Это и есть Акустическая тоника — глубокий фундамент, обертонами которого являются все три ноты нашего аккорда.</p>
+        <p>Чем ниже и глубже этот фундамент, тем сложнее и напряженнее звучит аккорд. Простые трезвучия стоят на твердой почве. Сложные джазовые аккорды висят над бездной инфразвука.</p>
+    </div>
+
+    <!-- APP 8: JI Keyboard -->
+    <div class="app-frame-container">
+        <iframe src="8_ji_keyboard.html" class="app-frame frame-keyboard" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 5. JI Анализатор. Нажмите несколько клавиш (ПКМ задает тонику). Синий маркер (Fundamental) покажет тот самый невидимый фундамент (GCD), а желтый (Cover) — период повторения (LCM). Обратите внимание: диссонансы уводят синий маркер далеко влево, в глубину.</div>
+
+    <!-- ГЛАВА 5 -->
+    <div class="article-container">
+        <h2>V. Умбральная гармония: зазеркалье</h2>
+        <p>Мы уже познакомились со "свитой" каждого звука — обертонами, уходящими вверх ($f \times 2, f \times 3...$). Но что, если мы заглянем в "звуковое зазеркалье"? Что если отразить этот ряд вниз?</p>
+        
+        <p>Мы получим ряд <strong>унтертонов</strong> ($f \div 2, f \div 3...$). В физической реальности струны не делятся сами по себе. Унтертоны — это скорее математическая абстракция, "тень" обертонов. Но для композитора это ключ к <strong>Негативной Гармонии</strong>.</p>
+        
+        <h3>Унтертоновая полимодальность</h3>
+        <p>В основе умбральной (от лат. <em>umbra</em> — тень) гармонии лежит идея: строить лады не от фундамента вверх (как мажор), а от "вершины" (Apex) вниз, к глубине. Такие лады неизбежно приобретают минорный, "темный" окрас.</p>
+        
+        <h3>Алгоритм Stem Pruning ("Стрижка стеблей")</h3>
+        <p>Если просто взять все унтертоны, получится музыкальная грязь. Мы используем специальный алгоритм <strong>Stem Pruning</strong>. Представьте, что мы генерируем сотни возможных "стеблей" (интервалов), связывающих вершину с глубиной. Алгоритм безжалостно отсекает те стебли, которые делают "общий фундамент" (акустическую тонику) слишком глубоким и зыбким. Мы жертвуем сложностью ради ясности, оставляя только самые сильные связи.</p>
+    </div>
+
+    <!-- APP: Umbral Harmony (Formerly polyundertonality) -->
+    <div class="app-frame-container">
+        <iframe src="9_polyundertonality.html" class="app-frame frame-umbral" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 6. Умбральная Гармония. Выберите "вершину" (Apex) и позвольте алгоритму Stem Pruning вырастить вниз "корни" лада. Результат — зеркальные, минорные миры, обладающие странной, но математически выверенной красотой.</div>
+
+    <!-- ГЛАВА 6 -->
+    <div class="article-container">
+        <h2>VI. Картография звука: от Аль-Урмави до Тоннетца</h2>
+        <p>Как ориентироваться в этом бесконечном море дробей и возможностей? Музыканты веками придумывали карты.</p>
+
+        <h3>Наследие Аль-Урмави (XIII век)</h3>
+        <p>В эту эпоху первых поисков математики в музыке особое место занимает гений <strong>Сафи ад-Дин аль-Урмави</strong>, персидский теоретик XIII века. Он не только предложил систему из 17 ступеней в октаве, но и совершил прорыв в визуализации. Он рисовал лады с помощью уникальных дуговых диаграмм, напоминающих современные графы.</p>
+        
+        <div class="image-container">
+            <img src="images/4_urmavi.jpg" alt="Манускрипт Аль-Урмави" class="content-image">
+            <span class="image-caption">Страница из трактата Аль-Урмави. Его "звуковые чертежи" предвосхитили методы визуализации данных на 700 лет.</span>
+        </div>
+
+        <p>Мы создали генератор ладов, вдохновленный его методом "полного перебора". Алгоритм перебирает тысячи комбинаций интервалов, ищет наиболее консонансные структуры и визуализирует их в стиле древних мастеров.</p>
+    </div>
+
+    <!-- APP 5: Urmavi Scales -->
+    <div class="app-frame-container">
+        <iframe src="5_urmavi_scales.html" class="app-frame frame-scales" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 7. Генератор Ладов Аль-Урмави. Инструмент перебирает комбинации интервалов, находя благозвучные, но экзотические гаммы. Визуализация (Arc Diagram) показывает связи между ступенями.</div>
+
+    <div class="article-container">
+        <h3>Круг, который не замыкается</h3>
+        <p>Кварто-квинтовый круг знают все. Но в мире Чистого Строя (JI) он превращается в спираль. Если отложить 12 чистых квинт (3/2), мы никогда не вернемся в исходную ноту. Мы промахнемся на ~24 цента (Пифагорова комма). Чтобы круг замкнулся, квинты приходится чуть-чуть "сплющивать" (темперировать). Это компромисс, на который пошла европейская музыка ради возможности модулировать.</p>
+    </div>
+
+    <!-- APP 6: Circle -->
+    <div class="app-frame-container">
+        <iframe src="6_circle_of_fifth.html" class="app-frame frame-circle" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 8. Сравнение строев. Переключайтесь между режимами. В "Just Intonation" аккорды звучат кристально чисто, но спираль квинт разрывается, уходя в бесконечность.</div>
+
+    <div class="article-container">
+        <h3>Тоннетц: Космическая паутина</h3>
+        <p>Вершиной музыкальной картографии является <strong>Тоннетц</strong> (Tonnetz), придуманный Эйлером и развитый Риманом. Это не линия и не круг, а 2D-сетка.
+        <ul>
+            <li>Горизонталь: движение по Квинтам (3:2).</li>
+            <li>Диагональ: движение по Терциям (5:4).</li>
+        </ul>
+        Любой треугольник на этой сетке — это трезвучие. Любой шаг — это минимальное голосоведение. Это идеальный навигатор для композитора, желающего выйти за пределы одной тональности.</p>
+    </div>
+
+    <!-- APP 7: Tonnetz -->
+    <div class="app-frame-container">
+        <iframe src="7_tonnetz.html" class="app-frame frame-tonnetz" loading="lazy"></iframe>
+    </div>
+    <div class="app-caption">Приложение 9. Тоннетц. Исследуйте геометрическое пространство гармонии. Включите "Rectangular Mode" для декартова отображения. Заметьте: близкие на сетке ноты всегда звучат гармонично.</div>
+
+    <!-- ЗАКЛЮЧЕНИЕ -->
+    <div class="article-container">
+        <div class="highlight-box">
+            <h3>Заключение: Новая эра гармонии</h3>
+            <p>Акустическая тоника — не просто абстракция, а мощный инструмент. Она позволяет видеть музыку не как набор разрозненных нот, а как единую систему гравитации.</p>
+            <p>Унтертоновая полимодальность и понимание энтропии открывают двери, которые были закрыты столетиями из-за ограничений механических инструментов. Сегодня, с помощью кода и синтеза, мы можем строить здания гармонии, которые раньше считались невозможными.</p>
+        </div>
+
+        <div class="image-container">
+            <img src="images/5_ji_spectrum.jpg" alt="Спектральная нотация" class="content-image">
+            <span class="image-caption">Будущее нотации? Музыкальная запись в виде спектрограммы, где линии — это чистые гармоники, а прозрачность — громкость.</span>
+        </div>
+
+        <p style="text-align: center; color: var(--text-dim); margin-top: 4rem; font-size: 0.9rem;">
+            <em>Код доступен для форка. Математика вечна.<br>
+            Творите.</em>
+        </p>
+        <div style="height: 100px;"></div>
+    </div>
+
+</article>
+
+</body>
+</html>

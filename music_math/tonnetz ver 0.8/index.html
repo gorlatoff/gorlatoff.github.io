@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tonnetz — Music Math</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app" v-cloak>
+        <div v-if="!audioStarted" class="start-overlay" @click="startAudio">
+            <div class="start-btn">
+                <h1>The Tonnetz</h1>
+                <p>Click to Start Audio Engine</p>
+            </div>
+        </div>
+        <div class="app-layout">
+            <header class="app-header">
+                <div class="app-title">Tonnetz Environment</div>
+                <div class="header-controls">
+                    <!-- Info Toggle -->
+                    <button class="btn-icon" @click="toggleInfo">
+                        {{ showInfo ? 'Close Info' : 'Info' }}
+                    </button>
+                </div>
+            </header>
+
+            <main>
+                <div class="panel canvas-panel">
+                    <!-- Main SVG View -->
+                    <tonnetz-view 
+                        :notes="notes" 
+                        :trace="trace"
+                        :init-type="type"
+                        @update:type="type = $event">
+                    </tonnetz-view>
+                </div>
+
+                <!-- Control Panel (Bottom) -->
+                <div class="panel controls-panel">
+                    <!-- Trace Toggle -->
+                    <div class="control-group">
+                        <span class="label">Trajectory</span>
+                        <label class="toggle-opt">
+                            <input type="checkbox" v-model="trace">
+                            <div class="toggle-face">{{ trace ? 'Tracking On' : 'Tracking Off' }}</div>
+                        </label>
+                    </div>
+                    
+                    <div class="control-group">
+                        <span class="label">Status</span>
+                        <div class="status-text" :class="{ 'connected': midiConnected }">
+                            {{ midiConnected ? 'MIDI Active' : 'No MIDI Device' }}
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Info Modal Overlay -->
+            <transition name="fade">
+                <div class="info-overlay" v-if="showInfo" @click.self="toggleInfo">
+                    <div class="info-content panel">
+                        <info-panel :info-type="type"></info-panel>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </div>
+
+    <!-- External Libs (Replace with local paths if needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jzz@0.8.8/javascript/JZZ.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.0/TweenLite.min.js"></script>
+
+    <!-- Application Modules (Ordered) -->
+    <script src="js/1_utils.js"></script>
+    <script src="js/2_midi.js"></script>
+    <script src="js/3_strings.js"></script>
+    <script src="js/4_mixins.js"></script>
+    <script src="js/5_components_primitives.js"></script>
+    <script src="js/6_components_layout.js"></script>
+    <script src="js/7_app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #container {
+            width: 500px;
+            height: 500px;
+            overflow: auto;
+            border: 1px solid black;
+            cursor: grab;
+            user-select: none; /* Disables text selection on drag */
+        }
+        .content {
+            width: 1500px;
+            height: 1500px;
+            background: linear-gradient(to bottom right, red, yellow);
+        }
+    </style>
+    <title>Drag and Scroll</title>
+</head>
+<body>
+
+<div id="container">
+    <div class="content"></div>
+</div>
+
+<script>
+    const container = document.getElementById('container');
+
+    let isDown = false;
+    let startX;
+    let startY;
+    let scrollLeft;
+    let scrollTop;
+
+    const updateCursor = () => {
+        container.style.cursor = 'grabbing';
+    };
+
+    const resetCursor = () => {
+        container.style.cursor = 'grab';
+    };
+
+    container.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - container.offsetLeft;
+        startY = e.pageY - container.offsetTop;
+        scrollLeft = container.scrollLeft;
+        scrollTop = container.scrollTop;
+        updateCursor();
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDown = false;
+        resetCursor();
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDown = false;
+        resetCursor();
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const y = e.pageY - container.offsetTop;
+        const walkX = (x - startX); // distance to move horizontally
+        const walkY = (y - startY); // distance to move vertically
+        container.scrollTop = scrollTop - walkY;
+        container.scrollLeft = scrollLeft - walkX;
+    });
+
+    container.addEventListener('touchstart', (e) => {
+        isDown = true;
+        const touch = e.touches[0];
+        startX = touch.pageX - container.offsetLeft;
+        startY = touch.pageY - container.offsetTop;
+        scrollLeft = container.scrollLeft;
+        scrollTop = container.scrollTop;
+        updateCursor();
+    });
+
+    container.addEventListener('touchend', () => {
+        isDown = false;
+        resetCursor();
+    });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const x = touch.pageX - container.offsetLeft;
+        const y = touch.pageY - container.offsetTop;
+        const walkX = (x - startX);
+        const walkY = (y - startY);
+        container.scrollTop = scrollTop - walkY;
+        container.scrollLeft = scrollLeft - walkX;
+    });
+</script>
+
+</body>
+</html>

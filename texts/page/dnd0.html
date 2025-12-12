@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            cursor: grab;
+        }
+        #slider {
+            display: block;
+            height: 100vh;
+            overflow: auto;
+            cursor: grab;
+            position: relative;
+            scroll-snap-type: y mandatory;
+        }
+        .slide {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background-color: lightcoral;
+            scroll-snap-align: start;
+            border-bottom: 1px solid #fff;
+        }
+    </style>
+    <title>Minimal Drag-and-Scroll Vertical Example</title>
+</head>
+<body>
+    <div id="slider">
+        <div class="slide">Slide 1</div>
+        <div class="slide">Slide 2</div>
+        <div class="slide">Slide 3</div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('slider');
+        let isDown = false;
+        let startY, scrollTop;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startY = e.pageY;
+            scrollTop = slider.scrollTop;
+            slider.style.cursor = 'grabbing';
+        });
+
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            slider.style.cursor = 'grab';
+        });
+
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            slider.style.cursor = 'grab';
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const y = e.pageY;
+            const walk = y - startY;
+            slider.scrollTop = scrollTop - walk;
+        });
+
+        slider.addEventListener('touchstart', (e) => {
+            isDown = true;
+            const touch = e.touches[0];
+            startY = touch.pageY;
+            scrollTop = slider.scrollTop;
+            slider.style.cursor = 'grabbing';
+        });
+
+        slider.addEventListener('touchend', () => {
+            isDown = false;
+            slider.style.cursor = 'grab';
+        });
+
+        slider.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const y = touch.pageY;
+            const walk = y - startY;
+            slider.scrollTop = scrollTop - walk;
+        });
+    </script>
+</body>
+</html>
+

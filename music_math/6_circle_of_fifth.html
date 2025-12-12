@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Сircle of fifth</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+  <style>
+    :root {
+      --bg-color: hsl(231, 15%, 19%);
+      --header-color: #ffffff;
+      --canvas-bg-color: hsl(210, 8%, 12%);
+      --button-bg-color: hsl(220, 87%, 80%);
+      --button-hover-bg-color: hsl(220, 97%, 90%);
+      --button-text-color: hsl(231, 15%, 19%);
+      --text-color: hsl(60, 8%, 96%);
+      --central-text-color: hsl(0, 0%, 100%);
+      --active-sector-color: hsla(210, 84%, 75%, 0.2);
+      --stroke-color: hsla(210, 84%, 75%, 0.5);
+      --active-stroke-color: hsl(210, 84%, 75%);
+      --sector-divider-color: hsl(231, 14%, 31%);
+      --cents-text-color: hsl(0, 0%, 72%);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: var(--header-color);
+      font-size: 28px;
+      font-weight: 200;
+      text-align: center;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'Roboto', sans-serif;
+      background: none;
+      border: none;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+    }
+
+    canvas {
+      background-color: var(--canvas-bg-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    canvas:hover {
+      transform: scale(1.03);
+    }
+
+    #centralText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 42px;
+      font-weight: bold;
+      color: var(--central-text-color);
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .controls button {
+      background-color: var(--button-bg-color);
+      color: var(--button-text-color);
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .controls button:hover {
+      background-color: var(--button-hover-bg-color);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Класс для текста центов был в стилях, но не использовался. Оставим его */
+    .cents-text {
+      font-size: 11px;
+      color: var(--cents-text-color);
+      margin-top: 2px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Circle of fifth</h1>
+
+  <div class="container">
+    <canvas id="circleCanvas" width="400" height="400"></canvas>
+    <div id="centralText"></div>
+  </div>
+
+  <div class="controls">
+    <button id="equalTemperament">Equal Temperament</button>
+    <button id="pythagoreanScale">Pythagorean Scale</button>
+    <button id="justIntonation">Just Intonation</button>
+  </div>
+  <script src="lib/audio-lib.js"></script>
+
+  <script>
+    const ctx = Utils.initAudio();
+
+    // Flute synthesis parameters
+    const FLUTE = {
+      harmonics: 12,
+      vibrato: { rate: 5, depth: 0.001 },
+      envelope: { attack: 0.15, decay: 0.25, sustain: 0.7, release: 0.6 }
+    };
+
+    // Generate additive synthesis partials with staggered envelopes
+    const flutePartials = (freq) => 
+      Array.from({ length: FLUTE.harmonics }, (_, i) => {
+        const n = i + 1;
+        const gain = (n % 2 === 0 ? 0.5 : 0.15) / (n * 1.2);
+        
+        return {
+          ratio: n,
+          amp: gain,
+          startDelay: i * 0.005,
+          attack: FLUTE.envelope.attack + i * 0.01,
+          decay: FLUTE.envelope.decay,
+          sustain: FLUTE.envelope.sustain,
+          release: Math.max(FLUTE.envelope.release - i * 0.03, 0.1)
+        };
+      });
+
+    // Create and connect synthesizer
+    const synth = new Synth(ctx, {
+      partials: flutePartials,
+      vibrato: FLUTE.vibrato
+    });
+    synth.connect(ctx.destination);
+
+    // Polyphonic note tracking
+    const activeNotes = new Map(); // freq -> Set<noteId>
+    let noteId = 0;
+
+    function playNote(freq) {
+      const id = noteId++;
+      if (!activeNotes.has(freq)) activeNotes.set(freq, new Set());
+      activeNotes.get(freq).add(id);
+      synth.noteOn(id, freq);
+    }
+
+    function stopNote(freq) {
+      const ids = activeNotes.get(freq);
+      if (!ids?.size) return;
+      
+      const oldest = Math.min(...ids);
+      synth.noteOff(oldest);
+      ids.delete(oldest);
+      if (!ids.size) activeNotes.delete(freq);
+    }
+
+
+    // ===== Класс для рациональных чисел (дополненный) =====
+    class Rational {
+      constructor(numerator, denominator = 1) {
+        if (denominator === 0) {
+          throw new Error("Denominator cannot be zero.");
+        }
+        // Обработка знака: знак хранится в числителе, знаменатель всегда положительный
+        const sign = Math.sign(numerator) * Math.sign(denominator);
+        this.numerator = Math.abs(numerator);
+        this.denominator = Math.abs(denominator);
+        if (sign < 0) {
+            this.numerator = -this.numerator;
+        }
+        this.reduce();
+      }
+
+      reduce() {
+        if (this.numerator === 0) {
+            this.denominator = 1;
+            return;
+        }
+        const commonDivisor = Rational.gcd(Math.abs(this.numerator), this.denominator);
+        this.numerator /= commonDivisor;
+        this.denominator /= commonDivisor;
+      }
+
+      toDecimal() {
+        return this.numerator / this.denominator;
+      }
+
+      // Метод для вычисления абсолютных центов относительно 1/1
+      toAbsoluteCents() {
+        const decimal = this.toDecimal();
+        if (decimal <= 0) return -Infinity; // Логарифм от неположительных чисел не определен
+        const log2 = Math.log2 ? Math.log2 : (val) => Math.log(val) / Math.LN2; // Полифилл для log2
+        return 1200 * log2(decimal);
+      }
+
+      // Представление в виде строки "num/den"
+      toString() {
+        return `${this.numerator}/${this.denominator}`;
+      }
+
+      // Умножение
+      multiply(other) {
+        return new Rational(this.numerator * other.numerator, this.denominator * other.denominator);
+      }
+
+      // Деление
+      divide(other) {
+        if (other.numerator === 0) {
+          throw new Error("Division by zero (rational).");
+        }
+        return new Rational(this.numerator * other.denominator, this.denominator * other.numerator);
+      }
+
+      // Возведение в целую степень (включая отрицательные и 0)
+      pow(exponent) {
+          if (!Number.isInteger(exponent)) {
+              throw new Error("Exponent must be an integer for Rational.pow");
+          }
+          if (exponent === 0) {
+              return new Rational(1, 1); // Любое число в степени 0 равно 1
+          }
+          if (this.numerator === 0 && exponent < 0) {
+               throw new Error("Cannot raise zero to a negative power.");
+          }
+
+          let resultNum, resultDen;
+          if (exponent > 0) {
+              resultNum = Math.pow(this.numerator, exponent);
+              resultDen = Math.pow(this.denominator, exponent);
+          } else { // exponent < 0
+              // (a/b)^(-n) = (b/a)^n
+               if (this.numerator === 0) throw new Error("Cannot raise zero to a negative power"); // Уже проверено, но для ясности
+               // Меняем числитель и знаменатель местами (учитывая знак)
+               const baseNum = this.denominator * Math.sign(this.numerator);
+               const baseDen = Math.abs(this.numerator);
+
+               resultNum = Math.pow(baseNum, -exponent);
+               resultDen = Math.pow(baseDen, -exponent);
+          }
+
+         // Math.pow может давать неточные результаты для больших целых,
+         // но для степеней 3 и 2 в пределах пифагорейского круга должно быть нормально.
+         // Для супер-точности потребовалась бы библиотека BigInt или своя реализация возведения в степень.
+          return new Rational(resultNum, resultDen);
+      }
+
+
+      // Нормализация: приведение дроби к диапазону [1, 2) умножением/делением на 2
+      normalize() {
+          let current = new Rational(this.numerator, this.denominator); // Создаем копию
+          const two = new Rational(2, 1);
+          if (current.toDecimal() <= 0) return current; // Не нормализуем ноль или отрицательные
+
+          while (current.toDecimal() >= 2) {
+              current = current.divide(two);
+          }
+          while (current.toDecimal() < 1) {
+              current = current.multiply(two);
+          }
+          // Присваиваем нормализованные значения обратно this
+          this.numerator = current.numerator;
+          this.denominator = current.denominator;
+          this.reduce(); // Убедимся, что дробь сокращена после нормализации
+      }
+
+
+      // НОД (Greatest Common Divisor) - Алгоритм Евклида
+      static gcd(n, m) {
+        // Работаем с абсолютными значениями
+        n = Math.abs(n);
+        m = Math.abs(m);
+        while (m) {
+            let temp = m;
+            m = n % m;
+            n = temp;
+        }
+        return n;
+      }
+
+       // НОК не нужен для текущей задачи, но оставим если потребуется
+      static nok(n, m) {
+        return (n * m) / Rational.gcd(n, m);
+      }
+    }
+
+    // ===== Базовая частота =====
+    const baseFrequency = 261.63; // C4
+
+    // ===== Определение данных для нот =====
+    class NoteData {
+      constructor(definition) {
+        this.definition = definition;
+        this.name = '';
+        this.frequency = 0;
+        this.absoluteCents = 0; // Центы относительно 1/1
+        this.centsDifference = 0; // Разница в центах с ET
+        this.displayCents = ''; // Форматированная строка для отображения
+
+        this._calculate();
+      }
+
+      _calculate() {
+        const etSteps = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]; // Эталонные шаги ET для сравнения (порядок круга квинт)
+        let ratioDecimal = 1.0;
+        let ratio = null; // Объект Rational
+
+        // --- Вычисляем имя, отношение (если применимо) и абсолютные центы ---
+        try { // Обернем вычисления в try...catch для надежности
+            if (this.definition.type === 'ET') {
+              this.name = this.definition.name;
+              ratioDecimal = Math.pow(2, this.definition.step / 12);
+              this.absoluteCents = this.definition.step * 100;
+
+            } else if (this.definition.type === 'Pythagorean') {
+              const power = this.definition.power;
+              ratio = new Rational(3, 2).pow(power);
+              ratio.normalize(); // Приводим к базовой октаве [1, 2)
+              this.name = ratio.toString();
+              ratioDecimal = ratio.toDecimal();
+              this.absoluteCents = ratio.toAbsoluteCents();
+
+            } else if (this.definition.type === 'JI') {
+              const ratioString = this.definition.ratioString;
+              const parts = ratioString.split('/');
+              if (parts.length !== 2) throw new Error(`Invalid JI ratio format: ${ratioString}`);
+              const n = parseInt(parts[0], 10);
+              const d = parseInt(parts[1], 10);
+              if (isNaN(n) || isNaN(d) || d === 0) throw new Error(`Invalid numbers in JI ratio: ${ratioString}`);
+
+              ratio = new Rational(n, d);
+              // Предполагаем, что JI дроби уже нормализованы или их не нужно нормализовать для отображения
+              this.name = ratio.toString();
+              ratioDecimal = ratio.toDecimal();
+              this.absoluteCents = ratio.toAbsoluteCents();
+            }
+         } catch (error) {
+            console.error("Error calculating note data:", error, "Definition:", this.definition);
+            this.name = "Error";
+            this.frequency = baseFrequency; // Возвращаем базовую частоту при ошибке
+            this.absoluteCents = 0;
+            this.centsDifference = 0;
+            this.displayCents = "Error";
+            return; // Прерываем дальнейшие вычисления при ошибке
+        }
+
+        // --- Вычисляем частоту ---
+        this.frequency = baseFrequency * ratioDecimal;
+
+        // --- Вычисляем разницу с ET ---
+        if (typeof this.definition.circleIndex === 'number' && this.definition.circleIndex >= 0 && this.definition.circleIndex < 12) {
+            const etEquivalentStep = etSteps[this.definition.circleIndex];
+            const etEquivalentCents = etEquivalentStep * 100;
+            this.centsDifference = this.absoluteCents - etEquivalentCents;
+        } else {
+             console.warn("NoteData missing or invalid circleIndex. Cannot calculate precise centsDifference vs ET.", this.definition);
+             // Как запасной вариант, считаем разницу до ближайшего полутона ET
+             const closestEtCents = Math.round(this.absoluteCents / 100) * 100;
+             this.centsDifference = this.absoluteCents - closestEtCents;
+             // Или установить в NaN, если это значение не должно отображаться без индекса
+             // this.centsDifference = NaN;
+        }
+
+
+        // --- Форматируем строку displayCents ---
+        // Проверяем на NaN перед форматированием
+        if (isNaN(this.centsDifference)) {
+             this.displayCents = "N/A";
+        } else {
+            const roundedDiff = Math.round(this.centsDifference * 100) / 100;
+            const sign = roundedDiff > 0 ? '+' : '';
+            // Используем небольшую погрешность для сравнения с нулем
+            this.displayCents = (Math.abs(roundedDiff) < 0.005)
+                                ? '0.00 cents'
+                                : `${sign}${roundedDiff.toFixed(2)} cents`;
+         }
+      }
+    }
+
+    // ===== Класс для представления строя (схемы) =====
+    class Scheme {
+      constructor(type) { // Принимает 'ET', 'Pythagorean', 'JI'
+        this.type = type;
+        this.notes = this._generateNotes(); // Массив объектов NoteData
+      }
+
+      _generateNotes() {
+        const notesArray = [];
+        // Определения нот в порядке круга квинт (C, G, D, A, E, B, F#, C#, G#, D#, A#, F)
+        const etNoteNames = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯', 'C♯', 'G♯', 'D♯', 'A♯', 'F'];
+        const etSteps =      [0,   7,   2,   9,   4,  11,   6,    1,    8,    3,   10,   5]; // Шаги в полутонах от C
+        const pythagoreanPowers = [0, 1, 2, 3, 4, 5, 6, -5, -4, -3, -2, -1]; // Степени для (3/2)^n
+        const jiRatios = [ // Дроби для Just Intonation в том же порядке круга квинт
+            '1/1',   // C
+            '3/2',   // G
+            '9/8',   // D (3/2)^2 нормализованное
+            '5/3',   // A (Не пифагорейское, частый вариант JI) - было 27/16
+            '5/4',   // E (Не пифагорейское, частый вариант JI) - было 81/64
+            '15/8',  // B (5/4 * 3/2) - было 243/128
+            '45/32', // F# (5/4 * 9/8) - было 729/512
+            '16/15', // C# (Не пифагорейское, часто как обращение 15/8 или др.) - было 256/243 - !!! ВАЖНО: Твой исходный JI имел здесь 16/15
+            '8/5',   // G# (Обращение 5/3?) - было 128/81 - !!! ВАЖНО: Твой исходный JI имел здесь 8/5
+            '6/5',   // D# (Обращение 5/3?) - было 32/27 - !!! ВАЖНО: Твой исходный JI имел здесь 6/5
+            '16/9',  // A# (Обращение 9/8 * 2) - было 16/9 (совпадает)
+            '4/3'    // F (Обращение 3/2) - было 4/3 (совпадает)
+            // --- Используем дроби из ТВОЕГО ИСХОДНОГО примера Just Intonation ---
+         ];
+        const originalJiRatios = ['1/1', '3/2', '9/8', '5/3', '5/4', '15/8', '45/32', '16/15', '8/5', '6/5', '16/9', '4/3'];
+
+
+        for (let i = 0; i < 12; i++) {
+          let definition = { circleIndex: i, type: this.type }; // Передаем индекс и тип
+
+          if (this.type === 'ET') {
+            definition.step = etSteps[i];
+            definition.name = etNoteNames[i];
+          } else if (this.type === 'Pythagorean') {
+            definition.power = pythagoreanPowers[i];
+            // Имя будет сгенерировано в NoteData как дробь
+          } else if (this.type === 'JI') {
+            definition.ratioString = originalJiRatios[i]; // Используем дроби из твоего исходного примера
+             // Имя будет сгенерировано в NoteData как дробь
+          }
+          notesArray.push(new NoteData(definition));
+        }
+        return notesArray;
+      }
+    }
+
+    // ===== Инициализация строев =====
+    const schemes = [
+      new Scheme('ET'),
+      new Scheme('Pythagorean'),
+      new Scheme('JI')
+    ];
+
+    // ===== Глобальные переменные для состояния =====
+    let currentScheme = 0; // Индекс текущего строя в массиве schemes
+    let selectedSector = null; // Индекс выделенного сектора (0-11)
+
+    // ===== Получение элементов DOM =====
+    const canvas = document.getElementById('circleCanvas');
+    const ctxCanvas = canvas.getContext('2d');
+    const centralText = document.getElementById('centralText');
+
+    // ===== Параметры отрисовки =====
+    const radius = canvas.width / 2;
+    const innerRadius = radius * 0.66;
+    const outerRadius = radius;
+    const sectorAngle = (2 * Math.PI) / 12;
+
+    // ===== Функция отрисовки круга =====
+    function drawCircle() {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const colors = {
+        sectorDivider: rootStyles.getPropertyValue('--sector-divider-color').trim(),
+        activeStroke: rootStyles.getPropertyValue('--active-stroke-color').trim(),
+        stroke: rootStyles.getPropertyValue('--stroke-color').trim(),
+        text: rootStyles.getPropertyValue('--text-color').trim(),
+        cents: rootStyles.getPropertyValue('--cents-text-color').trim(),
+        activeSector: rootStyles.getPropertyValue('--active-sector-color').trim()
+      };
+
+      ctxCanvas.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Получаем текущий активный строй
+      const activeScheme = schemes[currentScheme];
+
+      activeScheme.notes.forEach((note, i) => {
+        const startAngle = i * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+        const endAngle = (i + 1) * sectorAngle - Math.PI / 2 - sectorAngle / 2;
+
+        ctxCanvas.beginPath();
+        ctxCanvas.arc(radius, radius, outerRadius, startAngle, endAngle);
+        ctxCanvas.arc(radius, radius, innerRadius, endAngle, startAngle, true);
+        ctxCanvas.closePath();
+        ctxCanvas.fillStyle = i === selectedSector ? colors.activeSector : 'transparent';
+        ctxCanvas.fill();
+        ctxCanvas.strokeStyle = colors.sectorDivider;
+        ctxCanvas.lineWidth = 1;
+        ctxCanvas.stroke(); // Рисуем основной разделитель
+
+        // Логика обводки как в оригинале
+        if (selectedSector !== null) {
+            // Сначала проверяем, нужно ли применить специальную обводку
+             if (i === selectedSector) {
+                ctxCanvas.strokeStyle = colors.activeStroke;
+                ctxCanvas.lineWidth = 3;
+                ctxCanvas.stroke(); // Рисуем активную обводку
+             } else if (i === (selectedSector + 1) % 12 || i === (selectedSector + 11) % 12) {
+                ctxCanvas.strokeStyle = colors.stroke;
+                ctxCanvas.lineWidth = 2;
+                ctxCanvas.stroke(); // Рисуем обводку соседей
+             }
+        }
+
+
+        const textAngle = startAngle + sectorAngle / 2;
+        const textRadius = (innerRadius + outerRadius) / 2;
+        const x = radius + textRadius * Math.cos(textAngle);
+        const y = radius + textRadius * Math.sin(textAngle);
+
+        // Рисуем текст как в оригинале
+        ctxCanvas.fillStyle = colors.text;
+        ctxCanvas.font = '16px Roboto'; // Оригинальный шрифт/размер
+        ctxCanvas.textAlign = 'center';
+        ctxCanvas.textBaseline = 'bottom';
+        ctxCanvas.fillText(note.name, x, y - 4); // Оригинальное смещение
+
+        ctxCanvas.fillStyle = colors.cents;
+        ctxCanvas.font = '11px Roboto'; // Оригинальный шрифт/размер
+        ctxCanvas.textBaseline = 'top';
+        ctxCanvas.fillText(note.displayCents, x, y + 4); // Используем displayCents и оригинальное смещение
+      });
+    }
+
+    // ===== Функция определения сектора по координатам =====
+    function getSector(x, y) {
+      const dx = x - radius;
+      const dy = y - radius;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Проверяем, попадает ли клик в кольцо
+      if (distance < innerRadius || distance > outerRadius) return null;
+
+      // Вычисляем угол и нормализуем его
+      let angle = Math.atan2(dy, dx); // Угол в радианах от положительной оси X
+      // Скорректируем угол, чтобы 0 радиан соответствовал верху круга (12 часов)
+      // и учтем смещение секторов (первый сектор центрирован наверху)
+      angle += Math.PI / 2 + sectorAngle / 2;
+
+      // Нормализуем угол к диапазону [0, 2*PI)
+      if (angle < 0) angle += 2 * Math.PI;
+      if (angle >= 2 * Math.PI) angle -= 2 * Math.PI; // На всякий случай
+
+      // Определяем индекс сектора
+      return Math.floor(angle / sectorAngle) % 12;
+    }
+
+    // ===== Обработчик клика по канвасу =====
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const sector = getSector(x, y);
+
+      if (sector !== null) {
+        // Если кликнули по тому же сектору, отменяем выбор
+        if (selectedSector === sector) {
+            selectedSector = null;
+            centralText.textContent = ''; // Очищаем центральный текст
+            drawCircle(); // Перерисовываем без выделения
+            // Можно добавить остановку звука, если он еще звучит
+        } else {
+            selectedSector = sector;
+            const selectedNote = schemes[currentScheme].notes[sector];
+            centralText.textContent = selectedNote.name; // Показываем имя (ноту или дробь)
+            drawCircle(); // Перерисовываем с выделением
+
+            // Воспроизводим ноту
+            const freq = selectedNote.frequency;
+            playNote(freq);
+            // Останавливаем через короткое время (как и было)
+            setTimeout(() => {
+              stopNote(freq);
+            }, 450); // Чуть дольше, чтобы услышать атаку
+        }
+      } else {
+        // Клик вне секторов - сбрасываем выделение
+        selectedSector = null;
+        centralText.textContent = '';
+        drawCircle();
+      }
+    });
+
+    // ===== Обработчики кнопок переключения строя =====
+    document.getElementById('equalTemperament').addEventListener('click', () => {
+      if (currentScheme !== 0) { // Переключаем только если не текущий
+          currentScheme = 0;
+          selectedSector = null; // Сбрасываем выделение при смене строя
+          centralText.textContent = '';
+          drawCircle();
+      }
+    });
+
+    document.getElementById('pythagoreanScale').addEventListener('click', () => {
+       if (currentScheme !== 1) {
+           currentScheme = 1;
+           selectedSector = null;
+           centralText.textContent = '';
+           drawCircle();
+       }
+    });
+
+    document.getElementById('justIntonation').addEventListener('click', () => {
+        if (currentScheme !== 2) {
+            currentScheme = 2;
+            selectedSector = null;
+            centralText.textContent = '';
+            drawCircle();
+        }
+    });
+
+    // ===== Первичная отрисовка круга при загрузке =====
+    drawCircle();
+
+  </script>
+
+</body>
+</html>

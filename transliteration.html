@@ -1,0 +1,32 @@
+<title>Interslavic transliteration</title>
+<link rel="stylesheet" type="text/css" href="transliteration.css">
+<link rel="icon" href="icon.png">
+
+<body>
+  
+  <h1>Transliteracija</h1>
+
+  <div class="form-container">
+    <label for="language-select">Izberite jezyk transliteracije: </label>
+    <select id="language-select">
+      <option value="kir_to_lat">V latinicu</option>
+      <option value="isv_to_cyrillic">V kirilicu</option>
+      <option value="isv_to_standard">V standardnu latinicu</option>
+      <option value="isv_to_standard_cyrillic">V standardnu kirilicu</option>
+      <option value="isv_to_slovianto">Latinica v Slovianto</option>
+    </select>
+  </div>
+
+  <div class="textarea-container">
+    <textarea id="input-text" placeholder="Vpišite tekst..."></textarea>
+    <button id="paste-button" >paste</button>
+  </div>
+
+  <div class="textarea-container">
+    <textarea id="output-text" placeholder="Transliterovany tekst..."></textarea>
+    <button id="copy-button">copy</button>
+  </div>
+  
+</body>
+
+<script src="transliteration.js"> </script>

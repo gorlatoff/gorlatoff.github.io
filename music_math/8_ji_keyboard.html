@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>JI Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./ji_analyzer/style.css" />
+</head>
+<body>
+
+<main class="app-compact">
+  
+  <!-- Controls Row -->
+  <div class="controls-bar">
+    <div class="control-group">
+      <label class="control-label">Odd Limit</label>
+      <input type="number" id="maxDenom" value="45" min="1" max="256" class="inp-small">
+    </div>
+    
+    <div class="toggles-row">
+      <label class="toggle-compact" title="Floating 1/1 center">
+        <input type="checkbox" id="flagAutoTonic" checked>
+        <span>Auto 1/1</span>
+      </label>
+      <label class="toggle-compact" title="Minimize Grid Cover">
+        <input type="checkbox" id="flagLCM" checked>
+        <span>LCM</span>
+      </label>
+      <label class="toggle-compact" title="Deep Fundamental">
+        <input type="checkbox" id="flagGCD" checked>
+        <span>GCD</span>
+      </label>
+    </div>
+    
+    <div class="slider-group">
+      <label class="slider-label">
+        GCD Weight: <span id="gcdWeightVal">1.5</span>
+      </label>
+      <input type="range" id="gcdWeight" min="0.5" max="3" step="0.1" value="1.5" class="slider-small">
+    </div>
+    
+    <div class="slider-group">
+      <label class="slider-label">
+        Hysteresis: <span id="hysteresisVal">20%</span>
+      </label>
+      <input type="range" id="hysteresis" min="0" max="0.5" step="0.05" value="0.2" class="slider-small">
+    </div>
+  </div>
+
+  <!-- Keyboard -->
+  <div class="canvas-container">
+    <canvas id="keyboard-canvas"></canvas>
+  </div>
+
+  <!-- Analysis Bar -->
+  <div class="analysis-bar">
+    <div class="analysis-item">
+      <span class="analysis-label">Cover (LCM)</span>
+      <span id="lcmValue" class="analysis-value">—</span>
+    </div>
+    <div class="analysis-item">
+      <span class="analysis-label">Fundamental (GCD)</span>
+      <span id="gcdValue" class="analysis-value">—</span>
+      <span id="fundamentalInfo" class="analysis-hz"></span>
+    </div>
+    <div class="analysis-item interpretation-text">
+      <pre id="playedNotes">Click keys or use MIDI</pre>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <button id="perfButton" class="btn-small">Benchmark</button>
+    <span id="perfResult" class="perf-result"></span>
+  </div>
+  
+</main>
+
+<script src="./ji_analyzer/ji-lib.js"></script>
+<script src="./ji_analyzer/keyboard.js"></script>
+<script src="./ji_analyzer/ji-interpretations.js"></script>
+</body>
+</html>

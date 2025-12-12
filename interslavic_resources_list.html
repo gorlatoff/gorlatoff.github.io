@@ -1,0 +1,599 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext' rel='stylesheet' type='text/css' /><style type='text/css'>html {overflow-x: initial !important;}:root { --bg-color:#ffffff; --text-color:#333333; --select-text-bg-color:#B5D6FC; --select-text-font-color:auto; --monospace:"Lucida Console",Consolas,"Courier",monospace; --title-bar-height:20px; }
+.mac-os-11 { --title-bar-height:28px; }
+html { font-size: 14px; background-color: var(--bg-color); color: var(--text-color); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4, h5 { white-space: pre-wrap; }
+body { margin: 0px; padding: 0px; height: auto; inset: 0px; font-size: 1rem; line-height: 1.42857; overflow-x: hidden; background: inherit; }
+iframe { margin: auto; }
+a.url { word-break: break-all; }
+a:active, a:hover { outline: 0px; }
+.in-text-selection, ::selection { text-shadow: none; background: var(--select-text-bg-color); color: var(--select-text-font-color); }
+#write { margin: 0px auto; height: auto; width: inherit; word-break: normal; overflow-wrap: break-word; position: relative; white-space: normal; overflow-x: visible; padding-top: 36px; }
+#write.first-line-indent p { text-indent: 2em; }
+#write.first-line-indent li p, #write.first-line-indent p * { text-indent: 0px; }
+#write.first-line-indent li { margin-left: 2em; }
+.for-image #write { padding-left: 8px; padding-right: 8px; }
+body.typora-export { padding-left: 30px; padding-right: 30px; }
+.typora-export .footnote-line, .typora-export li, .typora-export p { white-space: pre-wrap; }
+.typora-export .task-list-item input { pointer-events: none; }
+@media screen and (max-width: 500px) {
+  body.typora-export { padding-left: 0px; padding-right: 0px; }
+  #write { padding-left: 20px; padding-right: 20px; }
+}
+#write li > figure:last-child { margin-bottom: 0.5rem; }
+#write ol, #write ul { position: relative; }
+img { max-width: 100%; vertical-align: middle; image-orientation: from-image; }
+button, input, select, textarea { color: inherit; font: inherit; }
+input[type="checkbox"], input[type="radio"] { line-height: normal; padding: 0px; }
+*, ::after, ::before { box-sizing: border-box; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p, #write pre { width: inherit; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p { position: relative; }
+p { line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid-page; break-inside: avoid; orphans: 4; }
+p { orphans: 4; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+.md-math-block, .md-rawblock, h1, h2, h3, h4, h5, h6, p { margin-top: 1rem; margin-bottom: 1rem; }
+.hidden { display: none; }
+.md-blockmeta { color: rgb(204, 204, 204); font-weight: 700; font-style: italic; }
+a { cursor: pointer; }
+sup.md-footnote { padding: 2px 4px; background-color: rgba(238, 238, 238, 0.7); color: rgb(85, 85, 85); border-radius: 4px; cursor: pointer; }
+sup.md-footnote a, sup.md-footnote a:hover { color: inherit; text-transform: inherit; text-decoration: inherit; }
+#write input[type="checkbox"] { cursor: pointer; width: inherit; height: inherit; }
+figure { overflow-x: auto; margin: 1.2em 0px; max-width: calc(100% + 16px); padding: 0px; }
+figure > table { margin: 0px; }
+thead, tr { break-inside: avoid; break-after: auto; }
+thead { display: table-header-group; }
+table { border-collapse: collapse; border-spacing: 0px; width: 100%; overflow: auto; break-inside: auto; text-align: left; }
+table.md-table td { min-width: 32px; }
+.CodeMirror-gutters { border-right: 0px; background-color: inherit; }
+.CodeMirror-linenumber { user-select: none; }
+.CodeMirror { text-align: left; }
+.CodeMirror-placeholder { opacity: 0.3; }
+.CodeMirror pre { padding: 0px 4px; }
+.CodeMirror-lines { padding: 0px; }
+div.hr:focus { cursor: none; }
+#write pre { white-space: pre-wrap; }
+#write.fences-no-line-wrapping pre { white-space: pre; }
+#write pre.ty-contain-cm { white-space: normal; }
+.CodeMirror-gutters { margin-right: 4px; }
+.md-fences { font-size: 0.9rem; display: block; break-inside: avoid; text-align: left; overflow: visible; white-space: pre; background: inherit; position: relative !important; }
+.md-fences-adv-panel { width: 100%; margin-top: 10px; text-align: center; padding-top: 0px; padding-bottom: 8px; overflow-x: auto; }
+#write .md-fences.mock-cm { white-space: pre-wrap; }
+.md-fences.md-fences-with-lineno { padding-left: 0px; }
+#write.fences-no-line-wrapping .md-fences.mock-cm { white-space: pre; overflow-x: auto; }
+.md-fences.mock-cm.md-fences-with-lineno { padding-left: 8px; }
+.CodeMirror-line, twitterwidget { break-inside: avoid; }
+svg { break-inside: avoid; }
+.footnotes { opacity: 0.8; font-size: 0.9rem; margin-top: 1em; margin-bottom: 1em; }
+.footnotes + .footnotes { margin-top: 0px; }
+.md-reset { margin: 0px; padding: 0px; border: 0px; outline: 0px; vertical-align: top; background: 0px 0px; text-decoration: none; text-shadow: none; float: none; position: static; width: auto; height: auto; white-space: nowrap; cursor: inherit; -webkit-tap-highlight-color: transparent; line-height: normal; font-weight: 400; text-align: left; box-sizing: content-box; direction: ltr; }
+li div { padding-top: 0px; }
+blockquote { margin: 1rem 0px; }
+li .mathjax-block, li p { margin: 0.5rem 0px; }
+li blockquote { margin: 1rem 0px; }
+li { margin: 0px; position: relative; }
+blockquote > :last-child { margin-bottom: 0px; }
+blockquote > :first-child, li > :first-child { margin-top: 0px; }
+.footnotes-area { color: rgb(136, 136, 136); margin-top: 0.714rem; padding-bottom: 0.143rem; white-space: normal; }
+#write .footnote-line { white-space: pre-wrap; }
+@media print {
+  body, html { border: 1px solid transparent; height: 99%; break-after: avoid; break-before: avoid; font-variant-ligatures: no-common-ligatures; }
+  #write { margin-top: 0px; border-color: transparent !important; padding-top: 0px !important; padding-bottom: 0px !important; }
+  .typora-export * { -webkit-print-color-adjust: exact; }
+  .typora-export #write { break-after: avoid; }
+  .typora-export #write::after { height: 0px; }
+  .is-mac table { break-inside: avoid; }
+  #write > p:nth-child(1) { margin-top: 0px; }
+  .typora-export-show-outline .typora-export-sidebar { display: none; }
+  figure { overflow-x: visible; }
+}
+.footnote-line { margin-top: 0.714em; font-size: 0.7em; }
+a img, img a { cursor: pointer; }
+pre.md-meta-block { font-size: 0.8rem; min-height: 0.8rem; white-space: pre-wrap; background: rgb(204, 204, 204); display: block; overflow-x: hidden; }
+p > .md-image:only-child:not(.md-img-error) img, p > img:only-child { display: block; margin: auto; }
+#write.first-line-indent p > .md-image:only-child:not(.md-img-error) img { left: -2em; position: relative; }
+p > .md-image:only-child { display: inline-block; width: 100%; }
+#write .MathJax_Display { margin: 0.8em 0px 0px; }
+.md-math-block { width: 100%; }
+.md-math-block:not(:empty)::after { display: none; }
+.MathJax_ref { fill: currentcolor; }
+[contenteditable="true"]:active, [contenteditable="true"]:focus, [contenteditable="false"]:active, [contenteditable="false"]:focus { outline: 0px; box-shadow: none; }
+.md-task-list-item { position: relative; list-style-type: none; }
+.task-list-item.md-task-list-item { padding-left: 0px; }
+.md-task-list-item > input { position: absolute; top: 0px; left: 0px; margin-left: -1.2em; margin-top: calc(1em - 10px); border: none; }
+.math { font-size: 1rem; }
+.md-toc { min-height: 3.58rem; position: relative; font-size: 0.9rem; border-radius: 10px; }
+.md-toc-content { position: relative; margin-left: 0px; }
+.md-toc-content::after, .md-toc::after { display: none; }
+.md-toc-item { display: block; color: rgb(65, 131, 196); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-h1 .md-toc-inner { margin-left: 0px; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+@media screen and (max-width: 48em) {
+  .md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+  .md-toc-h4 .md-toc-inner { margin-left: 5em; }
+  .md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+  .md-toc-h6 .md-toc-inner { margin-left: 8em; }
+}
+a.md-toc-inner { font-size: inherit; font-style: inherit; font-weight: inherit; line-height: inherit; }
+.footnote-line a:not(.reversefootnote) { color: inherit; }
+.reversefootnote { font-family: ui-monospace, sans-serif; }
+.md-attr { display: none; }
+.md-fn-count::after { content: "."; }
+code, pre, samp, tt { font-family: var(--monospace); }
+kbd { margin: 0px 0.1em; padding: 0.1em 0.6em; font-size: 0.8em; color: rgb(36, 39, 41); background: rgb(255, 255, 255); border: 1px solid rgb(173, 179, 185); border-radius: 3px; box-shadow: rgba(12, 13, 14, 0.2) 0px 1px 0px, rgb(255, 255, 255) 0px 0px 0px 2px inset; white-space: nowrap; vertical-align: middle; }
+.md-comment { color: rgb(162, 127, 3); opacity: 0.6; font-family: var(--monospace); }
+code { text-align: left; vertical-align: initial; }
+a.md-print-anchor { white-space: pre !important; border-width: initial !important; border-style: none !important; border-color: initial !important; display: inline-block !important; position: absolute !important; width: 1px !important; right: 0px !important; outline: 0px !important; background: 0px 0px !important; text-decoration: initial !important; text-shadow: initial !important; }
+.os-windows.monocolor-emoji .md-emoji { font-family: "Segoe UI Symbol", sans-serif; }
+.md-diagram-panel > svg { max-width: 100%; }
+[lang="flow"] svg, [lang="mermaid"] svg { max-width: 100%; height: auto; }
+[lang="mermaid"] .node text { font-size: 1rem; }
+table tr th { border-bottom: 0px; }
+video { max-width: 100%; display: block; margin: 0px auto; }
+iframe { max-width: 100%; width: 100%; border: none; }
+.highlight td, .highlight tr { border: 0px; }
+mark { background: rgb(255, 255, 0); color: rgb(0, 0, 0); }
+.md-html-inline .md-plain, .md-html-inline strong, mark .md-inline-math, mark strong { color: inherit; }
+.md-expand mark .md-meta { opacity: 0.3 !important; }
+mark .md-meta { color: rgb(0, 0, 0); }
+@media print {
+  .typora-export h1, .typora-export h2, .typora-export h3, .typora-export h4, .typora-export h5, .typora-export h6 { break-inside: avoid; }
+}
+.md-diagram-panel .messageText { stroke: none !important; }
+.md-diagram-panel .start-state { fill: var(--node-fill); }
+.md-diagram-panel .edgeLabel rect { opacity: 1 !important; }
+.md-fences.md-fences-math { font-size: 1em; }
+.md-fences-advanced:not(.md-focus) { padding: 0px; white-space: nowrap; border: 0px; }
+.md-fences-advanced:not(.md-focus) { background: inherit; }
+.typora-export-show-outline .typora-export-content { max-width: 1440px; margin: auto; display: flex; flex-direction: row; }
+.typora-export-sidebar { width: 300px; font-size: 0.8rem; margin-top: 80px; margin-right: 18px; }
+.typora-export-show-outline #write { --webkit-flex:2; flex: 2 1 0%; }
+.typora-export-sidebar .outline-content { position: fixed; top: 0px; max-height: 100%; overflow: hidden auto; padding-bottom: 30px; padding-top: 60px; width: 300px; }
+@media screen and (max-width: 1024px) {
+  .typora-export-sidebar, .typora-export-sidebar .outline-content { width: 240px; }
+}
+@media screen and (max-width: 800px) {
+  .typora-export-sidebar { display: none; }
+}
+.outline-content li, .outline-content ul { margin-left: 0px; margin-right: 0px; padding-left: 0px; padding-right: 0px; list-style: none; overflow-wrap: anywhere; }
+.outline-content ul { margin-top: 0px; margin-bottom: 0px; }
+.outline-content strong { font-weight: 400; }
+.outline-expander { width: 1rem; height: 1.42857rem; position: relative; display: table-cell; vertical-align: middle; cursor: pointer; padding-left: 4px; }
+.outline-expander::before { content: ""; position: relative; font-family: Ionicons; display: inline-block; font-size: 8px; vertical-align: middle; }
+.outline-item { padding-top: 3px; padding-bottom: 3px; cursor: pointer; }
+.outline-expander:hover::before { content: ""; }
+.outline-h1 > .outline-item { padding-left: 0px; }
+.outline-h2 > .outline-item { padding-left: 1em; }
+.outline-h3 > .outline-item { padding-left: 2em; }
+.outline-h4 > .outline-item { padding-left: 3em; }
+.outline-h5 > .outline-item { padding-left: 4em; }
+.outline-h6 > .outline-item { padding-left: 5em; }
+.outline-label { cursor: pointer; display: table-cell; vertical-align: middle; text-decoration: none; color: inherit; }
+.outline-label:hover { text-decoration: underline; }
+.outline-item:hover { border-color: rgb(245, 245, 245); background-color: var(--item-hover-bg-color); }
+.outline-item:hover { margin-left: -28px; margin-right: -28px; border-left: 28px solid transparent; border-right: 28px solid transparent; }
+.outline-item-single .outline-expander::before, .outline-item-single .outline-expander:hover::before { display: none; }
+.outline-item-open > .outline-item > .outline-expander::before { content: ""; }
+.outline-children { display: none; }
+.info-panel-tab-wrapper { display: none; }
+.outline-item-open > .outline-children { display: block; }
+.typora-export .outline-item { padding-top: 1px; padding-bottom: 1px; }
+.typora-export .outline-item:hover { margin-right: -8px; border-right: 8px solid transparent; }
+.typora-export .outline-expander::before { content: "+"; font-family: inherit; top: -1px; }
+.typora-export .outline-expander:hover::before, .typora-export .outline-item-open > .outline-item > .outline-expander::before { content: "−"; }
+.typora-export-collapse-outline .outline-children { display: none; }
+.typora-export-collapse-outline .outline-item-open > .outline-children, .typora-export-no-collapse-outline .outline-children { display: block; }
+.typora-export-no-collapse-outline .outline-expander::before { content: "" !important; }
+.typora-export-show-outline .outline-item-active > .outline-item .outline-label { font-weight: 700; }
+.md-inline-math-container mjx-container { zoom: 0.95; }
+mjx-container { break-inside: avoid; }
+
+
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+}
+
+@include-when-export url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext);
+
+/* open-sans-regular - latin-ext_latin */
+  /* open-sans-italic - latin-ext_latin */
+    /* open-sans-700 - latin-ext_latin */
+    /* open-sans-700italic - latin-ext_latin */
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family: "Open Sans","Clear Sans", "Helvetica Neue", Helvetica, Arial, 'Segoe UI Emoji', sans-serif;
+    color: rgb(51, 51, 51);
+    line-height: 1.6;
+}
+
+#write {
+    max-width: 860px;
+  	margin: 0 auto;
+  	padding: 30px;
+    padding-bottom: 100px;
+}
+
+@media only screen and (min-width: 1400px) {
+	#write {
+		max-width: 1024px;
+	}
+}
+
+@media only screen and (min-width: 1800px) {
+	#write {
+		max-width: 1200px;
+	}
+}
+
+#write > ul:first-child,
+#write > ol:first-child{
+    margin-top: 30px;
+}
+
+a {
+    color: #4183C4;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    cursor: text;
+}
+h1:hover a.anchor,
+h2:hover a.anchor,
+h3:hover a.anchor,
+h4:hover a.anchor,
+h5:hover a.anchor,
+h6:hover a.anchor {
+    text-decoration: none;
+}
+h1 tt,
+h1 code {
+    font-size: inherit;
+}
+h2 tt,
+h2 code {
+    font-size: inherit;
+}
+h3 tt,
+h3 code {
+    font-size: inherit;
+}
+h4 tt,
+h4 code {
+    font-size: inherit;
+}
+h5 tt,
+h5 code {
+    font-size: inherit;
+}
+h6 tt,
+h6 code {
+    font-size: inherit;
+}
+h1 {
+    font-size: 2.25em;
+    line-height: 1.2;
+    border-bottom: 1px solid #eee;
+}
+h2 {
+    font-size: 1.75em;
+    line-height: 1.225;
+    border-bottom: 1px solid #eee;
+}
+
+/*@media print {
+    .typora-export h1,
+    .typora-export h2 {
+        border-bottom: none;
+        padding-bottom: initial;
+    }
+
+    .typora-export h1::after,
+    .typora-export h2::after {
+        content: "";
+        display: block;
+        height: 100px;
+        margin-top: -96px;
+        border-top: 1px solid #eee;
+    }
+}*/
+
+h3 {
+    font-size: 1.5em;
+    line-height: 1.43;
+}
+h4 {
+    font-size: 1.25em;
+}
+h5 {
+    font-size: 1em;
+}
+h6 {
+   font-size: 1em;
+    color: #777;
+}
+p,
+blockquote,
+ul,
+ol,
+dl,
+table{
+    margin: 0.8em 0;
+}
+li>ol,
+li>ul {
+    margin: 0 0;
+}
+hr {
+    height: 2px;
+    padding: 0;
+    margin: 16px 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+}
+
+li p.first {
+    display: inline-block;
+}
+ul,
+ol {
+    padding-left: 30px;
+}
+ul:first-child,
+ol:first-child {
+    margin-top: 0;
+}
+ul:last-child,
+ol:last-child {
+    margin-bottom: 0;
+}
+blockquote {
+    border-left: 4px solid #dfe2e5;
+    padding: 0 15px;
+    color: #777777;
+}
+blockquote blockquote {
+    padding-right: 0;
+}
+table {
+    padding: 0;
+    word-break: initial;
+}
+table tr {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 0;
+}
+table tr:nth-child(2n),
+thead {
+    background-color: #f8f8f8;
+}
+table th {
+    font-weight: bold;
+    border: 1px solid #dfe2e5;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;
+}
+table td {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 6px 13px;
+}
+table th:first-child,
+table td:first-child {
+    margin-top: 0;
+}
+table th:last-child,
+table td:last-child {
+    margin-bottom: 0;
+}
+
+.CodeMirror-lines {
+    padding-left: 4px;
+}
+
+.code-tooltip {
+    box-shadow: 0 1px 1px 0 rgba(0,28,36,.3);
+    border-top: 1px solid #eef2f2;
+}
+
+.md-fences,
+code,
+tt {
+    border: 1px solid #e7eaed;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    padding: 0;
+    padding: 2px 4px 0px 4px;
+    font-size: 0.9em;
+}
+
+code {
+    background-color: #f3f4f4;
+    padding: 0 2px 0 2px;
+}
+
+.md-fences {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    padding-top: 8px;
+    padding-bottom: 6px;
+}
+
+
+.md-task-list-item > input {
+  margin-left: -1.3em;
+}
+
+@media print {
+    html {
+        font-size: 13px;
+    }
+    pre {
+        page-break-inside: avoid;
+        word-wrap: break-word;
+    }
+}
+
+.md-fences {
+	background-color: #f8f8f8;
+}
+#write pre.md-meta-block {
+	padding: 1rem;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f7f7f7;
+    border: 0;
+    border-radius: 3px;
+    color: #777777;
+    margin-top: 0 !important;
+}
+
+.mathjax-block>.code-tooltip {
+	bottom: .375rem;
+}
+
+.md-mathjax-midline {
+    background: #fafafa;
+}
+
+#write>h3.md-focus:before{
+	left: -1.5625rem;
+	top: .375rem;
+}
+#write>h4.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h5.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h6.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+.md-image>.md-meta {
+    /*border: 1px solid #ddd;*/
+    border-radius: 3px;
+    padding: 2px 0px 0px 4px;
+    font-size: 0.9em;
+    color: inherit;
+}
+
+.md-tag {
+    color: #a7a7a7;
+    opacity: 1;
+}
+
+.md-toc { 
+    margin-top:20px;
+    padding-bottom:20px;
+}
+
+.sidebar-tabs {
+    border-bottom: none;
+}
+
+#typora-quick-open {
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+}
+
+#typora-quick-open-item {
+    background-color: #FAFAFA;
+    border-color: #FEFEFE #e5e5e5 #e5e5e5 #eee;
+    border-style: solid;
+    border-width: 1px;
+}
+
+/** focus mode */
+.on-focus-mode blockquote {
+    border-left-color: rgba(85, 85, 85, 0.12);
+}
+
+header, .context-menu, .megamenu-content, footer{
+    font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+.file-node-content:hover .file-node-icon,
+.file-node-content:hover .file-node-open-state{
+    visibility: visible;
+}
+
+.mac-seamless-mode #typora-sidebar {
+    background-color: #fafafa;
+    background-color: var(--side-bar-bg-color);
+}
+
+.md-lang {
+    color: #b4654d;
+}
+
+/*.html-for-mac {
+    --item-hover-bg-color: #E6F0FE;
+}*/
+
+#md-notification .btn {
+    border: 0;
+}
+
+.dropdown-menu .divider {
+    border-color: #e5e5e5;
+    opacity: 0.4;
+}
+
+.ty-preferences .window-content {
+    background-color: #fafafa;
+}
+
+.ty-preferences .nav-group-item.active {
+    color: white;
+    background: #999;
+}
+
+.menu-item-container a.menu-style-btn {
+    background-color: #f5f8fa;
+    background-image: linear-gradient( 180deg , hsla(0, 0%, 100%, 0.8), hsla(0, 0%, 100%, 0)); 
+}
+
+
+
+</style><title>List for the ISO Commission</title>
+</head>
+<body class='typora-export os-windows'><div class='typora-export-content'>
+<div id='write'  class=''><h1 id='list-of-interslavic-resources'><span>List of Interslavic resources</span></h1><p><em><span>authors: Neudržima Mašina Dobra, Владимир Брєзин</span></em></p><h2 id='educational-literature'><span>Educational literature</span></h2><ul><li><p><a href='http://steen.free.fr/interslavic/index.html'><span>Jan van Steenbergen&#39;s main site</span></a><span> (has grammar, dictionaries and many more interesting things)</span></p></li><li><p><a href='https://interslavic-dictionary.com/'><span>The dictionary</span></a></p></li><li><p><span>Vojtěh Merunka&#39;s coursebook (it is somewhat outdated): </span></p><ul><li><p><a href='https://books.google.com/books?id=egpTDwAAQBAJ&amp;printsec=frontcover#v=onepage&amp;q&amp;f=false'><span>English version</span></a></p></li><li><p><a href='https://app.box.com/s/jzyf90ago272lcfx3lijcud2ar0lw29a'><span>Russian translation</span></a></p></li></ul></li><li><p><a href='https://www.liveinternet.ru/users/ranmarurei/rubric/6714552/'><span>Ranmaru Rei&#39;s course in Russian</span></a></p></li><li><p><a href='https://gorlatoff.github.io/fraznik.html'><span>List of recommended Interslavic words</span></a><span> </span></p></li><li><p><a href='https://drive.google.com/file/d/1-qYUKVZAoFd1sveBNebeIGbxQJK4tcSf/edit'><span>&quot;Govoriš li medžuslovjansky?&quot; book by Jakim Sekyra</span></a></p></li></ul><h2 id='teksty-s-korektorami-texts-that-were-proofread'><span>Teksty s korektorami (Texts that were proofread):</span></h2><ul><li><p><a href='https://hackmd.io/@xlO6E2n-S5eX4tROzsbTpg/ryr9565Ni'><span>&quot;Turistične konversacije&quot;</span></a><span> (an Interslavic language phrasebook). </span><em><span>Certainly, the phrases from this phrasebook are the most understandable of all texts that exist in Interslavic. All problematic parts were discusssed and corrected by people from various nations.</span></em></p></li><li><p><a href='https://melacpise.wordpress.com/teksty-melacevyh-pesnej/'><span>Texts of Melac&#39;s songs</span></a><span> (a known Interslavic creator).</span></p></li><li><p><a href='https://books.google.nl/books?id=i3lhDwAAQBAJ'><span>&quot;Čitateljnik&quot; anthology</span></a><span> (2018). It contains 36 different texts in one hundred pages.</span></p></li></ul><h2 id='reading'><span>Reading:</span></h2><ul><li><p><a href='http://isv.miraheze.org/'><span>Medžuviki</span></a><span> (Developing encyclopedia in Interslavic). </span><a href='https://isv.miraheze.org/w/index.php?title=Special:AllPages&amp;hideredirects=1'><span>It has 446 articles</span></a><span>.</span></p></li><li><p><a href='https://app.box.com/s/8zioa8m5kf8wv40ipif9r1b76tl0r5jw'><span>The corpus of Interslavic texts</span></a><span>, it contains over a thousand texts from dozens of authors.</span></p></li><li><p><a href='http://steen.free.fr/interslavic/maly_princ.html'><span>A translation of the book &quot;The Little Prince&quot;.</span></a></p></li><li><p><a href='http://steen.free.fr/interslavic/samples.html'><span>Texts collection</span></a><span> by Jan van Steenbergen. It includes 14 sample texts that were added in 2006 and later.</span></p></li><li><p><span>A </span><a href='https://t.me/interslavicthings/210'><span>translation</span></a><span> of part of the chapters of Jacob Perelman&#39;s book &quot;Physics at every Step&quot;.</span></p></li><li><p><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Vse'><span>Text collection</span></a><span> in Medžuviki: </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Poemy'><span>Poems</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Členky'><span>Articles</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Knigy'><span>Books </span></a><span>• </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Zasměšky'><span>Jokes</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Povědky'><span>Stories</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Pěsnje'><span>Songs</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Molitvy'><span>Prayers</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Citaty_i_prislovice'><span>Quotes and proverbs</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Věsti'><span>News and olds</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Nauka_medžuslovjanskogo'><span>Learning Interslavic</span></a><span> • </span><a href='https://isv.miraheze.org/wiki/Category:Sbornik:Ine_teksty'><span>Other texts</span></a></p></li><li><p><a href='https://app.box.com/s/6zxli16nxjjjk3mflltbogixza6n57ht'><span>&quot;Dove Book&quot;</span></a><span>. The Dove Book is a medieval historical document - a religious verse, written somewhere in the 1500&#39;s. A Russian legend of the creation of the world.</span></p></li><li><p><a href='https://lyricstranslate.com/ru/language/interslavic'><span>Translations of songs.</span></a></p></li><li><p><a href='https://slovene.online/isv/komiks-diky-vepr/'><span>&quot;Diky vepr&quot; comic</span></a><span> (&quot;Wild pig&quot;).</span></p></li><li><p><a href='https://drive.google.com/uc?export=download&amp;id=1Sktn6c29E1iV48Dq4DwjpuXGvFeFdqnV'><span>&quot;Rastuči větr&quot;</span></a><span> (&quot;The growing wind&quot;).</span></p></li><li><p><a href='https://drive.google.com/file/d/1Zzj-y4JnVLUIB94x_drubdtR9QIZlks2/view'><span>Card Game &quot;NOVY-2084&quot;</span></a><span> .</span></p></li><li><p><a href='https://docs.google.com/document/d/1bYOy7VR6aIMhmoX0i_tOatNGlBs_TC0DyldFtxEKNhk/edit'><span>Religious texts</span></a><span> by Miroslav Vančo:  </span><a href='https://docs.google.com/document/d/13eLrO60LpqURu1xrsonMbcOY9-NP1jsG718GlMqWzqk/edit?usp=sharing'><span>Dekalog</span></a><span> • </span><a href='https://docs.google.com/document/d/1bqi5tpnZbjGMsPRnu-DaJXQiBJPR6hDoe54653qxd48/edit?usp=sharing'><span>Ave Maria</span></a><span> • </span><a href='https://docs.google.com/document/d/14NWhQa7SHO1IJKZn-WhJsJ4uTPgXFLYDyaIhmYDgriA/edit?usp=sharing'><span>Pater noster</span></a><span> • </span><a href='https://docs.google.com/document/d/1Bjx45uQek_TDA7vqmOG6D7hh4S0tmReUxYAF78PuAoM/edit?usp=sharing'><span>Gloria Patri</span></a><span> • </span><a href='https://docs.google.com/document/d/1ED8DyvE8OzZGVZQ-b1HRGD8ABouqIpZGbQVZLkIPLKU/edit?usp=sharing'><span>Rozvěnec Děvice Marije</span></a><span> • </span><a href='https://docs.google.com/document/d/14M5fy22XJLmmtd_ltXEpkIsMFKPS6r5rTNmErpcMHNU/edit?usp=sharing'><span>Apostolsky symbol věry</span></a></p></li></ul><p>&nbsp;</p><h2 id='videos-and-audios'><span>Videos and Audios</span></h2><ul><li><p><span>Youtube channels:</span></p><ul><li><p><a href='https://www.youtube.com/@interslavicofficial'><span>Mihal Swat&#39;s channel</span></a><span> (40.7 thousand subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@Medzuslovjanskyjezyk'><span>Medžuslovjansky jezyk</span></a><span> (2.2 thousand subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@MelacInterslavic'><span>Melac&#39;s channel</span></a><span>  (1.5 thousand subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@vojtieh'><span>Vojtěh Merunka&#39;s channel</span></a><span> (781 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@RanmaruRei'><span>Ranmaru Rei&#39;s channel</span></a><span> (769 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@InterSlavicLight'><span>InterSlavic -Light</span></a><span>: (749 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/c/Ďyvina'><span>Dyvina</span></a><span> (250 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@mitomatija2376'><span>Mito Matija&#39;s channel</span></a><span> (239 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@MedzuslovjanskySlezk'><span>MedzuslovjanskySlezk</span></a><span> (225 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/channel/UCbbFL99pxa2pv7p6kqsoMgA'><span>Кирха</span></a><span>: (216 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@AdvancedInterslavic-no7gq'><span>Advanced Interslavic</span></a><span>: (76 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@miroslavvanco-medzuslovian4147'><span>Miroslav Vančo - medžuslovjansky</span></a><span> (73 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@flameandiceISL'><span>Flame and Ice with ISL</span></a><span> (52 subscribers, 5425 views of videos in Interslavic)</span></p></li><li><p><a href='https://www.youtube.com/watch?v=LcSl2kV_NB0'><span>Rubinolas&#39; channel</span></a><span> (51 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@medzumatika729'><span>Medžumatika</span></a><span> (42 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@medzurybak'><span>Međurybak&#39;s channel</span></a><span> (32 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@Matej_Milach/videos'><span>SLOVJANSKY PROSTOR</span></a><span> (videos in Interslavic and Polish language) (27 subscribers)</span></p></li><li><p><a href='https://www.youtube.com/@interslavicthings'><span>Interslavic things</span></a><span> (14 subscribers)</span></p></li><li><p><span>&quot;Finding inspiration with Sandra&quot; channel (</span><a href='https://www.youtube.com/playlist?list=PLLErD4LWIUMvdONcueoVkBAvE69VLPnh5'><span>&quot;Learn Interslavic language&quot; lessons</span></a><span>) (1.71 thousand subscribers)</span></p></li></ul></li><li><p><span>Tiktok channels:</span></p><ul><li><p><a href='https://www.tiktok.com/@interslavic?lang=en'><span>InterSlavic</span></a><span> (143.4 thousand subscribers)</span></p></li><li><p><a href='https://www.tiktok.com/@interslaviclanguage'><span>InterslavicLanguage</span></a><span> (2957 subscribers)</span></p></li><li><p><a href='https://www.tiktok.com/@jesmmelac'><span>Melac</span></a><span>  (3175 subscribers)</span></p></li><li><p><a href='https://www.tiktok.com/@sladkogorsky'><span>Světislav InterSlavic</span></a><span> (72 subscribers)</span></p></li><li><p><a href='https://www.tiktok.com/@max.interslavic'><span>max.interslavic</span></a><span> (22 subscribers)</span></p></li><li><p><a href='https://www.tiktok.com/@interslavic_things'><span>interslavic_things</span></a><span> (8 subscribers)</span></p></li></ul></li><li><p><span>Podcasts:</span></p><ul><li><p><a href='https://interslavic.news/podkast'><span>Interslavic news</span></a></p></li><li><p><span>Medžuslovjansky Slovotok in </span><a href='https://www.youtube.com/@medzuslovjanskyslovotokint1619'><span>Youtube</span></a><span> and </span><a href='https://podcasts.google.com/feed/aHR0cHM6Ly9hbmNob3IuZm0vcy83YzgwMGM4OC9wb2RjYXN0L3Jzcw'><span>Google podcasts</span></a></p></li><li><p><span>Slovjansky Katharsis by Mito Matija (music show about Slavic music spoken in the interslavic language). Episodes: </span><a href='https://soundcloud.com/mito-matija/slovjanski-katharsis'><span>Slovjansky Katharsis</span></a><span>, </span><a href='https://soundcloud.com/mito-matija/slovjansky-katharsis-2'><span>Slovjansky Katharsis 2</span></a><span>, </span><a href='https://soundcloud.com/mito-matija/slovjansky-rep-katharsis-3'><span>Slovjansky (Rep) Katharsis 3</span></a></p></li><li><p><a href='https://tyflonet.com/siciliano/arhiv/'><span>More podcasts</span></a></p></li></ul></li><li><p><span>Music:</span></p><ul><li><p><a href='https://www.youtube.com/playlist?list=PL--S_Qi-XfGTs4Hpnukm4VyiymJJ5VZqF'><span>Music playlist</span></a><span> (69 songs)</span></p></li><li><p><a href='https://youtube.com/playlist?list=PLIvLefDX3GpzPjDghoxCDT-recGqGvKh6&amp;si=AbieAlHZknzuFG1K'><span>A playlist with song subtitles</span></a><span> (33 songs)</span></p></li><li><p><a href='https://kmen.bandcamp.com/album/basnj'><span>Jeden kmen</span></a></p></li><li><p><a href='https://budakashaliova.bandcamp.com/album/1982'><span>Buda Kašaliova</span></a></p></li><li><p><a href='https://open.spotify.com/artist/7zQAFo2TbFOttXTiCH1Zfh?si=YxmK6JyLS9afS5z4_RFHBQ&amp;utm_medium=share&amp;utm_source=linktree&amp;nd=1&amp;dlsi=cc02f6ef8d96469e'><span>Melac on Spotify</span></a></p></li><li><p><a href='https://open.spotify.com/artist/4O1IcZcEYX5nM4d8q1rWIM'><span>Ďyvina on Spotify</span></a><span> (albums </span><a href='https://open.spotify.com/album/1JJgmjzF6KNipbU8JdZ6E4'><span>Počva</span></a><span> and </span><a href='https://open.spotify.com/album/5TcjIRCscVTfg9dXElF05K?si=7ULPtDToSd68Fn8PzfjaQw'><span>Duše</span></a><span>)</span></p></li><li><p><a href='https://www.facebook.com/ctoslysam/'><span>Studio &quot;Čto Slyšimo&quot; in Zagreb</span></a><span> </span></p></li></ul></li><li><p><span>Audiobooks</span></p><ul><li><p><a href='https://youtube.com/playlist?list=PLN7FF06VmIkni_M4__JF5Z5YDgPIbDs08'><span>Playlist on YouTube</span></a></p></li><li><p><a href='https://www.youtube.com/playlist?list=PLGK9hD6-iikzuAGTWFHq2xTQAai-LkPY9'><span>Audiobook &quot;Maly Princ&quot; (The Little Prince)</span></a><span> </span></p></li></ul></li><li><p><a href='https://www.youtube.com/playlist?list=PLT_X5HnKrXoiL3a5oK9Tv977JI8ijvFNM'><span>Playlist of videos in Interslavic</span></a><span> (479 videos)</span></p></li><li><p><a href='https://odysee.com/@medzuslovjanskyslezk:b'><span>Medžuslovjansky Slezsk</span></a><span> in Odyssee.com</span></p></li></ul><h2 id='films'><span>Films</span></h2><ul><li><p><a href='https://en.wikipedia.org/wiki/The_Painted_Bird_(film)'><span>The Painted Bird</span></a></p></li><li><p><a href='https://www.youtube.com/playlist?list=PLN7FF06VmIkkpWsnaRKitfJMx0Ngr8h-g'><span>A playlist with films</span></a></p></li><li><p><a href='https://www.youtube.com/playlist?list=PLN7FF06VmIknLtvkovPAGBCcR_vIfO3zY'><span>Interslavic subtitles playlist</span></a></p></li></ul><h2 id='videogames'><span>Videogames </span></h2><ul><li><p><span>Games with optional Interslavic interface</span></p><ul><li><p><a href='https://crowdin.com/project/minecraft/isv'><span>Minecraft</span></a></p></li><li><p><a href='https://store.steampowered.com/app/972760/Secret_Saga_Xamadeon_Stone/'><span>Secret Saga: Xamadeon</span></a><span> </span></p></li><li><p><a href='https://store.steampowered.com/news/app/1591540/view/2977430240172987539'><span>Hard Minus Classic Redux</span></a></p></li></ul></li><li><p><a href='https://app.box.com/s/i7xhusmdxt8ygnrwkmtoxyc8ea3y3ful'><span>Interslavic Fаn dubbing for CivBE</span></a><span> (promo video is </span><a href='https://www.youtube.com/shorts/wPphMHD_Jqw'><span>here</span></a><span>)</span></p></li></ul><h2 id='social-media'><span>Social media</span></h2><ul><li><p><span>Facebook:</span></p><ul><li><p><a href='http://www.facebook.com/groups/interslavic'><span>Official Interslavic group</span></a><span> (20.3 thousand members)</span></p></li><li><p><a href='https://www.facebook.com/groups/1933305396885265/'><span>Medžuslovjansko Věće / Interslavic Assembly</span></a><span> (365 members)</span></p></li><li><p><a href='https://www.facebook.com/groups/learninginterslavic'><span>Learning Interslavic</span></a><span> (126 members)</span></p></li><li><p><a href='https://www.facebook.com/groups/570315653945131'><span>Politikovka</span></a><span> (108 members)</span></p></li><li><p><a href='https://www.facebook.com/groups/2563574440632498'><span>Interslavic poetry</span></a><span> (104 members)</span></p></li><li><p><a href='https://www.facebook.com/groups/neoslavonic/'><span>Old Neoslavonic group</span></a><span> (818 members)</span></p></li></ul></li><li><p><span>Discord:</span></p><ul><li><p><a href='https://discord.gg/V2ptnmb233'><span>Main Discord server</span></a><span> (8,045)</span></p></li><li><p><a href='https://discord.gg/zufTTG4Dhp'><span>Server of the Medžuviki</span></a><span> (111 members)</span></p></li><li><p><a href='https://discord.gg/hMRJuJYvTM'><span>Medžuslovjanska Tvorba (server for art)</span></a></p></li><li><p><a href='https://discord.gg/AfE7MzjQnw'><span>Interslavic gaming</span></a><span> (105 members)</span></p></li><li><p><a href='https://discord.gg/edaH39Q6HG'><span>Glagolitic Interslavic server</span></a><span> (92 members, server for communicating in glagolitic)</span></p></li><li><p><a href='https://discord.gg/H6N4afB'><span>Всисловѣнщина / меꙉусловѣнщина</span></a><span> (92 members)</span></p></li></ul></li><li><p><span>Telegram channels and groups:</span></p><ul><li><p><a href='https://t.me/interslavic'><span>Меджусловјанска бесѣда / Medžuslovjanska besěda</span></a><span> (780 members)</span></p></li><li><p><a href='https://t.me/slovjansky'><span>Slovjansky.com - Interslavic / Medžuslovjansky</span></a><span> (727 subscribers)</span></p></li><li><p><a href='https://t.me/malkov_glas'><span>Malkov Glas</span></a><span> (478 subscribers)</span></p></li><li><p><a href='https://t.me/interslavicthings'><span>Pab «Medžuslovjanska Kapibara» · «Interslavic  capybara» pub</span></a><span> (384 subscribers)</span></p></li><li><p><a href='https://t.me/MSbesieda'><span>Medžuslovjansky / Меджусловјанскы / Interslavic</span></a><span> (320 members)</span></p></li><li><p><a href='https://t.me/slovnikovadruzina'><span>Medžuslovjanska Slovnikova Družina - Věsti</span></a><span> (153 subscribers)</span></p></li><li><p><a href='https://t.me/medzuslovjane'><span>Меꙉусловяне / Medžuslov́ane</span></a><span> (125 members)</span></p></li><li><p><a href='https://t.me/zapiskysm'><span>Zapisky srědnoevropskogo medžuslovjanina</span></a><span> (92 subscribers)</span></p></li><li><p><a href='https://t.me/frogs_and_apes_interslavic'><span>Žaby i Malpicy</span></a><span> (27 subscribers)</span></p></li><li><p><a href='https://t.me/mezhduslovyansky'><span>Межславянский язык</span></a><span> (27 subscribers)</span></p></li><li><p><a href='https://t.me/herojivracajutse'><span>Хероји врачајут се (МС)</span></a><span> (8 subscribers)</span></p></li></ul></li><li><p><span>VK:</span></p><ul><li><p><a href='https://vk.com/svetloslavjan'><span>Меджусловјанскы језык | interslavic</span></a><span> (3 313 members)</span></p></li><li><p><a href='https://vk.com/interslavic'><span>Межславянский - Меджусловіанскы - Interslavic</span></a><span> (2250 subscribers)</span></p></li><li><p><a href='https://vk.com/slovjansky'><span>Slovjansky.com – портал межславянского языка</span></a><span> (1787 subscribers)</span></p></li><li><p><a href='https://vk.com/kirhadungeon'><span>Кирха [Interslavic Dungeon Synth]</span></a><span> (353 subscribers)</span></p></li><li><p><a href='https://vk.com/ms_frogs_apes'><span>Мемы про жаб и обезьян на межславянском</span></a><span> (107 subscribers)</span></p></li><li><p><a href='https://vk.com/public213917828'><span>Мелац - музикант и меджусловјанскы творителј</span></a><span> (109 subscribers)</span></p></li><li><p><a href='https://vk.com/antonlandao'><span>Словянщина/Slovjanščina</span></a><span> (125 subscribers)</span></p></li><li><p><a href='https://vk.com/kolozor'><span>Kolozor</span></a><span> (67 subscribers)</span></p></li></ul></li><li><p><span>Instagram: </span></p><ul><li><p><a href='https://www.instagram.com/interslaviclanguage/'><span>Interslavic Language</span></a><span> (2249 subscribers)</span></p></li><li><p><a href='https://www.instagram.com/interslavic_memes/'><span>InterSlavic Memes</span></a><span> (431 subscriber)</span></p></li><li><p><a href='https://www.instagram.com/aleksy.melac.bernat/'><span>Aleksy &quot;Melac&quot; Bernat</span></a><span> (175 subscribers)</span></p></li><li><p><a href='https://www.instagram.com/interslavic_medzuslovjansky/'><span>interslavic_medzuslovjansky</span></a><span> (125 subscribers)</span></p></li></ul></li><li><p><span>Twitter: </span></p><ul><li><p><a href='https://twitter.com/INTERSLAVIC'><span>Interslavic</span></a><span> (197 readers)</span></p></li><li><p><a href='https://twitter.com/Interslavic_MSL'><span>Interslavic language - Medžuslovjansky język</span></a><span> (128 readers)</span></p></li><li><p><a href='https://twitter.com/izviestija'><span>Izviestija</span></a><span> (30 readers)</span></p></li></ul></li><li><p><a href='https://www.reddit.com/r/interslavic/'><span>Reddit</span></a><span> (1.4 thousand members)</span></p></li><li><p><span>Pikabu: </span></p><ul><li><p><a href='https://pikabu.ru/@TimaZagorski'><span>TimaZagorski (Blog o ucenju medzuslovjanskogo jezyka)</span></a><span> </span></p></li><li><p><a href='https://pikabu.ru/@MS.kapibara'><span>MS.kapibara</span></a><span> </span></p></li><li><p><a href='https://pikabu.ru/@KirhaDS'><span>KirhaDS</span></a><span> </span></p></li></ul></li><li><p><span>Teletype:</span></p><ul><li><p><a href='https://teletype.in/@flame-ice'><span>Цєним разумливост 💎 Сěnim razumlivost</span></a></p></li><li><p><a href='https://teletype.in/@mashine_of_goodness'><span>Interslavic things</span></a></p></li><li><p><a href='https://teletype.in/@arbtttrn6'><span>Артур</span></a><span> (has texts in Russian, Interslavic and Esperanto)</span></p></li><li><p><a href='https://teletype.in/@volkonaut'><span>Volkonaut</span></a></p></li></ul></li><li><p><span>Interslavic in Tumblr (</span><a href='https://www.tumblr.com/tagged/interslavic?sort=top'><span>1</span></a><span>, </span><a href='https://www.tumblr.com/tagged/medžuslovjansky?sort=top'><span>2</span></a><span>)</span></p></li><li><p><a href='https://www.tapatalk.com/groups/slovianski/index.php'><span>Old Tapatalk forum</span></a></p></li><li><p><a href='https://dzen.ru/interslavic'><span>Дзен</span></a><span> </span></p></li></ul><h2 id='sites-using-interslavic-as-the-primary-or-optional-language'><span>Sites using Interslavic as the primary or optional language</span></h2><ul><li><p><a href='https://slovjani.info/'><span>SLOVJANI.info</span></a><span> (in English: the SLAVS) is an expert journal focusing on issues of Slavic peoples in the wider sociocultural context of current times. </span></p></li><li><p><a href='https://interslavic.news/'><span>Interslavic news</span></a><span> </span></p></li><li><p><a href='https://interslavic.fun/'><span>Interslavic.fun</span></a></p></li><li><p><a href='https://interslavic-language.org/'><span>Interslavic language portal</span></a><span> </span></p></li><li><p><a href='https://interslavic.vercel.app/' target='_blank' class='url'>https://interslavic.vercel.app/</a></p></li><li><p><a href='https://www.casasantafecuba.com/me/'><span>Casa Santa Fe Cuba</span></a></p></li><li><p><a href='https://tesr.finance/#/'><span>Tesseract Finance</span></a></p></li></ul><h2 id='projects-in-progress'><span>Projects in progress</span></h2><ul><li><p><a href='https://interslavic.fun/'><span>Translation of Jan van Steenbergen&#39;s grammar into Slavic languages</span></a><span>.</span></p></li><li><p><span>Audio version of the book &quot;Nehaj nesut nas běle oblaky&quot;. </span></p></li><li><p><span>Animated movie &quot;Sněžna děva&quot;.</span></p></li><li><p><span>Translation of the essay </span><a href='https://app.box.com/s/8fwvje8oggdkpftd4tjom1jtbl2fjybv.'><span>&quot;Meditations on Moloch&quot;</span></a><span> by Scott Alexander.</span></p></li><li><p><a href='https://app.box.com/s/a9kzki0x6lgzn18789cdcvqnp9dn33uk'><span>Volgan&#39;s book &quot;Lěpke prsteni&quot;</span></a><span>.</span></p></li><li><p><a href='https://docs.google.com/spreadsheets/d/1rBG7brwbG4pR1j8_eVZapFZUSdaegSVjDH2V6Oqy00A/edit#gid=281935577'><span>Unofficial dictionary / parralel translations corpus.</span></a></p></li><li><p><a href='https://t.me/translation_interslv'><span>Translation of Telegram interface</span></a><span>.</span></p></li><li><p><a href='https://docs.google.com/spreadsheets/d/1hGvhqT9-lw3iKONOmu4wkxeMhDesgUlRp0CNKl6JkVk/edit?usp=sharing'><span>List of Slavic idioms with translation into Interslavic</span></a><span>.</span></p></li></ul><h2 id='utilities'><span>Utilities</span></h2><ul><li><p><span>Keyboards: </span></p><ul><li><p><a href='https://github.com/orlean-git/isv_mac_keyboards'><span>Interslavic keyboards for Mac</span></a><span> </span></p></li><li><p><a href='http://usachov.eu/g'><span>Interslavic modification of GBoard for Android</span></a></p></li><li><p><a href='http://tyflonet.com/siciliano/klaviatury/'><span>Interslavic keyboards for Windows</span></a></p></li></ul></li><li><p><a href='#transliterators'><span>Transliterators</span></a></p><ul><li><p><a href='https://interslavic.fun/resources/applets/transliterator/'><span>Transliterator by Yaroslav Serheiev</span></a></p></li><li><p><a href='http://steen.free.fr/interslavic/transliterator.html'><span>Basic transliterator by Jan van Steenbergen</span></a></p></li><li><p><a href='https://gorlatoff.github.io/transliteration.html'><span>Transliterator by Neudržima Mašina Dobra</span></a></p></li></ul></li><li><p><a href='#spell-checkers'><span>Spell Checkers</span></a></p><ul><li><p><a href='https://addons.mozilla.org/ru/firefox/addon/interslavic-spellcheck/'><span>Firefox</span></a></p></li><li><p><a href='https://extensions.libreoffice.org/en/extensions/show/15995'><span>LibreOffice</span></a></p></li><li><p><a href='https://github.com/medzuslovjansky/isv_hunspell_dict/releases'><span>Hunspell</span></a></p></li></ul></li><li><p><span>Tools by Jan van Steenbergen: </span></p><ul><li><p><a href='http://steen.free.fr/interslavic/transliterator_extended.html'><span>Extended transliterator</span></a><span> </span></p></li><li><p><a href='http://steen.free.fr/interslavic/spell_checker.html'><span>Spell checker</span></a><span> </span></p></li><li><p><a href='http://steen.free.fr/interslavic/words_learning_tool.html'><span>Words learning tool</span></a><span> </span></p></li><li><p><a href='http://steen.free.fr/interslavic/conjugator.html'><span>Verbs conjugator</span></a><span> </span></p></li><li><p><a href='http://steen.free.fr/interslavic/declinator.html'><span>Noun declinator</span></a></p></li><li><p><a href='http://steen.free.fr/interslavic/adjectivator.html'><span>Adjective declinator</span></a><span> </span></p></li><li><p><a href='http://steen.free.fr/interslavic/voting_machine.html'><span>Voting Machine</span></a><span> (tool for new words creation) </span></p></li></ul></li><li><p><span>Dictionary bot Mašina in </span><a href='https://t.me/mashina_slovnik_bot'><span>Telegram</span></a><span> and </span><a href='https://discord.com/channels/879438774323535914/913744290826555442'><span>Discord</span></a><span> (it helps to access thousands of unofficial words created by the community)</span></p></li><li><p><a href='https://interslavic-dictionary.com/172/translator'><span>Prototype of an automatic translator</span></a></p></li><li><p><a href='https://huggingface.co/spaces/Salavat/Interslavic-Translator-NLLB200'><span>Prototype of a neural network auto-translator</span></a><span> by Salavat</span></p></li><li><p><a href='https://github.com/medzuslovjansky/js-utils'><span>Linguistic utilities for Interslavic language</span></a></p></li><li><p><a href='https://github.com/bt2901/ISV_NLP_utils'><span>ISV_NLP_utils</span></a><span> by Viktor Bulatov. Some general-purpose utils helpful for parsing/sanity-checking/preprocessing.</span></p></li></ul><p>&nbsp;</p></div></div>
+</body>
+</html>

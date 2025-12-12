@@ -1,0 +1,238 @@
+<html>
+<title>Zakaznik</title>
+<style>
+    :root {
+        --background-color: hsl(240, 5%, 10%);
+        --text-color-dark: hsl(0, 0%, 95%);
+        --text-color-light: hsl(0, 0%, 50%);
+        --hover-color: hsl(0, 0%, 100%);
+    }
+
+    body, html {
+        background-color: var(--background-color);
+        color: var(--text-color-dark);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Space Grotesk';
+    }
+
+.slider {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.dragscroll {
+    overflow: auto;
+}
+
+.vertical.dragscroll {
+    width: 100%;
+    height: 100vh;
+    float: left;
+    padding: 10px;
+}
+
+.slide {
+    display: flex;
+    height: 100vh;
+    background: var(--background-color);
+    transition: transform 0.8s ease-in-out;
+}
+
+.slide-content {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.slide-content p {
+    font-size: 14pt; /* Это приблизительно соответствуют шрифту 14 в Google Docs */
+    line-height: 1.2; /* Междустрочный интервал */
+    max-width: 500px; /* Ограничение по ширине для текста */
+}
+
+.slide-image {
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.title-separator {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.25rem;
+}
+
+.title-separator h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    color: var(--text-color-light);
+    transition: color 200s ease-in-out;
+}
+
+.title-separator .separator {
+    width: 80%;
+    height: 2px;
+    background: var(--text-color-light);
+    transition: background-color 200s ease-in-out;
+}
+
+.slide-content:hover .title-separator h1,
+.slide-content.hovered .title-separator h1 { /* Добавлена поддержка класса 'hovered' */
+    color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.slide-content:hover .separator,
+.slide-content.hovered .separator { /* Добавлена поддержка класса 'hovered' */
+    background-color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.slide-content:not(:hover) h1,
+.slide-content:not(:hover) .separator {
+    transition-duration: 5s;
+}
+
+@media (max-width: 768px) {
+    .slide {
+        flex-direction: column;
+    }
+
+    .slide-content, .slide-image {
+        width: 100%;
+    }
+
+    .slide-content {
+        order: 2;
+        height: 50vh;
+    }
+
+    .slide-image {
+        order: 1;
+        height: 50vh;
+    }
+}
+</style>
+
+
+<!-- <script>
+((root, factory) => {
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory((root.dragscroll = {}));
+    }
+})(this, (exports) => {
+    const _window = window;
+    const _document = document;
+    const mousemove = 'mousemove';
+    const mouseup = 'mouseup';
+    const mousedown = 'mousedown';
+
+    let dragged = [];
+
+    const reset = () => {
+        dragged.forEach(el => {
+            el = el.container || el;
+            el.removeEventListener(mousedown, el.md);
+            _window.removeEventListener(mouseup, el.mu);
+            _window.removeEventListener(mousemove, el.mm);
+        });
+
+        dragged = Array.from(_document.getElementsByClassName('dragscroll'));
+
+        dragged.forEach(el => {
+            const scroller = el.scroller || el;
+            const cont = el.container || el;
+            let lastClientY, pushed;
+
+            cont.addEventListener(mousedown, el.md = (e) => {
+                if (!el.hasAttribute('nochilddrag') || _document.elementFromPoint(e.pageX, e.pageY) === cont) {
+                    pushed = 1;
+                    lastClientY = e.clientY;
+                    e.preventDefault();
+                }
+            });
+
+            _window.addEventListener(mouseup, el.mu = () => { pushed = 0; });
+
+            _window.addEventListener(mousemove, el.mm = (e) => {
+                if (pushed) {
+                    scroller.scrollTop -= (-lastClientY + (lastClientY = e.clientY));
+                    if (el === _document.body) {
+                        const docEl = _document.documentElement;
+                        docEl.scrollTop -= (-lastClientY + e.clientY);
+                    }
+                }
+            });
+        });
+    };
+
+    if (_document.readyState === 'complete') {
+        reset();
+    } else {
+        _window.addEventListener('load', reset);
+    }
+
+    exports.reset = reset;
+});
+
+document.addEventListener('mousedown', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.add('hovered');
+    });
+});
+document.addEventListener('mouseup', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.remove('hovered');
+    });
+});
+
+</script> -->
+
+
+<body>
+<div id="slider" style="transition: transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1); transform: translateY(0px);">
+  <div class="vertical dragscroll">
+    <div class="slide">
+        <div class="slide-content">
+            <div class="title-separator">
+                <h1>25 maja 2025</h1>
+                <div class="separator"></div>
+            </div>
+            <p>Это начало дневника... <br> Дата: 2024-11-26</p>
+        </div>
+        <img src="1.png" alt="Иллюстрация 1" class="slide-image">
+    </div>
+    <div class="slide">
+        <div class="slide-content">
+            <div class="title-separator">
+                <h1>26 aprilja 2025</h1>
+                <div class="separator"></div>
+            </div>
+            <p>Продолжение повествования... <br> Дата: 2024-11-27</p>
+        </div>
+        <img src="2.png" alt="Иллюстрация 2" class="slide-image">
+    </div>
+    <div class="slide">
+        <div class="slide-content">
+            <div class="title-separator">
+                <h1>26 julija 2025</h1>
+                <div class="separator"></div>
+            </div>
+            <p>История продолжается... <br> Дата: 2024-11-28</p>
+        </div>
+        <img src="3.png" alt="Иллюстрация 3" class="slide-image">
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tonnetz — Pure JS</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="./tonnetz/style.css">
+</head>
+<body>
+
+    <div id="app">
+        <!-- Audio Start Overlay -->
+        <div id="start-overlay" class="start-overlay">
+            <div class="start-btn">
+                <h1>The Tonnetz</h1>
+                <p>Click to Start Audio Engine</p>
+            </div>
+        </div>
+
+        <div class="app-layout">
+            <header class="app-header">
+                <div class="app-title">Tonnetz Environment</div>
+                <div class="header-controls">
+                    <button id="btn-info" class="btn-icon">Info</button>
+                </div>
+            </header>
+
+            <main>
+                <div class="panel canvas-panel">
+                    <!-- Pure SVG Container -->
+                    <svg id="main-svg" viewBox="0 0 1000 600" style="width:100%; height:100%; touch-action:none; background: transparent; cursor: grab;">
+                        <g id="svg-content" transform="scale(2) translate(0 0)"></g>
+                    </svg>
+                </div>
+
+                <!-- Control Panel -->
+                <div class="panel controls-panel">
+                    <div class="tonnetz-selector">
+                        <button id="btn-dual" class="btn-select btn-dual">
+                            Rectangular Mode
+                        </button>
+                    </div>
+                    
+                    <div style="width:1px; background:var(--border-base); height: 24px;"></div>
+
+                    <div class="control-group">
+                        <span class="label">Status</span>
+                        <div id="status-text" class="status-text">
+                            No MIDI Device
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Info Modal -->
+            <div id="info-overlay" class="info-overlay" style="display: none;">
+                <div class="info-content panel">
+                    <div class="info-body">
+                        <h2 class="app-title" style="color:white; margin-bottom:1rem;">Information</h2>
+                        <div id="info-text" style="color: var(--text-dim); text-align: justify; font-family: var(--font-ui); font-size: 14px;">
+                            <!-- Content injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/jzz@0.8.8/javascript/JZZ.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+
+    <!-- Application Modules (Ordered strictly for dependency) -->
+    <script src="./tonnetz/js/1_utils.js"></script>
+    <script src="./tonnetz/js/2_midi.js"></script>
+    <script src="./tonnetz/js/3_strings.js"></script>
+    <script src="./tonnetz/js/4_mixins.js"></script> <!-- Now GridLogic -->
+    <script src="./tonnetz/js/5_components_primitives.js"></script> <!-- Now SvgBuilder -->
+    <script src="./tonnetz/js/6_components_layout.js"></script> <!-- Now Renderer/Controller -->
+    <script src="./tonnetz/js/7_app.js"></script>
+
+</body>
+</html>

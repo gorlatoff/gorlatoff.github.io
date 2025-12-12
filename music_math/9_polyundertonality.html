@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyundertonality v0.98</title>
+    
+    <script src="./lib/ji-lib.js"></script>
+    <script src="./lib/audio-lib.js"></script>
+    <script src="polyundertonality.js"></script>
+
+    <style>
+        :root { --bg:#121212; --surf:#1e1e1e; --prim:#bb86fc; --sec:#03dac6; --txt:#e0e0e0; --brd:#333; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', monospace, sans-serif;
+            background: var(--bg); color: var(--txt);
+            padding: 12px; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--brd); padding-bottom: 8px; margin-bottom: 8px;
+        }
+        h1 { font-size: 1.1rem; }
+        h1 span { opacity: 0.5; font-weight: normal; }
+        .controls {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px; background: var(--surf); padding: 10px; border-radius: 6px;
+            margin-bottom: 8px; border: 1px solid var(--brd);
+        }
+        .grp { display: flex; flex-direction: column; }
+        .grp label { font-size: 0.6em; color: #888; margin-bottom: 2px; text-transform: uppercase; }
+        input, select {
+            background: #252525; color: #fff; border: 1px solid #444;
+            padding: 4px 6px; border-radius: 3px; font-family: monospace; font-size: 11px;
+        }
+        input[type="range"] { padding: 0; }
+        button#audioActivate {
+            background: transparent; border: 1px solid var(--prim); color: var(--prim);
+            padding: 5px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;
+            transition: all 0.2s;
+        }
+        button#audioActivate:hover {
+            background: var(--prim); color: #000;
+        }
+        .stats {
+            display: flex; gap: 12px; font-family: monospace; font-size: 0.7em;
+            color: #888; margin-bottom: 6px; padding: 0 4px;
+        }
+        .val { color: var(--sec); font-weight: bold; }
+        #viewport {
+            position: relative; flex: 1; background: #151515;
+            border: 1px solid var(--brd); border-radius: 4px; overflow: hidden;
+        }
+        #canvas { display: block; }
+        #loader {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; place-items: center; color: var(--prim); z-index: 9; font-size: 13px;
+        }
+        #tooltip {
+            position: absolute; background: rgba(18,18,18,0.95); color: #fff;
+            padding: 5px 9px; border-radius: 4px; font-size: 10px; line-height: 1.3;
+            pointer-events: none; display: none; z-index: 10;
+            border: 1px solid var(--prim); white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Polyundertonality <span>v0.98</span></h1>
+    <!-- FIX START: Добавляем настройки дронов -->
+    <div style="font-size:11px; display:flex; gap:10px; align-items:center; margin-right:auto; margin-left:20px;">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#888">
+            <input type="checkbox" id="chkBass"> System Bass
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#888">
+            <input type="checkbox" id="chkAnchor"> Row Anchor
+        </label>
+    </div>
+    <!-- FIX END -->
+    <div>
+        <button id="audioActivate">🎵 Activate Audio</button>
+        <span id="audioStatus" style="margin-left:10px;color:#666;font-size:11px">Click to activate</span>
+    </div>
+</header>
+
+<div class="controls">
+    <div class="grp"><label>Scales</label><input type="number" id="pool" value="24" min="5" max="64"></div>
+    <div class="grp"><label>Limit (Depth)</label><input type="number" id="limit" value="20" min="10" max="200"></div>
+    <div class="grp"><label>Min Consonance</label><input type="range" id="cons" min="0" max="1" step="0.01" value="0.35"></div>
+    <div class="grp"><label>Method</label>
+        <select id="method">
+            <option value="murzin">Murzin</option>
+            <option value="euler">Euler</option>
+        </select>
+    </div>
+    <div class="grp"><label>View Mode</label>
+        <select id="view">
+            <option value="local">Local (Normalized)</option>
+            <option value="relative">Relative (Anchor-based)</option>
+            <option value="harmonic">Harmonic (Root-based)</option>
+        </select>
+    </div>
+    <div class="grp"><label>Base Freq (Hz)</label><input type="number" id="freq" value="261.6" step="0.1"></div>
+</div>
+
+<div class="stats">
+    <div>System Root: <span id="s_root" class="val">—</span></div>
+    <div>Depth: <span id="s_depth" class="val">—</span></div>
+    <div>Scales: <span id="s_count" class="val">0</span></div>
+</div>
+
+<div id="viewport">
+    <div id="loader">Calculating...</div>
+    <canvas id="canvas"></canvas>
+    <div id="tooltip"></div>
+</div>
+
+<script>
+const App = {
+    ctx: null, synth: null,
+    canvas: null, c2d: null,
+    data: [], globalRoot: {num:1, den:1},
+    hitAreas: [],           // clickable regions
+    activeNoteId: null,     // currently sounding note
+    hoverNoteId: null,      // note under cursor
+    scrollY: 0,
+    isDragging: false,
+    audioReady: false,
+    
+    p: { pool:32, limit:45, cons:0.35, meth:'murzin', view:'local', freq:261.6, oct:{} },
+    
+    // Layout constants
+    ROW_H: 52, HEAD_W: 60, NOTE_H: 36, NOTE_GAP: 3, PAD: 6,
+    
+    // Colors
+    C: {
+        bg: '#151515', rowBg: 'rgba(255,255,255,0.02)', rowAlt: 'rgba(255,255,255,0.035)',
+        head: 'rgba(0,0,0,0.4)', headBorder: '#2a2a2a',
+        note: '#282828', noteHover: '#3a3a3a', noteActive: '#bb86fc',
+        text: '#e0e0e0', dim: '#666', accent: '#bb86fc'
+    },
+
+    init() {
+        this.canvas = document.getElementById('canvas');
+        this.c2d = this.canvas.getContext('2d');
+        this.bind();
+        this.resize();
+        this.update();
+        window.addEventListener('resize', () => { this.resize(); this.render(); });
+        
+        // Initialize audio on first user interaction
+        this.setupAudioActivation();
+    },
+
+    setupAudioActivation() {
+        const audioBtn = document.getElementById('audioActivate');
+        const audioStatus = document.getElementById('audioStatus');
+        
+        audioBtn.addEventListener('click', async () => {
+            try {
+                await this.ensureAudio();
+                audioStatus.textContent = '♪ Audio ready';
+                audioStatus.style.color = '#03dac6';
+                audioBtn.style.display = 'none';
+                this.audioReady = true;
+            } catch (error) {
+                audioStatus.textContent = 'Failed to activate audio';
+                audioStatus.style.color = '#ff5555';
+                console.error('Audio activation failed:', error);
+            }
+        });
+    },
+
+    p: { 
+        pool:32, limit:45, cons:0.35, meth:'murzin', view:'local', freq:261.6, oct:{}, 
+        droneBass: false, droneAnchor: false // <--- Добавлено
+    },
+
+    bind() {
+        const $ = id => document.getElementById(id);
+        
+        const regen = () => this.update();
+        $('pool').onchange = e => { this.p.pool = +e.target.value; regen(); };
+        $('limit').onchange = e => { this.p.limit = +e.target.value; regen(); };
+        $('cons').onchange = e => { this.p.cons = +e.target.value; regen(); };
+        $('method').onchange = e => { this.p.meth = e.target.value; regen(); };
+        $('view').onchange = e => { this.p.view = e.target.value; this.render(); };
+        $('freq').onchange = e => { this.p.freq = +e.target.value; };
+
+        $('chkBass').onchange = e => { this.p.droneBass = e.target.checked; };
+        $('chkAnchor').onchange = e => { this.p.droneAnchor = e.target.checked; };        
+        // Canvas events
+        this.canvas.addEventListener('mousedown', e => this.onPointerDown(e));
+        this.canvas.addEventListener('mouseup', e => this.onPointerUp(e));
+        this.canvas.addEventListener('mousemove', e => this.onPointerMove(e));
+        this.canvas.addEventListener('mouseleave', e => this.onPointerLeave());
+        this.canvas.addEventListener('wheel', e => this.onWheel(e), { passive: false });
+        
+        // Touch
+        this.canvas.addEventListener('touchstart', e => { 
+            e.preventDefault(); 
+            this.onPointerDown(e.touches[0]); 
+        }, { passive: false });
+        this.canvas.addEventListener('touchend', e => this.onPointerUp(e.changedTouches?.[0] || e));
+        this.canvas.addEventListener('touchmove', e => { 
+            e.preventDefault(); 
+            this.onPointerMove(e.touches[0]); 
+        }, { passive: false });
+    },
+
+    resize() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+        this.c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.W = rect.width;
+        this.H = rect.height;
+    },
+
+    async ensureAudio() {
+        if (this.synth) return this.ctx;
+        
+        this.ctx = AudioLib.Utils.initAudio();
+        
+        // Ensure audio context is running
+        if (this.ctx.state === 'suspended') {
+            await this.ctx.resume();
+        }
+        
+        const PIANO = {
+            harmonics: 12,
+            envelope: { attack: 0.005, decay: 0.4, sustain: 0.2, release: 0.6 }
+        };
+        
+        const pianoPartials = (freq) => 
+            Array.from({ length: PIANO.harmonics }, (_, i) => {
+                const n = i + 1;
+                const oddBoost = (n % 2 === 1) ? 1.2 : 0.8;
+                const gain = oddBoost / Math.pow(n, 1.8); 
+                return {
+                    ratio: n,
+                    amp: gain,
+                    attack: PIANO.envelope.attack,
+                    decay: PIANO.envelope.decay + (n * 0.03),
+                    sustain: Math.max(PIANO.envelope.sustain - (n * 0.015), 0.05),
+                    release: PIANO.envelope.release
+                };
+            });
+        
+        this.synth = new AudioLib.Synth(this.ctx, {
+            partials: pianoPartials,
+            type: 'sine',
+            envelope: PIANO.envelope
+        });
+        this.synth.connect(this.ctx.destination);
+        
+        return this.ctx;
+    },
+
+    playNote(hit) {
+            if (!this.synth) return;
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            
+            // 1. Останавливаем предыдущие звуки
+            this.stopNote();
+            
+            const now = this.ctx.currentTime;
+            this.activeNoteId = hit.id;
+
+            // 2. Основная мелодия
+            this.synth.noteOn(hit.id, hit.freq, 0.5);
+
+            // 3. System Bass (Бурдон системы)
+            if (this.p.droneBass && this.globalRoot) {
+                const gr = this.globalRoot;
+                // Частота системы = База * (Числ/Знам). 
+                // Спускаем на октаву (* 0.5), чтобы звучало как бас.
+                const bassFreq = this.p.freq * (gr.num / gr.den) * 8;
+                console.log("bass freq = ", bassFreq)
+                this.synth.noteOn('drone-bass', bassFreq, 0.2);
+            }
+
+            // 4. Row Anchor (Бурдон текущего лада)
+            if (this.p.droneAnchor && hit.root) {
+                // Частота якоря = База * Root * СдвигОктавыРяда
+                const rowOctave = this.p.oct[hit.root] || 0;
+                const anchorFreq = this.p.freq * hit.root * Math.pow(2, rowOctave);
+                
+                // Anchor может быть очень высоким (т.к. это обертоновая серия), 
+                // делаем его потише.
+                this.synth.noteOn('drone-anchor', anchorFreq, 0.08);
+            }
+        },
+
+    stopNote() {
+        if (!this.synth) return;
+
+        // Останавливаем основную ноту
+        if (this.activeNoteId) {
+            this.synth.noteOff(this.activeNoteId);
+            this.activeNoteId = null;
+        }
+        
+        // Останавливаем бурдоны (используем try catch на случай, если они не играли)
+        try { this.synth.noteOff('drone-bass'); } catch(e){}
+        try { this.synth.noteOff('drone-anchor'); } catch(e){}
+    },
+
+    update() {
+        document.getElementById('loader').style.display = 'grid';
+        setTimeout(() => {
+            try {
+                this.data = PolyUndertonality.generate(
+                    this.p.limit, this.p.pool, this.p.cons, this.p.meth
+                );
+                this.globalRoot = PolyUndertonality.getSystemRoot(this.data);
+                
+                document.getElementById('s_root').textContent = 
+                    `${this.globalRoot.num}/${this.globalRoot.den}`;
+                document.getElementById('s_depth').textContent = 
+                    PolyUndertonality.getDepth(this.data);
+                document.getElementById('s_count').textContent = this.data.length;
+
+                this.scrollY = 0;
+                this.render();
+            } catch(e) { 
+                console.error('Update error:', e); 
+            }
+            document.getElementById('loader').style.display = 'none';
+        }, 20);
+    },
+
+    // ========== TRANSFORM LOGIC (matches Julia exactly) ==========
+    transformNote(absRatio, row) {
+        const u = PolyUndertonality.utils;
+        const rootR = u.create(row.root, 1);
+        
+        let disp;
+        switch (this.p.view) {
+            case 'local':
+                // Just normalize to [1, 2)
+                disp = u.normalize(absRatio);
+                break;
+                
+            case 'relative':
+                // Divide by anchor, normalize, then multiply by normalized anchor
+                const rel = u.div(absRatio, rootR);
+                const normRel = u.normalize(rel);
+                const normRoot = u.normalize(rootR);
+                disp = u.mul(normRel, normRoot);
+                break;
+                
+            case 'harmonic':
+                // Divide by system root, then normalize
+                const harm = u.div(absRatio, this.globalRoot);
+                disp = u.normalize(harm);
+                break;
+                
+            default:
+                disp = u.normalize(absRatio);
+        }
+        
+        return disp;
+    },
+
+    // ========== RENDERING ==========
+    
+    render() {
+        const ctx = this.c2d;
+        const u = PolyUndertonality.utils;
+        
+        ctx.fillStyle = this.C.bg;
+        ctx.fillRect(0, 0, this.W, this.H);
+        
+        if (!this.data.length) {
+            ctx.fillStyle = this.C.dim;
+            ctx.font = '12px monospace';
+            ctx.fillText('No scales generated. Adjust parameters.', 20, 30);
+            this.hitAreas = [];
+            return;
+        }
+        
+        this.hitAreas = [];
+        const noteAreaW = this.W - this.HEAD_W - this.PAD * 2;
+        const totalH = this.data.length * this.ROW_H;
+        const maxScroll = Math.max(0, totalH - this.H);
+        this.scrollY = Math.max(0, Math.min(this.scrollY, maxScroll));
+        
+        ctx.save();
+        ctx.translate(0, -this.scrollY);
+        
+        this.data.forEach((row, ri) => {
+            if (this.p.oct[row.root] === undefined) this.p.oct[row.root] = 0;
+            
+            const y = ri * this.ROW_H;
+            
+            // Culling
+            if (y + this.ROW_H < this.scrollY - 10 || y > this.scrollY + this.H + 10) return;
+            
+            // Row background
+            ctx.fillStyle = ri % 2 ? this.C.rowAlt : this.C.rowBg;
+            ctx.fillRect(0, y, this.W, this.ROW_H - 1);
+            
+            // Header
+            ctx.fillStyle = this.C.head;
+            ctx.fillRect(0, y, this.HEAD_W, this.ROW_H - 1);
+            ctx.strokeStyle = this.C.headBorder;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.HEAD_W, y);
+            ctx.lineTo(this.HEAD_W, y + this.ROW_H - 1);
+            ctx.stroke();
+            
+            // Anchor number
+            ctx.fillStyle = this.C.accent;
+            ctx.font = 'bold 13px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(row.root, this.HEAD_W / 2, y + 16);
+            
+            // Octave controls
+            const octVal = this.p.oct[row.root];
+            const octY = y + 28;
+            ctx.fillStyle = this.C.dim;
+            ctx.font = '9px monospace';
+            ctx.fillText((octVal >= 0 ? '+' : '') + octVal, this.HEAD_W / 2, octY + 8);
+            
+            // Octave buttons
+            const btnW = 16, btnH = 13;
+            const btnMinusX = 6;
+            const btnPlusX = this.HEAD_W - btnW - 6;
+            
+            ctx.strokeStyle = this.C.dim;
+            ctx.strokeRect(btnMinusX, octY, btnW, btnH);
+            ctx.fillText('−', btnMinusX + btnW/2, octY + btnH/2 + 1);
+            ctx.strokeRect(btnPlusX, octY, btnW, btnH);
+            ctx.fillText('+', btnPlusX + btnW/2, octY + btnH/2 + 1);
+            
+            this.hitAreas.push({ 
+                x: btnMinusX, y: octY, w: btnW, h: btnH, 
+                type: 'oct', root: row.root, delta: -1 
+            });
+            this.hitAreas.push({ 
+                x: btnPlusX, y: octY, w: btnW, h: btnH, 
+                type: 'oct', root: row.root, delta: 1 
+            });
+            
+            // Transform and prepare notes
+            const notes = row.scale.map((absR, idx) => {
+                const disp = this.transformNote(absR, row);
+                const octShift = this.p.oct[row.root];
+                
+                // Apply octave shift to display
+                let finalDisp = disp;
+                if (octShift !== 0) {
+                    const octR = octShift > 0 
+                        ? u.create(1 << octShift, 1) 
+                        : u.create(1, 1 << (-octShift));
+                    finalDisp = u.mul(disp, octR);
+                }
+                
+                // Frequency: base × absolute × 2^octShift
+                const freq = this.p.freq * u.toDecimal(absR) * Math.pow(2, octShift);
+                
+                return { 
+                    absR, 
+                    disp: finalDisp, 
+                    freq, 
+                    idx, 
+                    id: `${row.root}-${idx}` 
+                };
+            });
+            
+            // Sort by display value for visual ordering
+            notes.sort((a, b) => u.toDecimal(a.disp) - u.toDecimal(b.disp));
+            
+            // Render notes
+            const nCount = notes.length;
+            const totalGaps = (nCount - 1) * this.NOTE_GAP;
+            const nw = Math.min(60, Math.max(40, (noteAreaW - totalGaps) / nCount));
+            const notesStartX = this.HEAD_W + this.PAD;
+            const ny = y + (this.ROW_H - this.NOTE_H) / 2;
+            
+            notes.forEach((n, j) => {
+                const nx = notesStartX + j * (nw + this.NOTE_GAP);
+                const isActive = this.activeNoteId === n.id;
+                const isHover = this.hoverNoteId === n.id;
+                
+                // Note background
+                ctx.fillStyle = isActive ? this.C.noteActive : 
+                                 (isHover ? this.C.noteHover : this.C.note);
+                ctx.beginPath();
+                ctx.roundRect(nx, ny, nw, this.NOTE_H, 3);
+                ctx.fill();
+                
+                // Ratio text
+                ctx.fillStyle = isActive ? '#000' : this.C.text;
+                ctx.font = 'bold 10px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${n.disp.num}/${n.disp.den}`, nx + nw/2, ny + this.NOTE_H/2 - 6);
+                
+                // Cents
+                const cents = Math.round(1200 * Math.log2(u.toDecimal(n.disp)));
+                ctx.fillStyle = isActive ? 'rgba(0,0,0,0.6)' : this.C.dim;
+                ctx.font = '8px monospace';
+                ctx.fillText(`${cents}¢`, nx + nw/2, ny + this.NOTE_H/2 + 8);
+                
+                // Register hit area
+                this.hitAreas.push({
+                    x: nx, y: ny, w: nw, h: this.NOTE_H,
+                    type: 'note', 
+                    id: n.id, 
+                    freq: n.freq, 
+                    disp: n.disp,
+                    root: row.root // <--- FIX: Добавляем root ряда
+                });
+            });
+        });
+        
+        ctx.restore();
+        
+        // Scrollbar indicator (if needed)
+        if (totalH > this.H) {
+            const scrollRatio = this.scrollY / maxScroll;
+            const barH = Math.max(30, (this.H / totalH) * this.H);
+            const barY = scrollRatio * (this.H - barH);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.fillRect(this.W - 6, barY, 4, barH);
+        }
+    },
+
+    // ========== POINTER EVENTS ==========
+    
+    getPointerPos(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return { 
+            x: e.clientX - rect.left, 
+            y: e.clientY - rect.top + this.scrollY 
+        };
+    },
+
+    findHit(pos) {
+        for (let i = this.hitAreas.length - 1; i >= 0; i--) {
+            const h = this.hitAreas[i];
+            if (pos.x >= h.x && pos.x <= h.x + h.w && 
+                pos.y >= h.y && pos.y <= h.y + h.h) {
+                return h;
+            }
+        }
+        return null;
+    },
+
+    onPointerDown(e) {
+        this.isDragging = true;
+        const pos = this.getPointerPos(e);
+        const hit = this.findHit(pos);
+        
+        if (hit?.type === 'note') {
+            // Play note on mousedown
+            if (this.synth) {
+                this.playNote(hit);
+            } else {
+                // If audio not ready, activate it first
+                this.ensureAudio().then(() => {
+                    this.playNote(hit);
+                }).catch(console.error);
+            }
+            this.activeNoteId = hit.id;
+            this.render();
+        } else if (hit?.type === 'oct') {
+            this.p.oct[hit.root] = (this.p.oct[hit.root] || 0) + hit.delta;
+            this.render();
+        }
+    },
+
+    onPointerUp(e) {
+        this.isDragging = false;
+        
+        // Stop note on mouseup
+        this.stopNote();
+        this.render();
+    },
+
+    onPointerMove(e) {
+        const pos = this.getPointerPos(e);
+        const hit = this.findHit(pos);
+        
+        const oldHover = this.hoverNoteId;
+        this.hoverNoteId = hit?.type === 'note' ? hit.id : null;
+        
+        // Tooltip
+        const tooltip = document.getElementById('tooltip');
+        if (hit?.type === 'note') {
+            const u = PolyUndertonality.utils;
+            const cents = Math.round(1200 * Math.log2(u.toDecimal(hit.disp)));
+            tooltip.innerHTML = `<b>${hit.disp.num}/${hit.disp.den}</b><br>${cents}¢ | ${Math.round(hit.freq)} Hz`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX - this.canvas.parentElement.getBoundingClientRect().left + 12) + 'px';
+            tooltip.style.top = (e.clientY - this.canvas.parentElement.getBoundingClientRect().top - 10) + 'px';
+        } else {
+            tooltip.style.display = 'none';
+        }
+        
+        // Drag to play
+        if (this.isDragging && this.synth && hit?.type === 'note' && hit.id !== this.activeNoteId) {
+            this.playNote(hit);
+            this.render();
+        }
+        
+        if (oldHover !== this.hoverNoteId) this.render();
+    },
+
+    onPointerLeave() {
+        this.hoverNoteId = null;
+        document.getElementById('tooltip').style.display = 'none';
+        this.render();
+    },
+
+    onWheel(e) {
+        e.preventDefault();
+        this.scrollY += e.deltaY * 0.5;
+        this.render();
+    }
+};
+
+window.onload = () => App.init();
+</script>
+</body>
+</html>

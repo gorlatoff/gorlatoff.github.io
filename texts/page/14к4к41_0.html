@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<script src="dragscroll.js"></script>
+
+<style>
+/*    img {
+        user-select: none;
+    }
+
+    body, html {
+        background-color: var(--background-color);
+        color: var(--text-color-dark);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Space Grotesk';
+    }
+
+    .dragscroll {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .dragscroll::-webkit-scrollbar {
+        display: none; 
+    }
+   .dragscroll {
+       scroll-snap-type: y mandatory;
+       overflow-y: scroll;
+       height: 100vh;
+   }
+
+    :root {
+        --background-color: hsl(240, 5%, 10%);
+        --text-color-dark: hsl(0, 0%, 95%);
+        --text-color-light: hsl(0, 0%, 50%);
+        --hover-color: hsl(0, 0%, 100%);
+    }
+
+
+    .slide {
+        display: flex;
+        height: 100vh;
+        background: var(--background-color);
+        transition: transform 0.8s ease-in-out;
+    }
+
+    .slide-content {
+        width: 50%;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .slide-content p {
+        font-size: 14pt; 
+        line-height: 1.2; 
+        max-width: 500px; 
+    }
+
+    .slide-image {
+        width: 50%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .title-separator {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0.25rem;
+    }
+
+    .title-separator h1 {
+        font-size: 14pt;
+        font-weight: bold;
+        margin: 0;
+        color: var(--text-color-light);
+        transition: color 200s ease-in-out;
+    }
+
+    .title-separator .separator {
+        width: 100%;
+        height: 2px;
+        background: var(--text-color-light);
+        transition: background-color 200s ease-in-out;
+    }
+
+    .slide-content:hover .title-separator h1,
+    .slide-content.hovered .title-separator h1 { 
+        color: var(--hover-color);
+        transition-duration: 0s;
+        transition-delay: 0.5s;
+    }
+
+    .slide-content:hover .separator,
+    .slide-content.hovered .separator {
+        background-color: var(--hover-color);
+        transition-duration: 0s;
+        transition-delay: 0.5s;
+    }
+
+
+
+    @media (max-width: 768px) {
+        .slide {
+            flex-direction: column;
+        }
+
+        .slide-content, .slide-image {
+            width: 100%;
+        }
+
+        .slide-content {
+            order: 2;
+            height: 50vh;
+        }
+
+        .slide-image {
+            order: 1;
+            height: 50vh;
+        }
+    }
+
+    .slide-content:not(:hover) h1,
+    .slide-content:not(:hover) .separator {
+        transition-duration: 2s;
+    }
+
+
+   .slide {
+       scroll-snap-align: start;
+       height: 100vh;
+   }
+   
+*/
+</style>
+<title>Zakaznik</title>
+<body>
+    <div class="dragscroll">
+
+Phước Nguyễn
+Collections
+Latest
+← Back toDrag and drop in React
+Scroll by dragging
+Written by
+Phuoc Nguyen
+Created
+03 Nov, 2023
+Last updated
+10 Nov, 2023
+Tags
+drag-to-scroll
+←
+Back to
+Drag and drop in React
+Star me on GitHub → 41 ⭐
+When scrolling through a container, most users rely on their mouse or trackpad. But have you considered drag-to-scroll? This method offers several advantages over traditional scrolling. For one, it allows for more precise control over scrolling speed and direction, which is especially useful when working with intricate designs in applications like Figma.
+Drag-to-scroll is also less taxing on your hands and wrists, as it allows for a more natural hand movement that doesn't require repetitive motions like those used with a mouse. And for touchscreens or other devices without a traditional mouse, drag-to-scroll offers a more intuitive and user-friendly experience overall.
+Many popular websites and applications, including Figma and Spotify's web player, are adopting drag-to-scroll. Even games like Minecraft are using it. As more interfaces adopt this feature, it will likely become even more prevalent.
+In this post, we'll explore how to implement drag-to-scroll functionality with React, so you can take advantage of this powerful feature in your own projects.
+Scrolling by dragging
+Let's say we have a container that can be scrolled, like the one below:
+tsx
+
+<div className="container">...</div>
+To enable scrolling within a container, you can set the `overflow` property to `auto`.
+css
+
+.container {
+    overflow: auto;
+}
+Let's take a moment to revisit the post where we learned how to create a draggable element. In that post, we used the `useRef()` hook to create a reference to the target element, which we then attached to the element using the `ref` attribute. We also handled the `mousedown` and `touchstart` events to make the target element draggable on both desktop and touchscreen devices.
+Just in case you need a refresher, here's a quick code snippet to remind you of what we did:
+tsx
+
+const containerRef = React.useRef();
+
+// Render
+<div
+    className="container"
+    ref={containerRef}
+    onMouseDown={handleMouseDown}
+    onTouchStart={handleTouchStart}
+/>
+Previously, we used to position draggable elements by setting their position absolutely within their container and updating their position using the `transform` property. However, we've adopted a different approach for our drag-to-scroll functionality. We no longer use internal states like `dx` and `dy`. Instead, we now store the starting point and the current scroll position when users start dragging the element.
+This is how we handle the `mousedown` event:
+ts
+
+const handleMouseDown = (e) => {
+    const ele = containerRef.current;
+    const startPos = {
+        left: ele.scrollLeft,
+        top: ele.scrollTop,
+        x: e.clientX,
+        y: e.clientY,
+    };
+    // ...
+};
+The starting point has four properties: `left` and `top`, which indicate the scroll position, and `x` and `y`, which represent the mouse position.
+Let's calculate the horizontal and vertical distance the mouse moves while in motion. Instead of updating internal states like we did before, we can simply update the scroll position of the target element.
+ts
+
+const handleMouseMove = (e) => {
+    const dx = e.clientX - startPos.x;
+    const dy = e.clientY - startPos.y;
+    ele.scrollTop = startPos.top - dy;
+    ele.scrollLeft = startPos.left - dx;
+    updateCursor(ele);
+};
+The `handleMouseMove()` function updates the scroll position of the container element while the user is dragging it.
+To do this, it calculates how far the mouse has moved horizontally and vertically since the drag started, using the `clientX` and `clientY` properties of the event object. Then, it subtracts these distances from the initial values of the `scrollTop` and `scrollLeft` properties of the container element.
+To give users a more intuitive and user-friendly experience, the function also calls a helper function called `updateCursor()`.
+ts
+
+const updateCursor = (ele) => {
+    ele.style.cursor = 'grabbing';
+    ele.style.userSelect = 'none';
+};
+When the user starts dragging the scrollable container, the `updateCursor()` function sets the cursor to `grabbing` and disables text selection using CSS. This provides visual feedback to the user that they are currently dragging an element.
+Similarly, it's important to remember to reset the cursor when the user releases the mouse.
+ts
+
+const resetCursor = (ele) => {
+    ele.style.cursor = 'grab';
+    ele.style.removeProperty('user-select');
+};
+Why not give it a try in the demo below? Simply drag any element inside the scrollable container and move it around. You'll see that the container automatically scrolls to the target position.
+styles.css
+App.tsx
+
+export default App = () => {
+    const containerRef = React.useRef();
+
+    const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+        const ele = containerRef.current;
+        if (!ele) {
+            return;
+        }
+        const startPos = {
+            left: ele.scrollLeft,
+            top: ele.scrollTop,
+            x: e.clientX,
+            y: e.clientY,
+        };
+
+        const handleMouseMove = (e: React.MouseEvent) => {
+            const dx = e.clientX - startPos.x;
+            const dy = e.clientY - startPos.y;
+            ele.scrollTop = startPos.top - dy;
+            ele.scrollLeft = startPos.left - dx;
+            updateCursor(ele);
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            resetCursor(ele);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, []);
+
+    const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+        const ele = containerRef.current;
+        if (!ele) {
+            return;
+        }
+        const touch = e.touches[0];
+        const startPos = {
+            left: ele.scrollLeft,
+            top: ele.scrollTop,
+            x: touch.clientX,
+            y: touch.clientY,
+        };
+
+        const handleTouchMove = (e: React.TouchEvent) => {
+            const touch = e.touches[0];
+            const dx = touch.clientX - startPos.x;
+            const dy = touch.clientY - startPos.y;
+            ele.scrollTop = startPos.top - dy;
+            ele.scrollLeft = startPos.left - dx;
+            updateCursor(ele);
+        };
+
+        const handleTouchEnd = () => {
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+            resetCursor(ele);
+        };
+
+
+
+Creating a custom hook for drag-to-scroll functionality
+The drag-to-scroll feature is useful in many real-life situations, so let's package it up and reuse it across multiple components. In React, we can achieve this by creating custom hooks. Custom hooks save time, help us write cleaner, more organized code, and allow us to take complex functionality and turn it into simple hooks that can be shared with other developers or reused in future projects.
+Creating a custom hook for drag-to-scroll functionality is similar to creating one for making an element draggable, which we covered previously. We won't go into the details of creating the custom hook here, but you can find it in our previous post.
+Check out the demo below to see the drag-to-scroll functionality in action!
+styles.css
+useDragScroll.ts
+App.tsx
+
+export const useDragScroll = () => {
+    const [node, setNode] = React.useState<HTMLElement>(null);
+
+    const ref = React.useCallback((nodeEle) => {
+        setNode(nodeEle);
+    }, []);
+
+    const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+        if (!node) {
+            return;
+        }
+        const startPos = {
+            left: node.scrollLeft,
+            top: node.scrollTop,
+            x: e.clientX,
+            y: e.clientY,
+        };
+
+        const handleMouseMove = (e: React.MouseEvent) => {
+            const dx = e.clientX - startPos.x;
+            const dy = e.clientY - startPos.y;
+            node.scrollTop = startPos.top - dy;
+            node.scrollLeft = startPos.left - dx;
+            updateCursor(node);
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            resetCursor(node);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, [node]);
+
+
+
+
+Conclusion
+To sum up, drag-to-scroll is a nifty feature that can enhance the user experience across various contexts. It offers benefits such as more precise control over scrolling speed and direction, reduced hand and wrist fatigue, and easy use on touchscreens or other devices without a traditional mouse.
+We've shown you how to implement drag-to-scroll functionality with React by creating a custom hook. With this hook, you can easily add drag-to-scroll functionality to any component that requires it.
+Overall, drag-to-scroll is gaining popularity and will likely continue to be adopted by more websites and applications in the future. As designers and developers, it's essential to stay up-to-date with these trends and consider integrating them into our work where appropriate.
+See also
+Drag to scroll in vanilla JavaScript
+If you found this post helpful, please consider giving the repository a star on GitHub or sharing the post on your favorite social networks 😍. Your support would mean a lot to me!
+8
+Create an image comparison slider
+←
+10
+Build a custom scrollbar
+→
+
+
+
+
+
+Hugeicons Pro - 25,000+ premium icons
+Questions? 🙋
+Do you have any questions about front-end development? If so, feel free to create a new issue on GitHub using the button below. I'm happy to help with any topic you'd like to learn more about, even beyond what's covered in this post.
+While I have a long list of upcoming topics, I'm always eager to prioritize your questions and ideas for future content. Let's learn and grow together! Sharing knowledge is the best way to elevate ourselves 🥷.
+Ask me questions
+Recent posts ⚡
+Lazy load a Google Map
+Lazy load a video
+Lazy load an iframe
+Lazy load a background image
+Lazy load an image
+Create a reusable component for IntersectionObserver
+Create a reusable hook for IntersectionObserver
+Use the IntersectionObserver API in React
+An introduction to the IntersectionObserver API
+Clipboard API fallback
+Check if the Clipboard API is supported
+Check if an element is visible in the viewport
+Build a REST client
+Simplify document cookies management
+Build a SQL query builder
+See more→
+Newsletter 🔔
+If you're into front-end technologies and you want to see more of the content I'm creating, then you might want to consider subscribing to my newsletter.
+By subscribing, you'll be the first to know about new articles, products, and exclusive promotions.
+Don't worry, I won't spam you. And if you ever change your mind, you can unsubscribe at any time.
+First name
+Your email address
+Phước Nguyễn
+Collections
+1 LOC
+Cross browser
+CSS animation
+CSS layout
+Front-end tips
+HTML DOM
+this vs that
+In-depth
+JavaScript Proxy
+Mirror a text area
+CSS grid
+Master of React ref
+The power of React context
+Drag and drop in React
+IntersectionObserver with React
+Interact with the clipboard
+Products
+BlurPage
+Form Validation
+React PDF Viewer
+Contact me
+DEV
+GitHub
+Email
+© 2019 — 2024 Phuoc Nguyen. All rights reserved.
+
+<!--         <div class="slide">
+            <div class="slide-content">
+                <div class="title-separator">
+                    <h1>25 maja 2025</h1>
+                    <div class="separator"></div>
+                </div>
+                <p>Это начало дневника... <br> Дата: 2024-11-26</p>
+            </div>
+            <img src="1.png" alt="Иллюстрация 1" class="slide-image">
+        </div>
+        <div class="slide">
+            <div class="slide-content">
+                <div class="title-separator">
+                    <h1>26 aprilja 2025</h1>
+                    <div class="separator"></div>
+                </div>
+                <p>Продолжение повествования... <br> Дата: 2024-11-27</p>
+            </div>
+            <img src="2.png" alt="Иллюстрация 2" class="slide-image">
+        </div>
+        <div class="slide">
+            <div class="slide-content">
+                <div class="title-separator">
+                    <h1>26 julija 2025</h1>
+                    <div class="separator"></div>
+                </div>
+                <p>История продолжается... <br> Дата: 2024-11-28</p>
+            </div>
+            <img src="3.png" alt="Иллюстрация 3" class="slide-image">
+        </div> -->
+    </div>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,283 @@
+<html>
+<title>Zakaznik</title>
+<style>
+    :root {
+        --background-color: hsl(240, 5%, 10%);
+        --text-color-dark: hsl(0, 0%, 95%);
+        --text-color-light: hsl(0, 0%, 50%);
+        --hover-color: hsl(0, 0%, 100%);
+    }
+
+    body, html {
+        background-color: var(--background-color);
+        color: var(--text-color-dark);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Space Grotesk';
+    }
+
+
+.slider {
+    overflow: auto;
+    width: 100%;
+    height: 100vh;
+    float: left;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+
+
+.slide {
+    will-change: transform;
+    display: flex;
+    height: 100vh;
+    background: var(--background-color);
+    transition: transform 0.8s ease-in-out;
+    flex-direction: column;
+}
+
+.text-block {
+    width: 50%;
+}
+
+.text-block p {
+    font-size: 15pt; /* Это приблизительно соответствуют шрифту 14 в Google Docs */
+    line-height: 1.2; /* Междустрочный интервал */
+    max-width: 80%; /* Ограничение по ширине для текста */
+}
+
+.slide-image {
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.title-separator {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.25rem;
+}
+
+.title-separator h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    color: var(--text-color-light);
+    transition: color 200s ease-in-out;
+}
+
+.title-separator .separator {
+    width: 80%;
+    height: 2px;
+    background: var(--text-color-light);
+    transition: background-color 200s ease-in-out;
+}
+
+.text-block:hover .title-separator h1,
+.text-block.hovered .title-separator h1 { /* Добавлена поддержка класса 'hovered' */
+    color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.text-block:hover .separator,
+.text-block.hovered .separator { /* Добавлена поддержка класса 'hovered' */
+    background-color: var(--hover-color);
+    transition-duration: 0s;
+    transition-delay: 0s; /* Задержка для исчезновения */
+}
+
+.text-block:not(:hover) h1,
+.text-block:not(:hover) .separator {
+    transition-duration: 5s;
+}
+
+@media (max-width: 768px) {
+    .slide {
+        flex-direction: column;
+    }
+
+    .text-block, .slide-image {
+        width: 100%;
+    }
+
+    .slide-image {
+        order: 1;
+        height: 50vh;
+    }
+}
+</style>
+
+
+<script>
+class PhysicsSlider {
+  constructor(element) {
+    this.element = element;
+    this.velocity = 0;
+    this.isPressed = false;
+    this.lastY = 0;
+    this.lastTime = Date.now();
+    this.slideHeight = window.innerHeight;
+    this.springConstant = 0.1; // константа пружины
+    this.damping = 0.9; // коэффициент затухания
+    this.snapThreshold = 0.66; // порог для snap-эффекта
+    this.init();
+  }
+
+  init() {
+    this.bindEvents();
+    this.startAnimation();
+  }
+
+  bindEvents() {
+    this.element.addEventListener('mousedown', (e) => {
+      this.isPressed = true;
+      this.lastY = e.clientY;
+      this.lastTime = Date.now();
+      this.velocity = 0;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isPressed) return;
+
+      const now = Date.now();
+      const deltaTime = (now - this.lastTime) / 1000; // конвертируем в секунды
+      const deltaY = this.lastY - e.clientY;
+
+      this.velocity = deltaY / deltaTime; // пикселей в секунду
+      this.element.scrollTop += deltaY;
+
+      this.lastY = e.clientY;
+      this.lastTime = now;
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isPressed = false;
+    });
+
+    // Добавляем поддержку touch events
+    this.element.addEventListener('touchstart', (e) => {
+      this.isPressed = true;
+      this.lastY = e.touches[0].clientY;
+      this.lastTime = Date.now();
+      this.velocity = 0;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!this.isPressed) return;
+
+      const now = Date.now();
+      const deltaTime = (now - this.lastTime) / 1000;
+      const deltaY = this.lastY - e.touches[0].clientY;
+
+      this.velocity = deltaY / deltaTime;
+      this.element.scrollTop += deltaY;
+
+      this.lastY = e.touches[0].clientY;
+      this.lastTime = now;
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      this.isPressed = false;
+    });
+  }
+
+  snapToNearestSlide() {
+    const currentScroll = this.element.scrollTop;
+    const targetSlide = Math.round(currentScroll / this.slideHeight);
+
+    this.element.scroll({
+      top: targetSlide * this.slideHeight,
+      behavior: 'smooth'
+    });
+
+    this.velocity = 0;
+  }
+
+  startAnimation() {
+    const animate = () => {
+      if (!this.isPressed) {
+        const currentScroll = this.element.scrollTop;
+        const targetSlide = Math.round(currentScroll / this.slideHeight);
+        const distanceToSnap = Math.abs(currentScroll - targetSlide * this.slideHeight);
+
+        if (distanceToSnap < this.snapThreshold * this.slideHeight) {
+          this.snapToNearestSlide();
+        } else {
+          this.velocity += (targetSlide * this.slideHeight - currentScroll) * this.springConstant;
+          this.velocity *= this.damping;
+          this.element.scrollTop += this.velocity * (1 / 60); // Для 60fps
+        }
+      }
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.querySelector('.slider');
+    new PhysicsSlider(slider);
+});
+
+document.addEventListener('mousedown', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.add('hovered');
+    });
+});
+document.addEventListener('mouseup', function() {
+    document.querySelectorAll('.slide-content').forEach(function(element) {
+        element.classList.remove('hovered');
+    });
+});
+</script>
+
+
+<body>
+<div class="vertical slider">
+<div class="slide">
+    <div class="slide-content">
+        <div class="title-separator">
+            <h1>25 maja 2025</h1>
+            <div class="separator"></div>
+        </div>
+        <p>Sěry ofis Sberbanka šuměl kako napȯlnjena pčelami ulja. Ja jesm sěděl, gledeči na črveny nadpis "Projekt je odklonjeny". God råboty, bezsȯnne noći, gory kavy — vsečto je izšlo v ničto. "Prěmnogo rizikovano", skazali sųt oni. Ha! Možno je pomysliti, že ostavjeńje banka bez obråny od izmamiteljev ne je rizik.</p>
+        <p>Moja rųka potegnula sę k telefonu — pozvoniti Polině, råzkazati jej... Stop. "Nam je potrěbna pauza, Anton," ehom odzvalo sę v mojej glåvě. Prošėl je měsęc, a ja ješče ne mogl jesm privyknųti sę.</p>
+        <p>"Hej, kako ty se imaš?" Glås sųråbotnika izvedl mene iz otųpělosti.
+        "Dobro," promrmhal jesm ja, zatvarjajųći laptop.
+        "Poslušaj, my sbirajemo se večerom..."
+        "Ne dneś," ja jesm odsěkl jego. "Imam děla."</p>
+        <p>Imam děla. Kake děla može imati člověk, projekt ktorogo nedavno byl pogrebeny? Jedino sȯbrati věći i ujdti v zahod sȯlnca. To je imenno to, čto ja jesm stvoril.</p>
+    </div>
+    <img src="1.png" alt="Иллюстрация 1" class="slide-image">
+</div>
+<div class="slide">
+    <div class="slide-content">
+        <div class="title-separator">
+            <h1>26 aprilja 2025</h1>
+            <div class="separator"></div>
+        </div>
+        <p>Продолжение повествования... <br> Дата: 2024-11-27</p>
+    </div>
+    <img src="2.png" alt="Иллюстрация 2" class="slide-image">
+</div>
+<div class="slide">
+    <div class="slide-content">
+        <div class="title-separator">
+            <h1>26 julija 2025</h1>
+            <div class="separator"></div>
+        </div>
+        <p>История продолжается... <br> Дата: 2024-11-28</p>
+    </div>
+    <img src="3.png" alt="Иллюстрация 3" class="slide-image">
+</div>
+</div>
+</body>
+</html>
