@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Генератор Ладов JI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-void: hsl(225, 21.5%, 5%);
+  --bg-panel: hsl(225, 24%, 8%);
+  
+  --color-cyan: hsla(190, 90%, 62.5%, 1);
+  --color-purple: hsla(260, 85%, 67.5%, 1);
+  --color-warm: hsla(35, 100%, 67.5%, 1);
+  
+  --text-bright: hsl(0, 0%, 100%);
+  --text-main: hsl(220, 28.5%, 91%);
+  --text-dim: hsl(223, 18.5%, 69%);
+  
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  --shadow-input: inset 0 2px 4px hsla(0, 0%, 0%, 0.45);
+  --border-base: 1px solid hsla(0, 0%, 100%, 0.065);
+  
+  --glow-cyan-inner: inset 0 0 0 1px hsla(190, 80%, 65%, 0.35), inset -1px -3px 20px hsla(190, 80%, 62.5%, 0.1);
+  --glow-purple-inner: inset 0 0 0 1px hsla(260, 80%, 65%, 0.35), inset -1px -3px 20px hsla(260, 80%, 67.5%, 0.1);
+
+  --scrollbar-track: var(--bg-void);
+  --scrollbar-thumb: hsla(0, 0%, 100%, 0.15);
+}
+
+* { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-void);
+  background-image: radial-gradient(circle at 50% -20%, hsl(225, 25%, 12%) 0%, var(--bg-void) 70%);
+  color: var(--text-main);
+  font-family: 'Space Grotesk', sans-serif;
+  
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+/* === SCROLLBARS === */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+/* === VISUALIZATION === */
+#visualization-panel {
+  position: relative; 
+  width: 100%; 
+  height: 100%;
+  min-height: 80px;
+  overflow: hidden;
+  background: radial-gradient(circle at center, hsla(225, 25%, 10%, 0.5) 0%, transparent 80%);
+}
+#visualization-panel canvas { width: 100%; height: 100%; display: block; }
+
+/* === CONTROL PANEL === */
+#control-panel {
+  background: var(--bg-panel);
+  border-top: var(--border-base);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+  
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 12px;
+  
+  height: 42vh;
+  min-height: 200px;
+  max-height: 350px;
+}
+
+/* === TABLE (FIXED LAYOUT - NO HORIZONTAL SCROLL) === */
+.scales-table-container {
+  background: hsla(0, 0%, 0%, 0.2);
+  border: var(--border-base);
+  border-radius: var(--radius-md);
+  overflow: hidden; /* Vertical scroll only via tbody */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scales-table {
+  width: 100%; 
+  table-layout: fixed; /* Ключ: фиксированная ширина колонок */
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace; 
+  font-size: clamp(9px, 1.3vh, 12px);
+}
+
+/* Фиксированные пропорции колонок */
+.scales-table th:nth-child(1),
+.scales-table td:nth-child(1) { width: 7%; }  /* N */
+
+.scales-table th:nth-child(2),
+.scales-table td:nth-child(2) { width: 13%; } /* Конс */
+
+.scales-table th:nth-child(3),
+.scales-table td:nth-child(3) { width: 28%; } /* Название */
+
+.scales-table th:nth-child(4),
+.scales-table td:nth-child(4) { width: 52%; } /* Состав */
+
+.scales-table thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.scales-table tbody {
+  display: block;
+  overflow-y: auto;
+  max-height: calc(42vh - 60px); /* Высота панели минус header и padding */
+}
+
+.scales-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.scales-table th {
+  background: var(--bg-panel);
+  color: var(--text-dim); 
+  font-size: clamp(7px, 1vh, 10px); 
+  text-transform: uppercase; 
+  letter-spacing: 0.3px;
+  padding: clamp(5px, 1vh, 8px) clamp(4px, 0.6vh, 6px);
+  text-align: left;
+  border-bottom: 1px solid hsla(0, 0%, 100%, 0.1);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scales-table th:hover { color: var(--text-bright); }
+
+.scales-table td {
+  padding: clamp(4px, 0.7vh, 7px) clamp(4px, 0.6vh, 6px);
+  border-bottom: 1px solid hsla(0, 0%, 100%, 0.03);
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scales-table tr:hover td { background: hsla(0, 0%, 100%, 0.03); color: var(--text-bright); }
+.scales-table tr.selected td {
+  background: hsla(260, 85%, 67.5%, 0.1);
+  color: var(--color-purple);
+}
+.scales-table td.consonance { color: var(--color-cyan); }
+
+/* === CONFIG PANEL === */
+#generation-parameters {
+  width: clamp(200px, 26vh, 300px);
+  
+  display: flex; 
+  flex-direction: column;
+  gap: clamp(6px, 1.2vh, 10px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.panel-header {
+  font-size: clamp(8px, 1.2vh, 10px);
+  text-transform: uppercase; 
+  color: var(--text-dim);
+  font-weight: 600; 
+  letter-spacing: 0.8px;
+  padding-bottom: clamp(4px, 0.7vh, 6px);
+  border-bottom: var(--border-base);
+  flex-shrink: 0;
+}
+
+.param-group {
+  display: flex; 
+  flex-direction: column; 
+  gap: clamp(4px, 0.8vh, 7px);
+  padding: clamp(6px, 1vh, 10px);
+  background: hsla(0,0,0,0.15); 
+  border-radius: var(--radius-md); 
+  border: var(--border-base);
+  flex-shrink: 0;
+}
+
+.param-row {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  gap: 6px;
+}
+
+.param-row label {
+  font-size: clamp(9px, 1.2vh, 12px);
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* === INPUTS === */
+input[type="number"] {
+  background-color: hsla(0, 0%, 0%, 0.25);
+  border: var(--border-base); 
+  border-radius: var(--radius-sm);
+  color: var(--text-bright); 
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center; 
+  padding: clamp(3px, 0.6vh, 6px) 2px;
+  width: clamp(45px, 45%, 70px);
+  box-shadow: var(--shadow-input); 
+  font-size: clamp(10px, 1.2vh, 13px);
+  transition: all 0.2s;
+}
+input[type="number"]:focus { border-color: transparent; }
+
+.group-cyan input:focus { box-shadow: var(--glow-cyan-inner); }
+.group-cyan input:hover { border-color: hsla(190, 90%, 62.5%, 0.3); }
+
+.group-purple input:focus { box-shadow: var(--glow-purple-inner); }
+.group-purple input:hover { border-color: hsla(260, 85%, 67.5%, 0.3); }
+
+/* === CUSTOM SELECT === */
+.select-group {
+  flex-shrink: 0;
+}
+.select-group > label {
+  font-size: clamp(7px, 1vh, 9px);
+  color: var(--text-dim); 
+  display: block;
+  margin-bottom: clamp(2px, 0.4vh, 4px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.custom-select { 
+  position: relative; 
+  font-family: 'Space Grotesk', sans-serif; 
+}
+
+.select-trigger {
+  background: hsla(0, 0%, 0%, 0.25);
+  color: var(--text-main); 
+  padding: clamp(6px, 1vh, 10px) clamp(8px, 1.2vh, 12px);
+  border-radius: var(--radius-md); 
+  cursor: pointer;
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  border: var(--border-base); 
+  box-shadow: var(--shadow-input);
+  font-size: clamp(9px, 1.1vh, 12px);
+  font-weight: 500; 
+  transition: border-color 0.2s;
+}
+.select-trigger:hover { border-color: hsla(0, 0%, 100%, 0.15); }
+
+.custom-select.open .select-trigger {
+  background-color: hsla(260, 75%, 50%, 0.05);
+  box-shadow: var(--glow-purple-inner); 
+  border-color: transparent; 
+  color: var(--text-bright);
+}
+
+.select-arrow { 
+  font-size: clamp(7px, 0.9vh, 9px);
+  color: var(--text-dim); 
+  transition: transform 0.2s; 
+}
+.custom-select.open .select-arrow { 
+  transform: rotate(180deg); 
+  color: var(--color-purple); 
+}
+
+.select-options {
+  position: absolute; 
+  bottom: calc(100% + 4px); 
+  left: 0; 
+  right: 0;
+  background: #0b0d12; 
+  border: var(--border-base);
+  border-radius: var(--radius-md); 
+  overflow: hidden;
+  max-height: 0; 
+  opacity: 0; 
+  z-index: 100;
+  transition: all 0.2s var(--ease-out); 
+  box-shadow: 0 -8px 25px rgba(0,0,0,0.8);
+}
+.custom-select.open .select-options { 
+  max-height: 180px; 
+  opacity: 1; 
+}
+
+.option {
+  padding: clamp(7px, 1vh, 10px) clamp(8px, 1.2vh, 12px);
+  cursor: pointer; 
+  font-size: clamp(9px, 1.1vh, 11px);
+  color: var(--text-dim);
+  border-left: 2px solid transparent; 
+  transition: all 0.15s;
+}
+.option:hover { 
+  color: var(--text-bright); 
+  background: hsla(0, 0%, 100%, 0.04); 
+}
+.option.selected {
+  color: var(--text-bright); 
+  border-left-color: var(--color-purple);
+  background: linear-gradient(90deg, hsla(260, 85%, 67.5%, 0.08), transparent);
+}
+
+/* === BUTTON === */
+#genScalesBtn {
+  flex-shrink: 0;
+  margin-top: auto;
+  width: 100%; 
+  padding: clamp(8px, 1.3vh, 12px);
+  background: linear-gradient(180deg, hsl(225, 20%, 15%), hsl(225, 20%, 9%));
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-main); 
+  font-family: 'Space Grotesk', sans-serif; 
+  font-weight: 600; 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px; 
+  font-size: clamp(8px, 1.1vh, 10px);
+  cursor: pointer; 
+  overflow: hidden; 
+  transition: all 0.2s var(--ease-out); 
+  position: relative;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+}
+
+#genScalesBtn:hover {
+  border-color: hsla(0, 0%, 100%, 0.2);
+  color: var(--text-bright);
+  background: linear-gradient(180deg, hsl(225, 20%, 17%), hsl(225, 20%, 11%));
+}
+
+#genScalesBtn::after {
+  content: ''; 
+  position: absolute; 
+  bottom: 0; left: 0; 
+  width: 100%; height: 2px;
+  background: var(--color-cyan); 
+  transform: scaleX(0.5); 
+  opacity: 0.6;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 -1px 5px hsla(190, 90%, 62.5%, 0.2);
+}
+#genScalesBtn:hover::after { 
+  transform: scaleX(1); opacity: 1; height: 2px; 
+  box-shadow: 0 0 12px var(--color-cyan); 
+}
+#genScalesBtn:active { transform: translateY(1px); opacity: 0.9; }
+
+/* === OVERLAY === */
+#generation-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(5, 7, 15, 0.85); backdrop-filter: blur(5px);
+  display: none; align-items: center; justify-content: center;
+  font-size: clamp(14px, 2.5vmin, 20px); 
+  letter-spacing: 2px;
+  color: var(--color-cyan); z-index: 1500;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   PORTRAIT MODE
+   ============================================ */
+@media (max-aspect-ratio: 3/4) {
+  #control-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 8px;
+    padding: 8px;
+    
+    height: 58vh;
+    min-height: 260px;
+    max-height: 480px;
+  }
+  
+  .scales-table tbody {
+    max-height: calc(35vh - 40px);
+  }
+  
+  #generation-parameters {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
+  }
+  
+  .panel-header {
+    width: 100%;
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+  }
+  
+  .param-group {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 120px;
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  
+  /* Имена ВСЕГДА на одной строке с инпутами */
+  .param-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .param-row label {
+    font-size: clamp(8px, 1.8vw, 11px);
+  }
+  
+  .param-row input[type="number"] {
+    width: clamp(40px, 35%, 60px);
+    font-size: clamp(9px, 1.8vw, 12px);
+    padding: 4px 2px;
+  }
+  
+  .select-group {
+    flex: 1 1 100%;
+    order: 10;
+  }
+  
+  .select-group > label {
+    font-size: 8px;
+  }
+  
+  .select-trigger {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  
+  #genScalesBtn {
+    flex: 0 0 100%;
+    order: 20;
+    margin-top: 4px;
+    padding: 10px;
+    font-size: 9px;
+  }
+  
+  .select-options {
+    bottom: calc(100% + 3px);
+  }
+
+
+}
+
+/* Очень узкий экран */
+@media (max-aspect-ratio: 1/2) {
+  #control-panel {
+    height: 62vh;
+    max-height: 520px;
+  }
+  
+  .param-group {
+    flex: 1 1 100%;
+  }
+  
+  .scales-table tbody {
+    max-height: calc(28vh - 30px);
+  }
+  #gcdWeightGroup {
+    flex: 1 1 100%;
+    order: 11;
+  }
+}
+</style>
+</head>
+<body>
+
+  <div id="generation-overlay">Идет расчет...</div>
+
+  <div id="visualization-panel">
+    <canvas id="myCanvas"></canvas>
+  </div>
+
+  <div id="control-panel">
+    
+    <div class="scales-table-container">
+      <table class="scales-table">
+        <thead>
+          <tr>
+            <th data-sort="N">N</th>
+            <th data-sort="consonance">Конс.</th>
+            <th data-sort="scalename">Название</th>
+            <th data-sort="scale">Состав</th>
+          </tr>
+        </thead>
+        <tbody id="scales-table-body"></tbody>
+      </table>
+    </div>
+
+    <div id="generation-parameters">
+      <div class="panel-header">Настройки</div>
+
+      <div class="param-group group-cyan">
+        <div class="param-row">
+          <label for="minNotes">Мин. нот</label>
+          <input type="number" id="minNotes" value="7" min="3" max="12">
+        </div>
+        <div class="param-row">
+          <label for="maxNotes">Макс. нот</label>
+          <input type="number" id="maxNotes" value="7" min="3" max="12">
+        </div>
+      </div>
+
+      <div class="param-group group-purple">
+        <div class="param-row">
+          <label for="searchLimit">Глубина поиска</label>
+          <input type="number" id="searchLimit" value="32" min="1" max="100">
+        </div>
+        <div class="param-row">
+          <label for="minConsonance">Мин. конс.</label>
+          <input type="number" id="minConsonance" step="0.01" value="0.2" min="0" max="1">
+        </div>
+      </div>
+
+      <div class="select-group">
+              <label>Метод генерации</label>
+              <div class="custom-select" id="methodSelect">
+                <!-- По умолчанию ставим твой новый лучший алгоритм -->
+                <input type="hidden" id="consonanceMethod" value="structural-euler">
+                <div class="select-trigger">
+                  <span class="trigger-text">Harmonic Tree (Euler)</span>
+                  <span class="select-arrow">▼</span>
+                </div>
+                <div class="select-options">
+                  <!-- 1. Старый стандарт (для сравнения) -->
+                  <div class="option" data-value="euler">Pair Consonance (Euler) [Legacy]</div>
+                  
+                  <!-- 2. Новый топологический алгоритм (основные) -->
+                  <div class="option selected" data-value="structural-euler">Harmonic Tree (Euler)</div>
+                  <div class="option" data-value="structural-barlow">Harmonic Tree (Barlow)</div>
+                  <div class="option" data-value="structural-murzin">Harmonic Tree (Murzin)</div>
+                  <div class="option" data-value="structural-tenney">Harmonic Tree (Tenney)</div>
+                  
+                  <!-- 3. Остальные вариации Harmonic Tree -->
+                  <div class="option" data-value="structural-heClassic">Harmonic Tree (HE Classic)</div>
+                  <div class="option" data-value="structural-sopfr">Harmonic Tree (SOPFR)</div>
+                  <div class="option" data-value="structural-harmUtility">Harmonic Tree (Harm Utility)</div>
+
+                  <!-- 4. Старый Complexity (GCD/LCM) -->
+                  <div class="option" style="border-top: 1px solid #444; margin-top: 4px; padding-top: 8px;" data-value="complexity">Complexity (GCD/LCM) [Legacy]</div>
+                </div>
+              </div>
+      </div>
+
+      <div class="param-group group-purple" id="gcdWeightGroup">
+        <div class="param-row">
+          <label for="gcdWeight">GCD/LCM баланс</label>
+          <input type="number" id="gcdWeight" step="0.1" value="0.5" min="0" max="1">
+        </div>
+      </div>
+
+      <button id="genScalesBtn">Генерировать</button>
+    </div>
+  </div>
+
+  <script src="lib/ji-lib.js"></script>
+  <script src="lib/generate_modes.js"></script>
+  <script src="lib/audio-lib.js"></script>
+  <script src="lib/additivepiano.js"></script>
+  <script src="scales.js"></script>
+
+  <script>
+  function setupCustomSelect() {
+    const sel = document.getElementById('methodSelect');
+    const trigger = sel.querySelector('.select-trigger');
+    const triggerText = sel.querySelector('.trigger-text');
+    const input = document.getElementById('consonanceMethod');
+    const options = sel.querySelectorAll('.option');
+    const gcdGroup = document.getElementById('gcdWeightGroup');
+
+    function updateGcdVisibility() {
+      const method = input.value;
+      if (gcdGroup) {
+        gcdGroup.style.display = (method === 'complexity') ? 'flex' : 'none';
+      }
+    }
+
+    trigger.addEventListener('click', e => {
+      e.stopPropagation();
+      sel.classList.toggle('open');
+    });
+    
+    options.forEach(opt => {
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        options.forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        input.value = opt.dataset.value;
+        triggerText.textContent = opt.textContent;
+        sel.classList.remove('open');
+        updateGcdVisibility();
+      });
+    });
+    
+    document.addEventListener('click', () => sel.classList.remove('open'));
+    
+    updateGcdVisibility();
+  }
+
+  let currentScale = null;
+  let generatedScalesArray = [];
+  let currentSortColumn = 'default';
+  let currentSortOrder = 'desc';
+  let headersAttached = false;
+
+  // Для интерактивности
+  let hitAreas = { notes: [], intervals: [] };
+  let hoveredItem = null;
+  let canvasRect = null;
+
+  const canvas = document.getElementById("myCanvas");
+  const context = canvas.getContext("2d");
+  const overlay = document.getElementById("generation-overlay");
+
+  const { RationalInterval } = window.jiLib || {};
+  const { generateScales, flattenScales, generateScaleName, intervalConsonance } = window.ModeGenerator || {};
+
+  function getSelectedMethod() {
+    return document.getElementById('consonanceMethod').value || 'murzin';
+  }
+
+  function consonanceUsingSelectedMethod(r) {
+    return intervalConsonance(r, getSelectedMethod());
+  }
+
+  class FractionLabel {
+    constructor(n, d) { this.n = n; this.d = d; }
+    draw(ctx, x, y, size) {
+      ctx.save();
+      ctx.font = `500 ${size}px 'JetBrains Mono'`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillText(this.n, x, y - size * 0.4);
+      ctx.beginPath();
+      ctx.moveTo(x - size * 0.4, y);
+      ctx.lineTo(x + size * 0.4, y);
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.lineWidth = size * 0.08;
+      ctx.stroke();
+      ctx.fillText(this.d, x, y + size);
+      ctx.restore();
+    }
+  }
+
+  function getColorFromConsonance(cons) {
+    const normalized = cons / 1.6;
+    const hue = normalized * 60;
+    const alpha = 0.3 + 0.7 * normalized;
+    return `hsla(${hue}, 85%, 55%, ${alpha})`;
+  }
+
+  function getColorFromConsonanceHighlight(cons, highlight = false) {
+    const normalized = cons / 1.6;
+    const hue = normalized * 60;
+    const alpha = highlight ? 1 : (0.3 + 0.7 * normalized);
+    const lightness = highlight ? 65 : 55;
+    return `hsla(${hue}, 85%, ${lightness}%, ${alpha})`;
+  }
+
+  function cubicBezierPoint(t, p0, p1, p2, p3) {
+    const mt = (1 - t);
+    return {
+      x: mt * mt * mt * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * p3.x,
+      y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y
+    };
+  }
+
+  function pointNearCurve(mx, my, p0, p1, p2, p3, threshold = 12) {
+    for (let t = 0; t <= 1; t += 0.02) {
+      const pt = cubicBezierPoint(t, p0, p1, p2, p3);
+      const dist = Math.hypot(mx - pt.x, my - pt.y);
+      if (dist < threshold) return true;
+    }
+    return false;
+  }
+
+  function pointNearLabel(mx, my, x, y, size) {
+    return Math.abs(mx - x) < size * 1.2 && Math.abs(my - y) < size * 1.8;
+  }
+
+  function drawScale(scale) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvasRect = rect;
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.scale(dpr, dpr);
+
+    const w = rect.width, h = rect.height;
+
+    context.clearRect(0, 0, w, h);
+    
+    const u = Math.min(w, h);
+    const marginX = w * 0.06;
+    const axisY = h * 0.82;
+    const plotHeight = h * 0.9;
+    const fontSize = u * 0.035;
+    const curveWidth = u * 0.006;
+    
+    context.beginPath();
+    context.moveTo(0, axisY);
+    context.lineTo(w, axisY);
+    context.strokeStyle = "rgba(255,255,255,0.1)";
+    context.stroke();
+
+    // Очистка hit areas
+    hitAreas = { notes: [], intervals: [] };
+
+    if (!scale) return;
+
+    function getX(ratio) {
+      return marginX + (ratio.toDecimal() - 1) * (w - 2 * marginX);
+    }
+
+    scale.forEach((note, idx) => {
+      const x = getX(note);
+      context.beginPath();
+      context.moveTo(x, axisY - u * 0.015);
+      context.lineTo(x, axisY + u * 0.015);
+      context.strokeStyle = "rgba(255,255,255,0.5)";
+      context.lineWidth = 2;
+      context.stroke();
+      
+      const labelY = axisY + fontSize * 1.8;
+      const isHovered = hoveredItem && hoveredItem.type === 'note' && hoveredItem.index === idx;
+      
+      context.save();
+      if (isHovered) {
+        context.shadowColor = 'rgba(255,255,255,0.5)';
+        context.shadowBlur = 10;
+      }
+      new FractionLabel(note.numerator, note.denominator).draw(context, x, labelY, fontSize * (isHovered ? 1.15 : 1));
+      context.restore();
+      
+      // Сохраняем область для клика
+      hitAreas.notes.push({
+        x, y: labelY,
+        size: fontSize,
+        note,
+        index: idx
+      });
+    });
+
+    for (let i = 0; i < scale.length; i++) {
+      for (let j = i + 1; j < scale.length; j++) {
+        const xStart = getX(scale[i]), xEnd = getX(scale[j]);
+        if (xEnd <= xStart) continue;
+        
+        const interval = scale[j].divide(scale[i]).normalize();
+        const hArc = plotHeight * Math.log2(interval.toDecimal());
+        
+        const bend = 0.22;
+        const p0 = { x: xStart, y: axisY };
+        const p1 = { x: xStart + (xEnd - xStart) * bend, y: axisY - hArc };
+        const p2 = { x: xEnd - (xEnd - xStart) * bend, y: axisY - hArc };
+        const p3 = { x: xEnd, y: axisY };
+        
+        const intervalKey = `${i}-${j}`;
+        const isHovered = hoveredItem && hoveredItem.type === 'interval' && hoveredItem.key === intervalKey;
+        
+        context.beginPath();
+        context.moveTo(p0.x, p0.y);
+        context.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        context.lineCap = 'round';
+        context.lineWidth = isHovered ? curveWidth * 1.8 : curveWidth;
+        context.strokeStyle = getColorFromConsonanceHighlight(consonanceUsingSelectedMethod(interval), isHovered);
+        
+        if (isHovered) {
+          context.shadowColor = context.strokeStyle;
+          context.shadowBlur = 15;
+        }
+        context.stroke();
+        context.shadowBlur = 0;
+
+        const top = cubicBezierPoint(0.5, p0, p1, p2, p3);
+        
+        context.save();
+        if (isHovered) {
+          context.shadowColor = 'rgba(255,255,255,0.6)';
+          context.shadowBlur = 12;
+        }
+        new FractionLabel(interval.numerator, interval.denominator)
+          .draw(context, top.x, top.y - fontSize * 0.3, fontSize * (isHovered ? 1.05 : 0.9));
+        context.restore();
+        
+        // Сохраняем область интервала
+        hitAreas.intervals.push({
+          p0, p1, p2, p3,
+          labelX: top.x,
+          labelY: top.y - fontSize * 0.3,
+          size: fontSize * 0.9,
+          noteA: scale[i],
+          noteB: scale[j],
+          interval,
+          key: intervalKey
+        });
+      }
+    }
+  }
+
+  // === ОБРАБОТКА СОБЫТИЙ МЫШИ ===
+  
+  function getMousePos(e) {
+    if (!canvasRect) canvasRect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - canvasRect.left,
+      y: e.clientY - canvasRect.top
+    };
+  }
+
+  function findHoveredItem(mx, my) {
+    // Проверяем подписи нот
+    for (const note of hitAreas.notes) {
+      if (pointNearLabel(mx, my, note.x, note.y, note.size)) {
+        return { type: 'note', ...note };
+      }
+    }
+    
+    // Проверяем интервалы (подписи + кривые)
+    for (const int of hitAreas.intervals) {
+      if (pointNearLabel(mx, my, int.labelX, int.labelY, int.size)) {
+        return { type: 'interval', ...int };
+      }
+      if (pointNearCurve(mx, my, int.p0, int.p1, int.p2, int.p3, 10)) {
+        return { type: 'interval', ...int };
+      }
+    }
+    
+    return null;
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const pos = getMousePos(e);
+    const item = findHoveredItem(pos.x, pos.y);
+    
+    const changed = (
+      (!hoveredItem && item) ||
+      (hoveredItem && !item) ||
+      (hoveredItem && item && (hoveredItem.type !== item.type || hoveredItem.key !== item.key || hoveredItem.index !== item.index))
+    );
+    
+    if (changed) {
+      hoveredItem = item;
+      canvas.style.cursor = item ? 'pointer' : 'default';
+      if (currentScale) requestAnimationFrame(() => drawScale(currentScale));
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (hoveredItem) {
+      hoveredItem = null;
+      canvas.style.cursor = 'default';
+      if (currentScale) requestAnimationFrame(() => drawScale(currentScale));
+    }
+  });
+
+  canvas.addEventListener('click', (e) => {
+    const pos = getMousePos(e);
+    const item = findHoveredItem(pos.x, pos.y);
+    
+    if (!item) return;
+    
+    if (typeof PianoSynth !== 'undefined') {
+      if (item.type === 'note') {
+        PianoSynth.playNote(item.note);
+      } else if (item.type === 'interval') {
+        PianoSynth.playInterval(item.noteA, item.noteB);
+      }
+    }
+    
+    // Визуальный "пульс" при клике
+    pulseItem(item);
+  });
+
+  function pulseItem(item) {
+    // Простой эффект - временное усиление hover
+    const originalHovered = hoveredItem;
+    hoveredItem = item;
+    if (currentScale) drawScale(currentScale);
+    
+    setTimeout(() => {
+      hoveredItem = originalHovered;
+      if (currentScale) drawScale(currentScale);
+    }, 150);
+  }
+
+  function sortScales(scales) {
+    let sorted = scales.slice();
+    if (currentSortColumn === 'default') {
+      sorted.sort((a, b) => b.consonance !== a.consonance ? b.consonance - a.consonance : a.n - b.n);
+    } else {
+      sorted.sort((a, b) => {
+        let valA, valB;
+        if (currentSortColumn === 'N') { valA = a.n; valB = b.n; }
+        else if (currentSortColumn === 'consonance') { valA = a.consonance; valB = b.consonance; }
+        else if (currentSortColumn === 'scalename') { valA = generateScaleName(a.scale); valB = generateScaleName(b.scale); }
+        else { valA = a.scale.toString(); valB = b.scale.toString(); }
+        if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
+  }
+
+  function renderScalesTable() {
+    const tableBody = document.getElementById("scales-table-body");
+    tableBody.innerHTML = "";
+    let sortedScales = sortScales(generatedScalesArray);
+    
+    sortedScales.forEach(entry => {
+      const tr = document.createElement("tr");
+      const tdN = document.createElement("td"); tdN.textContent = entry.n;
+      const tdCons = document.createElement("td"); tdCons.textContent = entry.consonance.toFixed(3); tdCons.className = "consonance";
+      const tdName = document.createElement("td"); tdName.textContent = generateScaleName(entry.scale);
+      const tdScale = document.createElement("td"); tdScale.textContent = entry.scale.map(r => r.toString()).join(", ");
+
+      tr.append(tdN, tdCons, tdName, tdScale);
+      tr.addEventListener("click", () => {
+        document.querySelectorAll(".scales-table tr").forEach(row => row.classList.remove("selected"));
+        tr.classList.add("selected");
+        currentScale = entry.scale;
+        requestAnimationFrame(() => drawScale(currentScale));
+      });
+      tableBody.appendChild(tr);
+    });
+    
+    if (tableBody.firstChild) {
+      tableBody.firstChild.classList.add("selected");
+      currentScale = sortedScales[0].scale;
+      requestAnimationFrame(() => drawScale(currentScale));
+    }
+    
+    if (!headersAttached) {
+      document.querySelectorAll(".scales-table th").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.sort;
+          if (currentSortColumn === key) currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+          else { currentSortColumn = key; currentSortOrder = 'asc'; }
+          renderScalesTable();
+        });
+      });
+      headersAttached = true;
+    }
+  }
+
+  document.getElementById("genScalesBtn").addEventListener("click", () => {
+    overlay.style.display = "flex";
+    setTimeout(async () => {
+      try {
+        const db = await generateScales({
+          minNotes: +document.getElementById("minNotes").value,
+          maxNotes: +document.getElementById("maxNotes").value,
+          searchLimit: +document.getElementById("searchLimit").value,
+          minConsonance: +document.getElementById("minConsonance").value,
+          method: getSelectedMethod(),
+          gcdWeight: +document.getElementById("gcdWeight").value,
+          onProgress: c => overlay.textContent = `Расчет... [${c}]`
+        });
+        generatedScalesArray = flattenScales(db, +document.getElementById("minNotes").value);
+        renderScalesTable();
+      } catch(e) { console.error(e); } 
+      finally { overlay.style.display = "none"; }
+    }, 50);
+  });
+
+  window.addEventListener("resize", () => {
+    if(currentScale) requestAnimationFrame(() => drawScale(currentScale));
+  });
+
+  window.addEventListener("load", () => {
+    setupCustomSelect();
+    document.getElementById("genScalesBtn").click();
+  });
+  </script>
+</body> 
+</html>
